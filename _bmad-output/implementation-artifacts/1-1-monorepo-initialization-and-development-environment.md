@@ -1,6 +1,6 @@
 # Story 1.1: Monorepo Initialization & Development Environment
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -113,3 +113,8 @@ openai/gpt-5.2-codex
 ### Change Log
 
 - 2026-03-19: Initialized monorepo scaffold (frontend, backend, supabase) and updated repo ignore rules.
+- 2026-03-19: Code review completed (claude-sonnet-4-6). 6 patch items applied, 8 deferred, 1 intent gap noted.
+  - Fixed: `next lint` script target, invalid `[a]:hover` Tailwind selector in button.tsx, `shadcn` moved to devDependencies, `radix-ui` replaced with `@radix-ui/react-slot`, `backend/requirements.txt` created, `.gitignore` `.env` patterns broadened to full tree.
+  - Deferred: CORS, boilerplate metadata, next.config.ts security headers, Google Fonts offline fallback, Supabase TLS scope guard, tsconfig ES2017/esnext mismatch, FastAPI auth/middleware, Supabase port declarations.
+  - Intent gap: AC 4 `.gitignore` subdirectory scope ambiguous — broadened to cover full tree.
+  - Not fixed: `shadcn` style `"radix-nova"` (non-standard value) — requires manual verification with shadcn@4.1.0.

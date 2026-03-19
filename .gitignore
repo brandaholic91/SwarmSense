@@ -2,9 +2,12 @@
 /.claude
 /.cursor
 /.opencode
-/.env
-/.env.local
+.env
+.env.local
+.env.*
+.env.*.local
 __pycache__/
 .venv/
+.ruff_cache/
 .next/
 node_modules/

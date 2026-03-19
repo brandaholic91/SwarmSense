@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
 from app.core.cost_enforcement import cost_enforcement_middleware
@@ -12,14 +13,17 @@ def create_app() -> FastAPI:
     redoc_url = None if settings.is_production else "/redoc"
 
     app = FastAPI(docs_url=docs_url, redoc_url=redoc_url)
+    # Cost enforcement is registered first (inner), CORS last (outermost).
+    # This ensures CORS headers are present on all responses, including 402/503
+    # returned by cost enforcement.
+    app.add_middleware(BaseHTTPMiddleware, dispatch=cost_enforcement_middleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(settings.frontend_origin)],
+        allow_origins=[str(settings.frontend_origin).rstrip("/")],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.middleware("http")(cost_enforcement_middleware)
     app.include_router(runs.router)
     app.include_router(status.router)
 

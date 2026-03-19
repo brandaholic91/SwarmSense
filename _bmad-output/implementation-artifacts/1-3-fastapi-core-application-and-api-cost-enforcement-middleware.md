@@ -1,6 +1,6 @@
 # Story 1.3: FastAPI Core Application & API Cost Enforcement Middleware
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -15,7 +15,7 @@ so that the $50/month hard limit is enforced at the application layer and cannot
 1. Given the FastAPI application is running, when a request arrives at any run-initiating endpoint, then `cost_enforcement.py` queries `cost_tracking` for the current month's `total_usd` before allowing the request to proceed.
 2. If `total_usd >= 50.00`, the endpoint returns HTTP 402 with `{"detail": "A havi ingyenes kapacitás elérte a határát.", "code": "COST_LIMIT_REACHED"}`.
 3. Non-run endpoints (auth, waitlist, operator, status polling) are unaffected when the monthly limit is reached.
-4. All environment variables are parsed via Pydantic Settings from `SWARMSENSE_`-prefixed env vars: `SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_SUPABASE_SERVICE_KEY`, `SWARMSENSE_KIMI_API_KEY`, `SWARMSENSE_OPERATOR_API_KEY`.
+4. All environment variables are parsed via Pydantic Settings from `SWARMSENSE_`-prefixed env vars: `SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_SUPABASE_SERVICE_KEY`, `SWARMSENSE_KIMI_API_KEY`, `SWARMSENSE_OPERATOR_API_KEY`, `SWARMSENSE_FRONTEND_ORIGIN`.
 5. CORS middleware is configured to allow requests only from the Vercel frontend domain.
 6. FastAPI OpenAPI docs (`/docs` and `/redoc`) are disabled in production via env configuration.
 
@@ -72,6 +72,7 @@ openai/gpt-5.2-codex
 ### Debug Log References
 
 - 2026-03-20: `python -m pytest` (4 passed)
+- 2026-03-20: Code review (3-layer adversarial: Blind Hunter, Edge Case Hunter, Acceptance Auditor) — 10 patch, 1 bad_spec, 2 defer found; all patches applied, `python -m pytest` (9 passed)
 
 ### Completion Notes List
 
@@ -100,3 +101,4 @@ openai/gpt-5.2-codex
 ### Change Log
 
 - 2026-03-20: Implemented core FastAPI configuration, cost enforcement middleware, error handling, and tests; updated sprint status to review.
+- 2026-03-20: Code review patches applied — async I/O fix (asyncio.to_thread), fail-closed error handling (CostCheckError/503), trailing slash bypass fix, CORS middleware ordering fix (BaseHTTPMiddleware + add_middleware), Pydantic AnyHttpUrl trailing slash bug fix, get_supabase_client cache isolation in tests, limit(1) on DB query, _normalize_total raises on corrupt values, COST_CHECK_FAILED error code added, 5 new tests (trailing slash, 503 fail-closed, production docs, CORS allow/block), spec AC 4 updated with SWARMSENSE_FRONTEND_ORIGIN; story closed as done.

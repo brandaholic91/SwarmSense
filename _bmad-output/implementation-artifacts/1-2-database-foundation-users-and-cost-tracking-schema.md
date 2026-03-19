@@ -1,6 +1,6 @@
 # Story 1.2: Database Foundation — Users & Cost Tracking Schema
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -21,19 +21,19 @@ so that user records and monthly API spend tracking are securely in place before
 
 ## Tasks / Subtasks
 
-- [ ] Create `supabase/migrations/20260319_001_users.sql` (AC: 1, 3, 5)
-  - [ ] Create `users` table with required columns and defaults (`created_at` default `now()`, `id` UUID PK default `gen_random_uuid()` if available).
-  - [ ] Add unique constraint on `email` and a normalization check constraint (e.g., `email = lower(trim(email))`).
-  - [ ] Enable RLS on `users` and ensure no anon/authenticated policies are added (service role bypass only).
-- [ ] Create `supabase/migrations/20260319_006_cost_tracking.sql` (AC: 2, 6)
-  - [ ] Create `cost_tracking` table with `month` TEXT PK and `total_usd` NUMERIC NOT NULL DEFAULT 0.
-  - [ ] Add format guard for `month` (e.g., `CHECK (month ~ '^[0-9]{4}-[0-9]{2}$')`).
-  - [ ] Enable `pg_cron` extension (`create extension if not exists pg_cron with schema extensions;`) if not already enabled.
-- [ ] Apply and verify migrations locally (AC: 1, 2, 4, 6)
-  - [ ] Run `supabase db push`.
-  - [ ] Verify schema in Supabase Studio or via SQL: `\d users`, `\d cost_tracking`.
-  - [ ] Verify `pg_cron` installed: `SELECT extname FROM pg_extension WHERE extname = 'pg_cron';`.
-  - [ ] Verify RLS blocks anon access: query `SELECT * FROM users` using anon key returns 0 rows / permission denied.
+- [x] Create `supabase/migrations/20260319_001_users.sql` (AC: 1, 3, 5)
+  - [x] Create `users` table with required columns and defaults (`created_at` default `now()`, `id` UUID PK default `gen_random_uuid()` if available).
+  - [x] Add unique constraint on `email` and a normalization check constraint (e.g., `email = lower(trim(email))`).
+  - [x] Enable RLS on `users` and ensure no anon/authenticated policies are added (service role bypass only).
+- [x] Create `supabase/migrations/20260319_006_cost_tracking.sql` (AC: 2, 6)
+  - [x] Create `cost_tracking` table with `month` TEXT PK and `total_usd` NUMERIC NOT NULL DEFAULT 0.
+  - [x] Add format guard for `month` (e.g., `CHECK (month ~ '^[0-9]{4}-[0-9]{2}$')`).
+  - [x] Enable `pg_cron` extension (`create extension if not exists pg_cron with schema extensions;`) if not already enabled.
+- [x] Apply and verify migrations locally (AC: 1, 2, 4, 6)
+  - [x] Run `supabase db push`.
+  - [x] Verify schema in Supabase Studio or via SQL: `\d users`, `\d cost_tracking`.
+  - [x] Verify `pg_cron` installed: `SELECT extname FROM pg_extension WHERE extname = 'pg_cron';`.
+  - [x] Verify RLS blocks anon access: query `SELECT * FROM users` using anon key returns 0 rows / permission denied.
 
 ## Dev Notes
 
@@ -63,6 +63,26 @@ openai/gpt-5.2-codex
 
 ### Debug Log References
 
+- `supabase db push` failed: `supabase` CLI not found in PATH.
+- `supabase db push --local` failed: duplicate migration version `20260319` (Supabase CLI treats both files as same version).
+- Installed Supabase CLI and renamed migrations to unique versions; repaired local migration history for version `20260319`.
+- `supabase db push --local` applied migrations after repair.
+- Verified schema via `supabase db dump --local` and anon REST request to `/rest/v1/users`.
+- Verified `pg_cron` extension present via full schema dump.
+
 ### Completion Notes List
 
+- Added users and cost tracking migrations with RLS and constraints.
+- Renamed migrations to unique versioned filenames to satisfy Supabase CLI constraints.
+- Local migrations applied; verified table definitions, RLS enabled, and pg_cron extension present via schema dump.
+- Anon REST query to `users` returns empty array as expected under RLS.
+
 ### File List
+
+- supabase/migrations/20260319001_users.sql
+- supabase/migrations/20260319006_cost_tracking.sql
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+
+- 2026-03-19: Added users and cost_tracking migrations; renamed migration filenames to unique versions for Supabase CLI; applied and verified locally; marked story review.

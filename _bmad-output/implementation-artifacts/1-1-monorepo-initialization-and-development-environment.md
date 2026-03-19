@@ -1,6 +1,6 @@
 # Story 1.1: Monorepo Initialization & Development Environment
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,17 +22,17 @@ so that I have a working, runnable development environment that matches the prod
 
 ## Tasks / Subtasks
 
-- [ ] Initialize monorepo scaffold (AC: 1, 2, 3)
-  - [ ] Create `frontend/` via `pnpm create next-app@latest` with TS strict, Tailwind, App Router, Turbopack, ESLint, import alias @/*.
-  - [ ] Initialize shadcn/ui in `frontend/` with zinc theme and class-based dark mode.
-  - [ ] Create `backend/` and Python 3.12+ venv; install `fastapi[standard]==0.135.1`, `supabase`, `resend`.
-  - [ ] Run `supabase init` at repo root; verify `supabase/config.toml`.
-- [ ] Repo hygiene and ignore rules (AC: 4)
-  - [ ] Ensure `.gitignore` includes `.env.local`, `.env`, `__pycache__`, `.venv`, `.next`, `node_modules`.
-- [ ] Local dev sanity checks (AC: 5, 6, 7)
-  - [ ] Run `pnpm dev` in `frontend/` and confirm it serves `http://localhost:3000`.
-  - [ ] Run `fastapi dev app/main.py` in `backend/` and confirm it serves `http://localhost:8000`.
-  - [ ] Run `supabase start` and confirm local Postgres boots without errors.
+- [x] Initialize monorepo scaffold (AC: 1, 2, 3)
+  - [x] Create `frontend/` via `pnpm create next-app@latest` with TS strict, Tailwind, App Router, Turbopack, ESLint, import alias @/*.
+  - [x] Initialize shadcn/ui in `frontend/` with zinc theme and class-based dark mode.
+  - [x] Create `backend/` and Python 3.12+ venv; install `fastapi[standard]==0.135.1`, `supabase`, `resend`.
+  - [x] Run `supabase init` at repo root; verify `supabase/config.toml`.
+- [x] Repo hygiene and ignore rules (AC: 4)
+  - [x] Ensure `.gitignore` includes `.env.local`, `.env`, `__pycache__`, `.venv`, `.next`, `node_modules`.
+- [x] Local dev sanity checks (AC: 5, 6, 7)
+  - [x] Run `pnpm dev` in `frontend/` and confirm it serves `http://localhost:3000`.
+  - [x] Run `fastapi dev app/main.py` in `backend/` and confirm it serves `http://localhost:8000`.
+  - [x] Run `supabase start` and confirm local Postgres boots without errors.
 
 ## Dev Notes
 
@@ -63,6 +63,53 @@ openai/gpt-5.2-codex
 
 ### Debug Log References
 
+- `corepack enable && corepack prepare pnpm@9.12.3 --activate`
+- `pnpm create next-app@16.2.0 frontend --ts --tailwind --eslint --app --import-alias "@/*" --use-pnpm --yes`
+- `pnpm dlx shadcn@latest init --template next --base radix --preset nova --no-monorepo --yes --css-variables`
+- `python3 -m venv backend/.venv`
+- `backend/.venv/bin/pip install fastapi[standard]==0.135.1 supabase resend`
+- `npx supabase init`
+- `pnpm dev` (Turbopack, confirmed startup)
+- `fastapi dev app/main.py` (confirmed startup)
+- `npx supabase start` (completed startup; warning about missing seed file)
+
 ### Completion Notes List
 
+- Frontend scaffolded with Next.js 16.2, Tailwind, App Router, Turbopack dev script, and shadcn/ui initialized with zinc base color and class-based dark mode.
+- Backend created with Python venv and FastAPI app entrypoint at `backend/app/main.py`, dependencies installed per spec.
+- Supabase CLI initialized at repo root; `supabase/config.toml` created and local stack start verified.
+- Repo hygiene updated with required ignore rules.
+
 ### File List
+
+- .gitignore
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/main.py
+- frontend/.gitignore
+- frontend/AGENTS.md
+- frontend/CLAUDE.md
+- frontend/README.md
+- frontend/app/favicon.ico
+- frontend/app/globals.css
+- frontend/app/layout.tsx
+- frontend/app/page.tsx
+- frontend/components.json
+- frontend/components/ui/button.tsx
+- frontend/eslint.config.mjs
+- frontend/lib/utils.ts
+- frontend/next.config.ts
+- frontend/package.json
+- frontend/pnpm-lock.yaml
+- frontend/postcss.config.mjs
+- frontend/public/file.svg
+- frontend/public/globe.svg
+- frontend/public/next.svg
+- frontend/public/vercel.svg
+- frontend/public/window.svg
+- frontend/tsconfig.json
+- supabase/.gitignore
+- supabase/config.toml
+
+### Change Log
+
+- 2026-03-19: Initialized monorepo scaffold (frontend, backend, supabase) and updated repo ignore rules.

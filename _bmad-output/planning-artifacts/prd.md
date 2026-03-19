@@ -1,9 +1,14 @@
 ---
 stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
 lastEdited: '2026-03-19'
+date: '2026-03-19'
 editHistory:
   - date: '2026-03-19'
     changes: 'Validation Warning fixes: qualifier collection journey step + FR35/FR36 added; FR13/FR22/FR30 tightened; NFR1/2 measurement methods added; NFR7/10/15/18 impl. leakage removed; NFR19 degradation quantified'
+  - date: '2026-03-19'
+    changes: 'Critical-first edit pass: RBAC matrix + subscription entitlements added; FR/NFR measurability tightened; explicit MVP out-of-scope and traceability mapping added; frontmatter completeness updated'
+  - date: '2026-03-19'
+    changes: 'Post-validation warning closure: added user-success KPI, moat/unit-cost success metrics, explicit cap-reached journey moment, and traceability mapping updates'
 inputDocuments:
   - '_bmad-output/brainstorming/brainstorming-session-2026-03-18-1730.md'
   - 'docs/vazlat.md'
@@ -13,6 +18,7 @@ documentCounts:
   brainstormingCount: 1
   projectDocsCount: 1
 workflowType: 'prd'
+workflow: 'edit'
 classification:
   projectType: saas_b2b
   domain: martech_ai
@@ -47,6 +53,8 @@ The long-term moat is the **hypothesis database**: every query run accumulates s
 
 A user submits a research topic and target audience description, provides a verified email address, and receives a structured multi-persona analysis within 1–2 minutes. The "aha moment" is in the email: 15–20 attitudinally distinct personas responding to the same hypothesis — showing sentiment distribution, the strongest objections, and the conditions under which skeptics would change their minds. Success means the user gains a concrete, actionable insight they could not have produced with a single LLM prompt.
 
+**User-success KPI:** At least 70% of first-time verified users complete the post-result reflection action (reply-to email or tracked reflection CTA click) within 24 hours of result delivery.
+
 ### Business Success
 
 | Metric | 4-Week Target | 8-Week Target |
@@ -56,6 +64,8 @@ A user submits a research topic and target audience description, provides a veri
 | Qualifier question completion rate | 65%+ | 65%+ |
 | Email open rate (automated sequence) | 35%+ | 30%+ |
 | Potential paying users identified | 10 | 35 |
+| Hypothesis database growth (new structured runs stored) | 120+ | 320+ |
+| Average variable AI cost per completed run | <=$0.003 | <=$0.0025 |
 
 **Decision tree at week 4:**
 - 150+ verified emails AND recurring pain point identified → Pro tier development begins
@@ -64,11 +74,11 @@ A user submits a research topic and target audience description, provides a veri
 
 ### Technical Success
 
-- Magic link verification flow operates reliably end-to-end
-- Persona engine completes 15–20 parallel API calls and delivers results via email within 1–2 minutes
-- 1 free run per email address enforced at database level
-- Email delivery success rate: 95%+
-- API cost hard limit: $50/month (enforced)
+- Magic link verification flow succeeds with >=99% completion for valid tokens, measured weekly from authentication event logs
+- Persona engine completes 15–20 parallel API calls and delivers results via email within 120 seconds for p95 runs, measured from run start to email dispatch logs
+- 1 free run per email address is enforced with 0 duplicate free runs per verified email, measured by weekly run-log audit
+- Result email delivery success rate is >=95%, measured from transactional email provider delivery events
+- API cost hard limit is capped at $50/month with automatic run blocking at limit, measured from monthly billing telemetry
 
 ### Measurable Outcomes
 
@@ -129,6 +139,15 @@ A user submits a research topic and target audience description, provides a veri
 | Email capture conversion is low | Market | Magic link flow optimized for minimal friction; value proposition A/B tested |
 | Solo founder parallel build and marketing | Resource | Waitlist landing page published early during development; LinkedIn activation begins pre-launch |
 
+### Explicit Out of Scope (MVP)
+
+- Team accounts, seat management, and shared token pools (planned for V3)
+- In-browser results dashboard and advanced visualization views (planned for V3)
+- Counter-hypothesis dual-run workflow and benchmark database views (planned for V3)
+- Automated self-service data deletion portal (email-request flow only in MVP)
+- Recurring subscription billing (MVP and V2 use one-time token purchases)
+- Multi-language UX beyond Hungarian user-facing content
+
 ## User Journeys
 
 ### Journey 1: Primary User — First-Time Success
@@ -177,6 +196,8 @@ The result email arrives. The personas are distinct: a risk-averse procurement m
 
 He checks the Supabase run log: 14 runs overnight. He scans qualifier responses — three people mentioned "social media content testing," two mentioned "product launch messaging." One run flagged: API returned 17/18 personas due to a timeout; email sent with count noted. Email open rate in Resend: 41% on result emails, 29% on day-3 follow-up. API spend: $3.20 for the week, well within the $50/month limit.
 
+At month-end, spend reaches the configured cap. New run attempts are automatically blocked with a clear user-facing message that the monthly free-run capacity has been reached, while existing analytics and operator views remain available.
+
 **Capabilities revealed:** Run log with qualifier data, graceful degradation on partial API failure, email delivery/open rate monitoring, API cost tracking and hard limit enforcement.
 
 ---
@@ -198,6 +219,28 @@ He checks the Supabase run log: 14 runs overnight. He scans qualifier responses 
 | Run log + qualifier question storage | Journey 4 |
 | Email open rate monitoring | Journey 4 |
 | API cost tracking + hard spend limit | Journey 4 |
+
+### Cross-Cutting Compliance & Communication Trace
+
+| Requirement | Journey Moment | Outcome |
+|---|---|---|
+| FR9 (consent at capture) | Journey 1 - email capture before verification | User gives explicit consent before processing starts |
+| FR22 (3-email follow-up) | Journey 1 - post-result lifecycle | User receives day 1/day 3/day 7 follow-up sequence |
+| FR23 (unsubscribe option) | Journey 1 and 3 - every marketing email | User always has functional opt-out path |
+| FR24 (unsubscribe action) | Journey 1 and 3 - follow-up emails | User can stop future marketing communications |
+| FR31/FR32 (Privacy Policy / ToS access) | Journey 1 - email capture and submission step | User can review legal terms before sharing email |
+| FR33 (deletion request by email) | Journey 1 and returning lifecycle | User can request deletion from stored personal data |
+| FR34 (PII warning) | Journey 1 - query form submission | User is warned not to submit personal data in prompts |
+
+### Compact Traceability Map
+
+| Source Objective | User Journey | Requirements | Metric |
+|---|---|---|---|
+| Fast actionable validation in minutes | Journey 1 | FR10, FR11, FR14, FR25, NFR2, NFR4, NFR19 | p95 result delivery <=120s |
+| High-quality conversion funnel | Journey 1, Journey 2 | FR3, FR4, FR6, FR8, FR35, FR36 | Landing->verified conversion >=12% |
+| Compliance-safe MVP operation | Journey 1, Journey 3, Journey 4 | FR9, FR23, FR24, FR31-34, NFR6-11, NFR20 | Consent capture rate, unsubscribe SLA, zero cross-user access incidents |
+| Cost-bounded operation for solo founder | Journey 4 | FR28, FR29, NFR16, NFR17 | Monthly API spend <=$50, alert at 80%, and cap-reached run blocking behavior |
+| Compounding insight moat growth | Journey 1, Journey 4 | FR10, FR26, FR27, FR36 | Weekly net-new structured runs and qualifier-linked dataset growth |
 
 ## Domain-Specific Requirements
 
@@ -288,13 +331,32 @@ Primary competition is not a tool — it is inaction: marketing managers current
 | V2 | Individual accounts | Token-based paid access, single user per account |
 | V3 | Team accounts | Shared token pools, multiple seats, agency billing |
 
-### Token Model (V2)
+### Subscription Tiers & Entitlements (V2)
 
-- 1 run = 1 token; tokens never expire
-- Packages: Starter 10/990 HUF · Value 50/3 990 HUF · Pro 150/9 990 HUF
-- Payment processor: Stripe (one-time purchase, no recurring billing)
-- Token balance stored in Supabase; deducted at run initiation
-- Free-to-paid conversion point: "already used" blocking screen shows token purchase options
+| Tier | Price | Tokens | Included Entitlements | Billing Rules |
+|---|---|---|---|---|
+| Starter | 990 HUF | 10 | Single-user account, run history access, standard email support | One-time purchase, tokens never expire, no auto-renew |
+| Value | 3 990 HUF | 50 | Starter entitlements + priority processing queue during peak periods | One-time purchase, tokens never expire, no auto-renew |
+| Pro | 9 990 HUF | 150 | Value entitlements + early-access feature flags and referral unlock | One-time purchase, tokens never expire, no auto-renew |
+
+### Token Rules (V2)
+
+- 1 run consumes 1 token at run initiation
+- Runs rejected due to monthly API hard limit do not consume tokens
+- Failed runs with fewer than 12 persona outputs trigger automatic token credit restoration
+- Free-to-paid conversion point: "already used" blocking screen presents token purchase options
+
+### RBAC Matrix (MVP/V2/V3)
+
+| Role | Phase | Permissions |
+|---|---|---|
+| Visitor | MVP+ | Submit query and audience input, view value proposition and sample output |
+| Verified User | MVP+ | Verify email, answer qualifier survey, receive and view own results, use unsubscribe link |
+| Waitlist User | MVP+ | Join Pro waitlist, receive waitlist updates, request removal from waitlist |
+| Paid User | V2+ | Purchase tokens, run analyses with available balance, view own run history |
+| Operator/Admin | MVP+ | View run log, qualifier responses, delivery/open metrics, cost alerts, process deletion requests |
+
+**Access boundary rule:** Non-operator users can access only their own records and outcomes; operator access is restricted to operational and compliance needs.
 
 ### Integration List
 
@@ -322,15 +384,15 @@ Primary competition is not a tool — it is inaction: marketing managers current
 
 - **FR1:** Visitors can submit a research query by providing a research topic and a target audience description
 - **FR2:** Visitors can view rotating example queries on the submission form to understand the expected input format
-- **FR3:** Visitors can view a product value proposition and an example result preview on the landing page before submitting a query
+- **FR3:** Visitors can view a product value proposition and an example result preview above the primary submission CTA on desktop and mobile before submitting a query
 
 ### Identity Verification & Access Control
 
 - **FR4:** Visitors can provide their email address to receive their analysis results
 - **FR5:** The system can determine whether an email address has previously been used for a free analysis
-- **FR6:** First-time users receive a magic link to their email address to verify their identity before analysis processing begins
-- **FR7:** Returning users whose email address has already been used for a free analysis see a blocking message indicating this
-- **FR8:** Returning users are presented with a Pro tier waitlist signup option on the blocking screen
+- **FR6:** First-time users can receive a magic link to their email address to verify identity before analysis processing begins
+- **FR7:** Returning users whose email address has already been used for a free analysis can view a blocking message indicating the free run has already been used
+- **FR8:** Returning users can view a Pro tier waitlist signup option on the blocking screen
 - **FR35:** Returning users can submit their email address to join the Pro tier waitlist, and the system stores the waitlist signup with a timestamp
 - **FR9:** Users can provide explicit consent to data processing and marketing communications at the point of email capture
 - **FR36:** After magic link verification, users can answer a 2-question qualifier survey (role and primary use case) before analysis processing begins; responses are stored linked to the verified email address
@@ -339,79 +401,79 @@ Primary competition is not a tool — it is inaction: marketing managers current
 
 - **FR10:** The system can generate 15–20 distinct AI personas for a given target audience based on five attitudinal dimensions: risk appetite, decision-making style, organizational role, price sensitivity, and technology adoption curve
 - **FR11:** The system can run a research query against all generated personas in parallel
-- **FR12:** The system can deliver a partial result when one or more personas fail to respond within the processing timeout, noting the actual persona count in the result
+- **FR12:** The system can deliver a partial result when 1-8 personas fail to respond within the processing timeout, requiring at least 12 completed personas and displaying the delivered persona count in the result
 - **FR13:** The persona generation system produces persona responses that reflect Hungarian market context — including Hungarian consumer behaviors, local market references, and Hungarian-language idioms — confirmed by operator spot-check of the first 50 runs showing ≥90% culturally relevant output
 
 ### Result Delivery
 
-- **FR14:** Users receive their analysis results via email after identity verification and processing completion
-- **FR15:** Result emails include an aggregate sentiment score indicating how many personas support or reject the submitted hypothesis
-- **FR16:** Result emails include individual persona cards, each showing the persona's stance, primary argument, and the condition under which they would change their mind
-- **FR17:** Result emails include a prominent flag when the result is strongly unanimous (15 or more out of 20 personas in agreement)
-- **FR18:** Result emails include an interpretive disclaimer clarifying that results are AI-generated synthetic simulations, not real human research
-- **FR19:** Result emails include a closing reflection question ("Mit tennél másképp ennek alapján?") and a single next-step call-to-action
+- **FR14:** Users can receive their analysis results via email after identity verification and processing completion
+- **FR15:** Result emails can include an aggregate sentiment score indicating how many personas support or reject the submitted hypothesis
+- **FR16:** Result emails can include individual persona cards, each showing the persona's stance, primary argument, and the condition under which they would change their mind
+- **FR17:** Result emails can display a top-of-email consensus alert when at least 15 of 20 personas align on support or rejection
+- **FR18:** Result emails can include an interpretive disclaimer clarifying that results are AI-generated synthetic simulations, not real human research
+- **FR19:** Result emails can include a closing reflection question ("Mit tennél másképp ennek alapján?") and a single next-step call-to-action
 - **FR20:** Users can reply to result emails to contact the operator directly
 
 ### User Communication
 
 - **FR21:** The system can send a magic link verification email to new users
-- **FR22:** Users receive a 3-email automated follow-up sequence at day 1, day 3, and day 7 after analysis delivery, each promoting the Pro tier waitlist signup
-- **FR23:** All automated marketing emails include a functional unsubscribe option
+- **FR22:** The system can send a 3-email automated follow-up sequence at day 1, day 3, and day 7 after analysis delivery, each promoting the Pro tier waitlist signup
+- **FR23:** The system can include a functional unsubscribe option in all automated marketing emails
 - **FR24:** Users can unsubscribe from all marketing communications
 
 ### Processing Status
 
-- **FR25:** Users can view the current status of their analysis while it is being processed
+- **FR25:** Users can view processing states (Queued, Running Personas, Composing Result, Completed) with refresh at least every 5 seconds, and can view a delayed notice if processing exceeds 120 seconds
 
 ### Operator & Administration
 
 - **FR26:** The operator can view a log of all submitted queries and their processing status
 - **FR27:** The operator can view qualifier question responses associated with each verified email address
-- **FR28:** The system alerts the operator when API spend reaches 80% of the monthly hard limit
-- **FR29:** The system enforces a hard monthly API cost limit and rejects or queues new runs when the limit is reached
+- **FR28:** The system can alert the operator when API spend reaches 80% of the monthly hard limit
+- **FR29:** The system can enforce a hard monthly API cost limit and reject or queue new runs when the limit is reached
 - **FR30:** The operator can monitor email delivery success rates and open rates
 
 ### Legal & Compliance
 
 - **FR31:** Visitors can access the Privacy Policy before submitting their email address
 - **FR32:** Visitors can access the Terms of Service before submitting their email address
-- **FR33:** Users can submit a personal data deletion request via email
-- **FR34:** The submission form warns users not to include personally identifiable information in their research topic or target audience description
+- **FR33:** Users can submit a personal data deletion request via email, receive an acknowledgement within 15 minutes, and receive completion confirmation within 7 calendar days
+- **FR34:** The system can display a form warning instructing users not to include personally identifiable information in their research topic or target audience description
 
 ## Non-Functional Requirements
 
 ### Performance
 
-- **NFR1:** The landing page renders fully within 3 seconds on a 50 Mbps connection as measured by automated performance monitoring targeting a Lighthouse Performance Score ≥ 90
-- **NFR2:** Form submission to processing-started confirmation completes within 2 seconds at the 95th percentile under normal load as measured by backend response time logging
-- **NFR3:** Magic link verification email is delivered within 60 seconds of email submission
-- **NFR4:** Result email is delivered within 2 minutes of successful magic link verification
-- **NFR5:** The system delivers partial results (minimum 12 personas) rather than failing entirely if processing exceeds 2 minutes
+- **NFR1:** The system shall render the landing page within 3 seconds for p95 visits on a 50 Mbps connection, as measured daily by synthetic web performance checks
+- **NFR2:** The system shall complete form submission to processing-started confirmation within 2 seconds for p95 submissions under normal load, as measured by backend request timing logs
+- **NFR3:** The system shall deliver magic link verification emails within 60 seconds for >=95% of requests, as measured by transactional email event timestamps
+- **NFR4:** The system shall deliver result emails within 120 seconds of successful verification for p95 completed runs, as measured by run lifecycle and email dispatch logs
+- **NFR5:** The system shall deliver partial results with at least 12 persona outputs when full completion exceeds 120 seconds, as measured by run output-count logs
 
 ### Security
 
-- **NFR6:** All data in transit is encrypted via HTTPS/TLS
-- **NFR7:** All data at rest is encrypted at the storage level
-- **NFR8:** Magic link tokens expire 24 hours after issuance
-- **NFR9:** No user's query data or results are accessible to any other user
-- **NFR10:** User data access is enforced at the database level — each user can only access their own data, with no cross-user data exposure possible at the query layer
-- **NFR11:** The only PII stored in MVP is the user's email address — no names, phone numbers, or payment data
+- **NFR6:** The system shall enforce TLS 1.2+ for 100% of user-facing and API traffic, as measured by weekly transport-security scans
+- **NFR7:** The system shall encrypt all stored user and run data at rest with provider-managed encryption, as verified by quarterly infrastructure configuration audits
+- **NFR8:** The system shall expire magic link tokens exactly 24 hours after issuance, as verified by automated authentication integration tests
+- **NFR9:** The system shall prevent cross-user access to query data and result data with 0 unauthorized-access incidents, as measured by access-control audit logs
+- **NFR10:** The system shall enforce per-user data isolation so users can access only their own records, as verified by authorization test suites on each release
+- **NFR11:** The system shall store only email address as PII during MVP, with 0 persisted names, phone numbers, or payment data, as measured by monthly schema and data-retention audits
 
 ### Reliability
 
-- **NFR12:** Transactional email delivery success rate is 95% or higher
-- **NFR13:** All failed or partially failed runs are logged with error details for operator review
-- **NFR14:** The system remains operational for all other users when the monthly API cost limit is reached — only new run initiation is blocked
-- **NFR15:** All unhandled exceptions and API timeout events are captured by error monitoring within 60 seconds of occurrence
+- **NFR12:** The system shall maintain a transactional email delivery success rate of >=95% per rolling 7-day window, as measured by provider delivery events
+- **NFR13:** The system shall log 100% of failed and partially failed runs with error code and timestamp metadata, as measured by weekly run-log completeness checks
+- **NFR14:** The system shall keep non-run features operational when the monthly API limit is reached, blocking only new run initiation, as verified by limit-reached scenario tests
+- **NFR15:** The system shall capture unhandled exceptions and API timeout events within 60 seconds of occurrence, as measured by error-monitoring ingest timestamps
 
 ### Scalability & Cost Control
 
-- **NFR16:** The system enforces a hard monthly API spend limit of $50; new runs are rejected (not silently dropped) when the limit is reached
-- **NFR17:** The operator receives an automated alert when API spend reaches 80% of the monthly limit
-- **NFR18:** The backend service can be horizontally scaled without requiring database schema changes
-- **NFR19:** The system supports a minimum of 30 concurrent persona engine runs with p95 result delivery time not exceeding 120 seconds per run
+- **NFR16:** The system shall enforce a hard monthly API spend cap of $50 and reject new runs at cap with explicit user feedback, as measured by monthly spend and rejection logs
+- **NFR17:** The system shall send an automated operator alert within 60 seconds after spend reaches 80% of the monthly cap, as measured by alert event timestamps
+- **NFR18:** The system shall support doubling concurrent run throughput versus baseline without service interruption, as measured by controlled load-test execution each release cycle
+- **NFR19:** The system shall support at least 30 concurrent persona engine runs with p95 result delivery <=120 seconds per run, as measured by scheduled concurrency load tests
 
 ### Accessibility
 
-- **NFR20:** The core user flow (landing page, form, processing screen) meets WCAG 2.1 Level AA contrast and keyboard navigation requirements
-- **NFR21:** All user-facing content is in Hungarian; all system error messages presented to users are in Hungarian
+- **NFR20:** The system shall meet WCAG 2.1 AA contrast and keyboard navigation requirements for landing, form, and processing screens, as measured by automated accessibility scans plus quarterly manual audit
+- **NFR21:** The system shall present 100% of user-facing content and user-visible error messages in Hungarian during MVP, as measured by release checklist localization review

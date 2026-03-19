@@ -1,0 +1,92 @@
+# generated: 2026-03-19
+# last_updated: 2026-03-19
+# project: SwarmSense
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: "2026-03-19"
+last_updated: "2026-03-19"
+project: SwarmSense
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Project Foundation & Core Infrastructure
+  epic-1: backlog
+  1-1-monorepo-initialization-and-development-environment: backlog
+  1-2-database-foundation-users-and-cost-tracking-schema: backlog
+  1-3-fastapi-core-application-and-api-cost-enforcement-middleware: backlog
+  1-4-infrastructure-deployment-and-cicd-pipeline: backlog
+  1-5-frontend-base-configuration-and-monitoring-integration: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Landing Page & Research Query Submission
+  epic-2: backlog
+  2-1-landing-page-with-value-proposition-and-example-result-preview: backlog
+  2-2-research-query-submission-form: backlog
+  2-3-rotating-example-placeholders-on-form-fields: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Email Verification & Access Control
+  epic-3: backlog
+  3-1-email-capture-with-gdpr-consent-and-db-check: backlog
+  3-2-magic-link-generation-and-verification-flow: backlog
+  3-3-returning-user-blocking-screen-and-pro-waitlist-cta: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Qualifier Survey & Persona Engine Processing
+  epic-4: backlog
+  4-1-qualifier-survey-screen: backlog
+  4-2-run-initiation-and-backgroundtask-dispatch: backlog
+  4-3-persona-engine-parallel-llm-execution: backlog
+  4-4-partial-result-handling-and-run-completion: backlog
+  4-5-waiting-screen-with-named-progress-states: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Result Delivery & User Communication Lifecycle
+  epic-5: backlog
+  5-1-result-email-react-email-templates-and-design-tokens: backlog
+  5-2-result-email-content-structure-and-persona-cards: backlog
+  5-3-result-email-reflection-question-cta-and-delivery: backlog
+  5-4-automated-follow-up-email-sequence: backlog
+  5-5-data-deletion-request-handling: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Operator Monitoring & Administration
+  epic-6: backlog
+  6-1-operator-run-log-endpoint: backlog
+  6-2-qualifier-response-log-endpoint: backlog
+  6-3-api-cost-tracking-80-percent-alert-and-hard-cap-enforcement: backlog
+  6-4-email-delivery-and-open-rate-monitoring: backlog
+  epic-6-retrospective: optional

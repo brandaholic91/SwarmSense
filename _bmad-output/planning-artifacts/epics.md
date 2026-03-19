@@ -215,6 +215,7 @@ So that user records and monthly API spend tracking are securely in place before
 **And** a Supabase RLS policy is active on `users` ensuring no row is readable or writable without the service role key
 **And** running `SELECT * FROM users` from the Supabase anonymous client returns an empty result (RLS blocks access)
 **And** email values are stored in normalized form (lowercase, trimmed) as enforced by a check constraint or migration note
+**And** the pg_cron extension is enabled in the Supabase project, verified by `SELECT extname FROM pg_extension WHERE extname = 'pg_cron'` returning one row (required by Story 5.4 follow-up scheduling)
 
 ### Story 1.3: FastAPI Core Application & API Cost Enforcement Middleware
 
@@ -324,6 +325,8 @@ So that I can initiate a SwarmSense analysis without needing an account or any p
 **When** the form is submitted
 **Then** the email capture field appears inline below the form (no page reload, no redirect)
 **And** the research topic and audience values are preserved and visible
+
+> **Implementation note:** The email capture field is rendered and accepts input at the end of this story; the Server Action wiring to `POST /api/v1/auth/check-email` is implemented in Story 3.1. The field is intentionally non-functional (UI scaffold only) until Story 3.1 is complete.
 
 **Given** a visitor submits the form
 **When** the page renders on a mobile device (320px–767px)
@@ -540,6 +543,7 @@ So that I feel anticipation rather than anxiety and understand that my result wi
 **When** the `WaitingScreen` component renders
 **Then** TanStack Query polls `GET /api/v1/runs/{run_id}/status` every 5 seconds (FR25)
 **And** the run status maps to named states displayed on screen: `queued` → "Sorban…", `running` → "Futtatás: [N]/[total] persona", `composing` → "Eredmény összeállítása…", `completed`/`partial` → completion state
+**And** a transient `generating` display state ("Personák generálása…") may be shown client-side between the initial render and the first poll returning `running`; `generating` is a frontend-only UI state — it must never be persisted to the DB or returned by the status API endpoint
 **And** the persona count is displayed as a large numeric element (dominant visual) when status is `running`
 **And** an email delivery notice is shown: "Az eredményed erre az emailre érkezik: [email]"
 **And** `aria-live="polite"` is set on the progress label; the progress bar has `role="progressbar"` with `aria-valuenow`
@@ -640,6 +644,14 @@ So that verified users who haven't joined the Pro waitlist are re-engaged with v
 
 **Acceptance Criteria:**
 
+**Given** the FastAPI backend is running
+**When** `POST /api/v1/operator/send-followups` is called with a valid `SWARMSENSE_OPERATOR_API_KEY` Bearer token
+**Then** the endpoint queries `runs` for records where `completed_at < now() - interval '1 day'` and `day1_sent = false` (and equivalents for day3/day7)
+**And** for each eligible run, `email_service.py` dispatches the corresponding follow-up email via Resend (checking `unsubscribed_at IS NULL` first)
+**And** the respective `dayN_sent` flag is set to `true` after successful send
+**And** the endpoint returns HTTP 200 with `{"sent": N}` where N is the count of emails dispatched
+**And** if the Bearer token is missing or invalid, the endpoint returns HTTP 403
+
 **Given** a run has `completed_at` set and `day1_sent = false`
 **When** the Supabase pg_cron daily job runs and calls `POST /api/v1/operator/send-followups` (Bearer token protected)
 **Then** all runs where `completed_at < now() - interval '1 day'` and `day1_sent = false` receive the day-1 follow-up email via Resend
@@ -664,7 +676,7 @@ So that I can exercise my GDPR right to erasure.
 **Given** a user sends a data deletion request email to the operator's designated address
 **When** the operator receives the request
 **Then** the Privacy Policy documents the deletion contact email address and the expected response timeline
-**And** an automated acknowledgement email is sent to the requester within 15 minutes of the request being received (FR33)
+**And** an automated acknowledgement email is sent to the requester within 15 minutes of the request being received (FR33) — implemented as an auto-responder configured on the designated deletion inbox (e.g. Resend inbound, Gmail filter, or equivalent); no custom FastAPI endpoint is required for MVP
 **And** the operator completes the deletion (removing the user's record from `users`, `runs`, `qualifier_responses`) within 7 calendar days (FR33)
 **And** a deletion completion confirmation email is sent to the user within 7 calendar days
 

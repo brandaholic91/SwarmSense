@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-03-19"
-last_updated: "2026-03-19"
+last_updated: "2026-03-20"
 project: SwarmSense
 project_key: NOKEY
 tracking_system: file-system
@@ -45,8 +45,8 @@ development_status:
   # Epic 1: Project Foundation & Core Infrastructure
   epic-1: in-progress
   1-1-monorepo-initialization-and-development-environment: done
-  1-2-database-foundation-users-and-cost-tracking-schema: review
-  1-3-fastapi-core-application-and-api-cost-enforcement-middleware: ready-for-dev
+  1-2-database-foundation-users-and-cost-tracking-schema: done
+  1-3-fastapi-core-application-and-api-cost-enforcement-middleware: review
   1-4-infrastructure-deployment-and-cicd-pipeline: backlog
   1-5-frontend-base-configuration-and-monitoring-integration: backlog
   epic-1-retrospective: optional

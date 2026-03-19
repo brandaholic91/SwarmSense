@@ -1,6 +1,6 @@
 # Story 1.3: FastAPI Core Application & API Cost Enforcement Middleware
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -21,19 +21,19 @@ so that the $50/month hard limit is enforced at the application layer and cannot
 
 ## Tasks / Subtasks
 
-- [ ] Implement settings + app wiring for core backend config (AC: 4, 5, 6)
-  - [ ] Create/update `backend/app/core/config.py` with Pydantic Settings using `SWARMSENSE_` env prefix and a `ENVIRONMENT` or equivalent flag for prod toggles.
-  - [ ] Ensure `backend/app/main.py` reads settings and configures CORS allowed origins to the Vercel domain only.
-  - [ ] Disable OpenAPI docs in production (set `docs_url=None`, `redoc_url=None`) based on settings.
-- [ ] Implement cost enforcement middleware (AC: 1, 2, 3)
-  - [ ] Add `backend/app/core/cost_enforcement.py` middleware or dependency to guard run-initiating endpoints only (allowlist by path + method).
-  - [ ] Read the current month (`YYYY-MM`) and query `cost_tracking.total_usd` via Supabase client; treat missing rows as `0` (optionally insert on first use).
-  - [ ] Return HTTP 402 with `code: COST_LIMIT_REACHED` when total is >= 50.00.
-- [ ] Add error code constant for cost limit (AC: 2)
-  - [ ] Update `backend/app/core/errors.py` with `COST_LIMIT_REACHED` enum + helper for HTTP 402 responses.
-- [ ] Add tests for middleware guardrails (AC: 1, 2, 3)
-  - [ ] Create tests in `backend/tests/routers/test_runs.py` or `backend/tests/services/test_cost_tracker.py` using FastAPI TestClient with a mocked Supabase client.
-  - [ ] Verify run endpoints are blocked at cap and non-run endpoints still respond.
+- [x] Implement settings + app wiring for core backend config (AC: 4, 5, 6)
+  - [x] Create/update `backend/app/core/config.py` with Pydantic Settings using `SWARMSENSE_` env prefix and a `ENVIRONMENT` or equivalent flag for prod toggles.
+  - [x] Ensure `backend/app/main.py` reads settings and configures CORS allowed origins to the Vercel domain only.
+  - [x] Disable OpenAPI docs in production (set `docs_url=None`, `redoc_url=None`) based on settings.
+- [x] Implement cost enforcement middleware (AC: 1, 2, 3)
+  - [x] Add `backend/app/core/cost_enforcement.py` middleware or dependency to guard run-initiating endpoints only (allowlist by path + method).
+  - [x] Read the current month (`YYYY-MM`) and query `cost_tracking.total_usd` via Supabase client; treat missing rows as `0` (optionally insert on first use).
+  - [x] Return HTTP 402 with `code: COST_LIMIT_REACHED` when total is >= 50.00.
+- [x] Add error code constant for cost limit (AC: 2)
+  - [x] Update `backend/app/core/errors.py` with `COST_LIMIT_REACHED` enum + helper for HTTP 402 responses.
+- [x] Add tests for middleware guardrails (AC: 1, 2, 3)
+  - [x] Create tests in `backend/tests/routers/test_runs.py` or `backend/tests/services/test_cost_tracker.py` using FastAPI TestClient with a mocked Supabase client.
+  - [x] Verify run endpoints are blocked at cap and non-run endpoints still respond.
 
 ## Dev Notes
 
@@ -71,6 +71,32 @@ openai/gpt-5.2-codex
 
 ### Debug Log References
 
+- 2026-03-20: `python -m pytest` (4 passed)
+
 ### Completion Notes List
 
+- Implemented settings-driven FastAPI app wiring with CORS restriction and production doc toggles.
+- Added cost enforcement middleware with Supabase cost_tracking lookup and stable error response for cap breaches.
+- Added error code helper and router tests validating run blocking and non-run passthrough.
+
 ### File List
+
+- backend/app/__init__.py
+- backend/app/core/__init__.py
+- backend/app/core/config.py
+- backend/app/core/cost_enforcement.py
+- backend/app/core/database.py
+- backend/app/core/errors.py
+- backend/app/main.py
+- backend/app/routers/__init__.py
+- backend/app/routers/runs.py
+- backend/app/routers/status.py
+- backend/requirements.txt
+- backend/tests/__init__.py
+- backend/tests/routers/__init__.py
+- backend/tests/routers/test_runs.py
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+
+- 2026-03-20: Implemented core FastAPI configuration, cost enforcement middleware, error handling, and tests; updated sprint status to review.

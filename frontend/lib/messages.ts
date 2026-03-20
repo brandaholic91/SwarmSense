@@ -12,8 +12,8 @@ export const messages = {
       cta: "Ingyen kipróbálom",
     },
     hero: {
-      headline: "Tudd meg, mit gondol a piacod —",
-      highlight: "90 másodperc",
+      headline: "Tudd meg, mit gondol a piacod,",
+      highlight: "pár perc",
       headlineSuffix: "alatt.",
       subheadline:
         "15–20 attitudinálisan különböző AI persona elemzi a hipotézised. Nem egy ChatGPT válasz — strukturált piackutatás, toborzás és várakozás nélkül.",

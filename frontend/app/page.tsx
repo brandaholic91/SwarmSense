@@ -1,3 +1,5 @@
+"use client";
+
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, FilePlus, Mail, Zap } from "lucide-react";
@@ -40,7 +42,7 @@ export default function Home() {
             className="text-lg font-semibold tracking-tight"
             style={{ ...headlineFont, color: onSurface }}
           >
-            {landing.footer.brand}
+            Swarm<span style={{ color: accent }}>Sense</span>
           </span>
           <Link
             href="/research"
@@ -53,8 +55,8 @@ export default function Home() {
       </nav>
 
       <main className="flex w-full flex-col">
-        <header className="relative overflow-hidden px-6 pb-20 pt-28">
-          <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center text-center">
+        <header className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-28">
+          <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
             <h1
               className="text-4xl font-bold leading-[1.1] md:text-6xl"
               style={{ ...headlineFont, color: onSurface }}
@@ -304,7 +306,7 @@ export default function Home() {
             className="text-base font-semibold tracking-tight"
             style={{ ...headlineFont, color: onSurface }}
           >
-            {landing.footer.brand}
+            Swarm<span style={{ color: accent }}>Sense</span>
           </span>
           <Link
             href="/privacy"

@@ -1,6 +1,6 @@
 # Story 3.2: Magic Link Generation & Verification Flow
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,38 +23,38 @@ so that I can proceed to the analysis without creating a password.
 
 ## Tasks / Subtasks
 
-- [ ] Implement `POST /api/v1/auth/magic-link` endpoint in `backend/app/routers/auth.py` (AC: 1, 2, 3, 4, 8)
-  - [ ] Add request/response models in `backend/app/models/auth.py` for magic-link generation
-  - [ ] Normalize email at FastAPI boundary (`.lower().strip()`) before lookup/create
-  - [ ] Upsert/create `users` record with `has_consent=true` and `consent_timestamp` from validated request flow
-  - [ ] Generate UUID v4 token, insert into `magic_link_tokens` with 24h expiry and `used_at=NULL`
-  - [ ] Build verification URL using server-side base URL config and append token query param
-  - [ ] Call `email_service`/Resend client with real `from` and `reply_to` values from config
-  - [ ] Return success payload without exposing sensitive internals
+- [x] Implement `POST /api/v1/auth/magic-link` endpoint in `backend/app/routers/auth.py` (AC: 1, 2, 3, 4, 8)
+  - [x] Add request/response models in `backend/app/models/auth.py` for magic-link generation
+  - [x] Normalize email at FastAPI boundary (`.lower().strip()`) before lookup/create
+  - [x] Upsert/create `users` record with `has_consent=true` and `consent_timestamp` from validated request flow
+  - [x] Generate UUID v4 token, insert into `magic_link_tokens` with 24h expiry and `used_at=NULL`
+  - [x] Build verification URL using server-side base URL config and append token query param
+  - [x] Call `email_service`/Resend client with real `from` and `reply_to` values from config
+  - [x] Return success payload without exposing sensitive internals
 
-- [ ] Implement `POST /api/v1/auth/verify` endpoint in `backend/app/routers/auth.py` (AC: 5, 6, 7, 8)
-  - [ ] Validate token existence, single-use (`used_at IS NULL`), and expiry (`expires_at > now()`)
-  - [ ] Mark valid token as used atomically (`used_at = now()`) before returning success
-  - [ ] Return 401 + `TOKEN_EXPIRED` for expired tokens and 401 + `TOKEN_INVALID` for used/unknown tokens
-  - [ ] Return response including `user_id` required by qualifier entry flow (URL param or server action contract)
+- [x] Implement `POST /api/v1/auth/verify` endpoint in `backend/app/routers/auth.py` (AC: 5, 6, 7, 8)
+  - [x] Validate token existence, single-use (`used_at IS NULL`), and expiry (`expires_at > now()`)
+  - [x] Mark valid token as used atomically (`used_at = now()`) before returning success
+  - [x] Return 401 + `TOKEN_EXPIRED` for expired tokens and 401 + `TOKEN_INVALID` for used/unknown tokens
+  - [x] Return response including `user_id` required by qualifier entry flow (URL param or server action contract)
 
-- [ ] Add frontend `/verify` integration for token handling and UX states (AC: 5, 6, 7)
-  - [ ] Wire Server Action in `frontend/app/actions/verify-token.ts` to call backend verify endpoint
-  - [ ] Parse `token` from `/verify?token=...` on `frontend/app/verify/page.tsx`
-  - [ ] On success, redirect to `/qualifier` with agreed `user_id` handoff contract
-  - [ ] On `TOKEN_EXPIRED` or `TOKEN_INVALID`, render full-screen Hungarian error and "Új link kérése" CTA
-  - [ ] Keep all user-facing strings in `frontend/lib/messages.ts` and error-code mapping in `frontend/lib/errors.ts`
+- [x] Add frontend `/verify` integration for token handling and UX states (AC: 5, 6, 7)
+  - [x] Wire Server Action in `frontend/app/actions/verify-token.ts` to call backend verify endpoint
+  - [x] Parse `token` from `/verify?token=...` on `frontend/app/verify/page.tsx`
+  - [x] On success, redirect to `/qualifier` with agreed `user_id` handoff contract
+  - [x] On `TOKEN_EXPIRED` or `TOKEN_INVALID`, render full-screen Hungarian error and "Új link kérése" CTA
+  - [x] Keep all user-facing strings in `frontend/lib/messages.ts` and error-code mapping in `frontend/lib/errors.ts`
 
-- [ ] Add magic-link email template and dispatch path (AC: 3, 4)
-  - [ ] Implement or finalize `frontend/emails/magic-link-email.tsx` with inline CSS and tokenized styling
-  - [ ] Ensure email contains direct verification link (`/verify?token=...`) and clear Hungarian copy
-  - [ ] Verify sender identity/reply-to setup in backend env and sending code paths
+- [x] Add magic-link email template and dispatch path (AC: 3, 4)
+  - [x] Implement or finalize `frontend/emails/magic-link-email.tsx` with inline CSS and tokenized styling
+  - [x] Ensure email contains direct verification link (`/verify?token=...`) and clear Hungarian copy
+  - [x] Verify sender identity/reply-to setup in backend env and sending code paths
 
-- [ ] Add/extend automated tests (AC: 1-8)
-  - [ ] Backend tests in `backend/tests/routers/test_auth.py` for: token creation, expiry window, single-use behavior, error codes
-  - [ ] Backend test asserting user creation/consent fields for new user path
-  - [ ] Frontend tests for `/verify` success redirect and full-screen error rendering for expired/invalid tokens
-  - [ ] Contract tests for error payload shape `{detail, code}` and Hungarian error mapping behavior
+- [x] Add/extend automated tests (AC: 1-8)
+  - [x] Backend tests in `backend/tests/routers/test_auth.py` for: token creation, expiry window, single-use behavior, error codes
+  - [x] Backend test asserting user creation/consent fields for new user path
+  - [x] Frontend tests for `/verify` success redirect and full-screen error rendering for expired/invalid tokens
+  - [x] Contract tests for error payload shape `{detail, code}` and Hungarian error mapping behavior
 
 ## Dev Notes
 
@@ -147,14 +147,41 @@ openai/gpt-5.3-codex
 
 ### Debug Log References
 
-- Create-story context generation only (no implementation commands executed).
+- `pytest tests/routers/test_auth.py`
+- `pnpm test app/actions/verify-token.test.ts app/verify/page.test.tsx app/research/page.test.tsx`
+- `pytest`
+- `pnpm test`
+- `pnpm lint`
 
 ### Completion Notes List
 
-- Story context assembled from epics, architecture, PRD, UX spec, project context, previous story learnings, and recent git history.
-- Implementation guardrails added for token lifecycle, error semantics, UX behavior, and file-level integration points.
-- Story prepared for direct handoff to `dev-story` workflow.
+- Implemented `POST /api/v1/auth/magic-link` and `POST /api/v1/auth/verify` with UUID v4 token lifecycle, 24-hour expiry, single-use enforcement, and structured token error codes.
+- Added Resend-backed magic-link dispatch service plus sender/reply-to config wiring (`SWARMSENSE_RESEND_API_KEY`, `SWARMSENSE_EMAIL_FROM`, `SWARMSENSE_EMAIL_REPLY_TO`).
+- Added frontend verify flow with Server Action integration, `/verify` page redirect contract to `/qualifier?user_id=...`, and Hungarian full-screen fallback state with "Új link kérése" CTA.
+- Added/updated automated tests for backend token creation and validation logic, frontend verify success/error rendering, and error payload contract mapping.
+- Executed full backend and frontend test suites plus frontend lint; all checks are green.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/3-2-magic-link-generation-and-verification-flow.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/.env.example
+- backend/app/core/config.py
+- backend/app/core/errors.py
+- backend/app/models/auth.py
+- backend/app/routers/auth.py
+- backend/app/services/__init__.py
+- backend/app/services/email_service.py
+- backend/tests/routers/test_auth.py
+- frontend/app/actions/submit-run.ts
+- frontend/app/actions/verify-token.test.ts
+- frontend/app/actions/verify-token.ts
+- frontend/app/verify/page.test.tsx
+- frontend/app/verify/page.tsx
+- frontend/emails/magic-link-email.tsx
+- frontend/lib/errors.ts
+- frontend/lib/messages.ts
+
+### Change Log
+
+- 2026-03-20: Implemented magic-link generation + verification backend flow, connected frontend `/verify` UX and server action, added email template/dispatch path, and expanded backend/frontend tests for AC coverage.

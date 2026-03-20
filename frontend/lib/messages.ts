@@ -159,6 +159,20 @@ export const messages = {
       "Ehhez az email címhez már tartozik lezárt futás, ezért új ingyenes elemzést most nem tudunk indítani.",
     cta: "Vissza a főoldalra",
   },
+  verify: {
+    title: "A link nem hasznalhato",
+    descriptionPrefix: "A bejelentkezesi linkkel problema tortent:",
+    requestNewLinkCta: "Uj link kerese",
+  },
+  email: {
+    magicLink: {
+      subject: "SwarmSense - Bejelentkezesi link",
+      heading: "Folytasd a SwarmSense elemzest",
+      intro: "Kattints a lenti gombra az azonositashoz.",
+      buttonLabel: "Bejelentkezes magic linkkel",
+      expiry: "Ez a link 24 oran belul lejar.",
+    },
+  },
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",
     termsTitle: "Felhasználási feltételek",

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     sentry_dsn: AnyHttpUrl | None = Field(default=None)
     environment: str = Field(default="development")
     frontend_origin: AnyHttpUrl = Field(...)
+    resend_api_key: str = Field(default="re_example")
+    email_from: str = Field(default="SwarmSense <noreply@swarmsense.ai>")
+    email_reply_to: str = Field(default="support@swarmsense.ai")
 
     @property
     def is_production(self) -> bool:

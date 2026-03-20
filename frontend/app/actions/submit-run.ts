@@ -12,6 +12,8 @@ type CheckEmailResponse =
   | { status: "new" }
   | { status: "returning"; redirect_to: string };
 
+type MagicLinkResponse = { status: "sent" };
+
 export async function submitRunAction({
   email,
   hasConsent,
@@ -42,5 +44,27 @@ export async function submitRunAction({
   const data = (await response.json()) as CheckEmailResponse;
   if (data.status === "returning") {
     redirect("/blocked");
+  }
+
+  const magicLinkResponse = await fetch(`${apiUrl}/api/v1/auth/magic-link`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      has_consent: hasConsent,
+      consent_timestamp: consentTimestamp,
+    }),
+    cache: "no-store",
+  });
+
+  if (!magicLinkResponse.ok) {
+    throw new Error(`Magic link generation failed: ${magicLinkResponse.status}`);
+  }
+
+  const magicLinkData = (await magicLinkResponse.json()) as MagicLinkResponse;
+  if (magicLinkData.status !== "sent") {
+    throw new Error("Magic link generation failed");
   }
 }

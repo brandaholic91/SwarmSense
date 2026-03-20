@@ -157,3 +157,36 @@ def test_check_email_rejects_invalid_email(monkeypatch):
     )
 
     assert response.status_code == 422
+
+
+def test_check_email_rejects_missing_consent(monkeypatch):
+    fake_supabase = FakeSupabase(users_by_email={}, users_with_completed_runs=set())
+    client = build_client(monkeypatch, fake_supabase)
+
+    response = client.post(
+        "/api/v1/auth/check-email",
+        json={
+            "email": "user@example.com",
+            "has_consent": False,
+            "consent_timestamp": "2026-03-20T18:00:00Z",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Consent is required"
+
+
+def test_check_email_rejects_naive_timestamp(monkeypatch):
+    fake_supabase = FakeSupabase(users_by_email={}, users_with_completed_runs=set())
+    client = build_client(monkeypatch, fake_supabase)
+
+    response = client.post(
+        "/api/v1/auth/check-email",
+        json={
+            "email": "user@example.com",
+            "has_consent": True,
+            "consent_timestamp": "2026-03-20T18:00:00",
+        },
+    )
+
+    assert response.status_code == 422

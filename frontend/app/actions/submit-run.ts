@@ -16,10 +16,10 @@ export async function submitRunAction({
   email,
   hasConsent,
   consentTimestamp,
-}: SubmitRunInput): Promise<{ status: "new" }> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+}: SubmitRunInput): Promise<void> {
+  const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
-    throw new Error("NEXT_PUBLIC_API_URL is not configured");
+    throw new Error("API_URL is not configured");
   }
 
   const response = await fetch(`${apiUrl}/api/v1/auth/check-email`, {
@@ -36,13 +36,11 @@ export async function submitRunAction({
   });
 
   if (!response.ok) {
-    throw new Error("Email check failed");
+    throw new Error(`Email check failed: ${response.status}`);
   }
 
   const data = (await response.json()) as CheckEmailResponse;
   if (data.status === "returning") {
     redirect("/blocked");
   }
-
-  return { status: "new" };
 }

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, field_validator
 
 
 class EmailCheckRequest(BaseModel):
@@ -11,7 +10,7 @@ class EmailCheckRequest(BaseModel):
 
     email: EmailStr
     has_consent: bool
-    consent_timestamp: datetime
+    consent_timestamp: AwareDatetime
 
     @field_validator("email", mode="before")
     @classmethod

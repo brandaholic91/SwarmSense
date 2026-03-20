@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 
 from app.core.database import get_supabase_client
 from app.models.auth import EmailCheckRequest, EmailCheckResponse
@@ -12,6 +12,12 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
     "/check-email", response_model=EmailCheckResponse, response_model_exclude_none=True
 )
 async def check_email(payload: EmailCheckRequest) -> EmailCheckResponse:
+    if not payload.has_consent:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Consent is required",
+        )
+
     try:
         supabase = get_supabase_client()
         user_result = (

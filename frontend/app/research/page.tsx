@@ -5,6 +5,8 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, Info, Send, ShieldCheck } from "lucide-react";
 
+import { isRedirectError } from "next/dist/client/components/redirect-error";
+
 import { submitRunAction } from "@/app/actions/submit-run";
 import { RotatingPlaceholder } from "@/components/rotating-placeholder";
 import { Input } from "@/components/ui/input";
@@ -261,8 +263,11 @@ export default function ResearchPage() {
                         hasConsent: true,
                         consentTimestamp: new Date().toISOString(),
                       });
-                    } catch {
-                      setErrors((prev) => ({ ...prev, email: form.errors.email }));
+                    } catch (error) {
+                      if (isRedirectError(error)) {
+                        throw error;
+                      }
+                      setErrors((prev) => ({ ...prev, email: messages.genericError }));
                     }
                   });
                 }}

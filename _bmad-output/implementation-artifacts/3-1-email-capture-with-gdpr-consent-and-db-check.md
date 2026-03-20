@@ -1,6 +1,6 @@
 # Story 3.1: Email Capture with GDPR Consent & DB Check
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -98,6 +98,7 @@ openai/gpt-5.3-codex
 - `pytest` (backend: 15 passed)
 - `pnpm test` (frontend: 22 passed)
 - `pnpm lint` (frontend: passed)
+- Code review patches applied 2026-03-20: `pytest` (backend: 6 passed), `pnpm test` (frontend: 22 passed), `pnpm lint` (passed)
 
 ### Completion Notes List
 
@@ -108,6 +109,15 @@ openai/gpt-5.3-codex
 - Extended research page email step with GDPR consent checkbox, disabled submit gating, and legal links opening in new tabs.
 - Added `/privacy`, `/terms`, and `/blocked` pages plus message catalog updates for all Hungarian copy.
 - Added frontend tests to validate consent gating, checkbox default state, and secure external link attributes.
+
+**Code Review Patches (2026-03-20):**
+- P1: Backend rejects `has_consent: false` with HTTP 400 — GDPR bypass via API eliminated.
+- P2: `isRedirectError` re-throw in frontend catch block — `/blocked` redirect now propagates correctly.
+- P3: Server Action uses `API_URL ?? NEXT_PUBLIC_API_URL` — internal API URL no longer forced into client bundle.
+- P4: Generic catch uses `messages.genericError` instead of static email label — user gets actionable feedback.
+- P5: `consent_timestamp` field typed as `AwareDatetime` — timezone-naive timestamps rejected at input boundary.
+- P6: `submitRunAction` return type corrected to `Promise<void>` — redirect contract made explicit.
+- Tests added: `test_check_email_rejects_missing_consent`, `test_check_email_rejects_naive_timestamp`.
 
 ### File List
 
@@ -128,3 +138,4 @@ openai/gpt-5.3-codex
 ## Change Log
 
 - 2026-03-20: Implemented Story 3.1 email capture GDPR flow, auth check-email API, migration, legal routes, and automated tests; set status to `review`.
+- 2026-03-20: Applied 6 code review patches (P1–P6): consent enforcement, redirect propagation, env var, error messages, AwareDatetime, return type; set status to `done`.

@@ -47,7 +47,7 @@ development_status:
   1-1-monorepo-initialization-and-development-environment: done
   1-2-database-foundation-users-and-cost-tracking-schema: done
   1-3-fastapi-core-application-and-api-cost-enforcement-middleware: done
-  1-4-infrastructure-deployment-and-cicd-pipeline: backlog
+  1-4-infrastructure-deployment-and-cicd-pipeline: backlog # deferred until after epic-5
   1-5-frontend-base-configuration-and-monitoring-integration: backlog
   epic-1-retrospective: optional
 

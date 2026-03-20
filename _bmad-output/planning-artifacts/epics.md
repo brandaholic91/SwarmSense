@@ -234,31 +234,6 @@ So that the $50/month hard limit is enforced at the application layer and cannot
 **And** CORS middleware is configured to allow requests only from the Vercel frontend domain
 **And** FastAPI OpenAPI docs (`/docs`) are disabled in production via env config
 
-### Story 1.4: Infrastructure Deployment & CI/CD Pipeline
-
-As a developer,
-I want the backend deployed to Hetzner VPS with automatic HTTPS and the CI/CD pipeline automated via GitHub Actions,
-So that every PR is validated and every merge to main is deployed without manual steps.
-
-**Acceptance Criteria:**
-
-**Given** a Hetzner VPS with Docker installed and a registered domain
-**When** `docker compose up -d` is run on the VPS
-**Then** the `api` service runs FastAPI + Uvicorn on an internal port
-**And** the `caddy` service proxies HTTPS traffic to the `api` service with automatic Let's Encrypt SSL (satisfying NFR6: TLS 1.2+)
-**And** the FastAPI health endpoint returns HTTP 200 over HTTPS
-
-**Given** a pull request is opened on GitHub
-**When** the CI workflow (`ci.yml`) runs
-**Then** ESLint + TypeScript type-check passes on the frontend with zero errors
-**And** `pytest` passes on the backend with zero failures
-
-**Given** a commit is merged to `main`
-**When** the deploy workflow (`deploy.yml`) runs
-**Then** a Docker image is built and pushed to `ghcr.io`
-**And** the Hetzner VPS pulls the new image and restarts the container via SSH (`docker compose pull && docker compose up -d`)
-**And** Vercel automatically deploys the Next.js frontend with no manual trigger required
-
 ### Story 1.5: Frontend Base Configuration & Monitoring Integration
 
 As a developer,
@@ -685,6 +660,31 @@ So that I can exercise my GDPR right to erasure.
 **Then** the system treats it as a new first-time user (no blocking, no prior run history)
 
 ---
+
+### Story 1.4: Infrastructure Deployment & CI/CD Pipeline
+
+As a developer,
+I want the backend deployed to Hetzner VPS with automatic HTTPS and the CI/CD pipeline automated via GitHub Actions,
+So that every PR is validated and every merge to main is deployed without manual steps.
+
+**Acceptance Criteria:**
+
+**Given** a Hetzner VPS with Docker installed and a registered domain
+**When** `docker compose up -d` is run on the VPS
+**Then** the `api` service runs FastAPI + Uvicorn on an internal port
+**And** the `caddy` service proxies HTTPS traffic to the `api` service with automatic Let's Encrypt SSL (satisfying NFR6: TLS 1.2+)
+**And** the FastAPI health endpoint returns HTTP 200 over HTTPS
+
+**Given** a pull request is opened on GitHub
+**When** the CI workflow (`ci.yml`) runs
+**Then** ESLint + TypeScript type-check passes on the frontend with zero errors
+**And** `pytest` passes on the backend with zero failures
+
+**Given** a commit is merged to `main`
+**When** the deploy workflow (`deploy.yml`) runs
+**Then** a Docker image is built and pushed to `ghcr.io`
+**And** the Hetzner VPS pulls the new image and restarts the container via SSH (`docker compose pull && docker compose up -d`)
+**And** Vercel automatically deploys the Next.js frontend with no manual trigger required
 
 ## Epic 6: Operator Monitoring & Administration
 

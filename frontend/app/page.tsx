@@ -1,9 +1,17 @@
+"use client";
+
+import * as React from "react";
+
 import { PersonaCard } from "@/components/persona-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { messages } from "@/lib/messages";
 import {
   accent,
   border,
   surface,
+  stanceReject,
   textPrimary,
   textSecondary,
   trueBlack,
@@ -15,6 +23,49 @@ const formatAriaLabel = (template: string, values: Record<string, string>) =>
 export default function Home() {
   const { landing } = messages;
   const personaCards = landing.preview.cards;
+  const [researchTopic, setResearchTopic] = React.useState("");
+  const [audienceDescription, setAudienceDescription] = React.useState("");
+  const [showEmailCapture, setShowEmailCapture] = React.useState(false);
+  const [errors, setErrors] = React.useState<{
+    researchTopic?: string;
+    audienceDescription?: string;
+  }>({});
+
+  const isComplete =
+    researchTopic.trim().length > 0 && audienceDescription.trim().length > 0;
+
+  const handleBlur = (field: "researchTopic" | "audienceDescription") => {
+    const value =
+      field === "researchTopic" ? researchTopic : audienceDescription;
+    const message =
+      field === "researchTopic"
+        ? landing.form.errors.researchTopic
+        : landing.form.errors.audienceDescription;
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: value.trim() ? undefined : message,
+    }));
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isComplete) {
+      setErrors({
+        researchTopic: researchTopic.trim()
+          ? undefined
+          : landing.form.errors.researchTopic,
+        audienceDescription: audienceDescription.trim()
+          ? undefined
+          : landing.form.errors.audienceDescription,
+      });
+      return;
+    }
+
+    setErrors({});
+    setShowEmailCapture(true);
+  };
 
   return (
     <div
@@ -35,6 +86,99 @@ export default function Home() {
           <p className="text-base leading-7" style={{ color: textSecondary }}>
             {landing.hero.supporting}
           </p>
+        </section>
+
+        <section className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pb-20 sm:px-6">
+          <form
+            className="mx-auto flex w-full max-w-lg flex-col gap-5 font-sans"
+            onSubmit={handleSubmit}
+          >
+            <div className="flex flex-col gap-3 md:flex-row">
+              <div className="flex flex-1 flex-col gap-2">
+                <label className="text-sm font-semibold" htmlFor="research-topic">
+                  {landing.form.researchLabel}
+                </label>
+                <Textarea
+                  id="research-topic"
+                  name="researchTopic"
+                  value={researchTopic}
+                  onChange={(event) => setResearchTopic(event.target.value)}
+                  onBlur={() => handleBlur("researchTopic")}
+                  className="min-h-[160px]"
+                  style={{
+                    backgroundColor: trueBlack,
+                    borderColor: border,
+                    color: textPrimary,
+                  }}
+                />
+                <p className="text-xs" style={{ color: textSecondary }}>
+                  {landing.form.piiWarning}
+                </p>
+                {errors.researchTopic ? (
+                  <p className="text-xs font-semibold" style={{ color: stanceReject }}>
+                    {errors.researchTopic}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-1 flex-col gap-2">
+                <label className="text-sm font-semibold" htmlFor="audience-description">
+                  {landing.form.audienceLabel}
+                </label>
+                <Textarea
+                  id="audience-description"
+                  name="audienceDescription"
+                  value={audienceDescription}
+                  onChange={(event) => setAudienceDescription(event.target.value)}
+                  onBlur={() => handleBlur("audienceDescription")}
+                  className="min-h-[160px]"
+                  style={{
+                    backgroundColor: trueBlack,
+                    borderColor: border,
+                    color: textPrimary,
+                  }}
+                />
+                {errors.audienceDescription ? (
+                  <p className="text-xs font-semibold" style={{ color: stanceReject }}>
+                    {errors.audienceDescription}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="min-h-[44px] px-6 text-base font-extrabold"
+              style={{ backgroundColor: accent, color: trueBlack }}
+              disabled={!isComplete}
+              aria-disabled={!isComplete ? "true" : "false"}
+            >
+              {landing.form.cta}
+            </Button>
+          </form>
+
+          {showEmailCapture ? (
+            <div className="mx-auto flex w-full max-w-lg flex-col gap-2">
+              <label className="text-sm font-semibold" htmlFor="email-capture">
+                {landing.form.emailLabel}
+              </label>
+              <Input
+                id="email-capture"
+                name="email"
+                type="email"
+                placeholder={landing.form.emailPlaceholder}
+                className="min-h-[44px]"
+                style={{
+                  backgroundColor: trueBlack,
+                  borderColor: border,
+                  color: textPrimary,
+                }}
+              />
+              <p className="text-xs" style={{ color: textSecondary }}>
+                {messages.emailCaptureNotice}
+              </p>
+            </div>
+          ) : null}
         </section>
 
         <section className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pb-24 sm:px-6">

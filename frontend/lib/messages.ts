@@ -15,6 +15,18 @@ export const messages = {
       supporting:
         "Gyorsan látszik, kinek szól, ki kételkedik, és hol kell javítani a pozicionáláson.",
     },
+    form: {
+      researchLabel: "Kutatási téma",
+      audienceLabel: "Célcsoport leírása",
+      piiWarning: "Ne adj meg személyes adatokat a kutatási témában",
+      cta: "Kutatás indítása",
+      emailLabel: "Email-cím",
+      emailPlaceholder: "nev@ceg.hu",
+      errors: {
+        researchTopic: "Add meg a kutatási témát.",
+        audienceDescription: "Add meg a célcsoport leírását.",
+      },
+    },
     preview: {
       eyebrow: "Minta eredmény",
       title: "Első körös reakciók, egyetlen pillantásból",

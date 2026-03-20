@@ -1,6 +1,6 @@
 # Story 2.2: Research Query Submission Form
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,22 +24,22 @@ so that I can initiate a SwarmSense analysis without needing an account or any p
 
 ## Tasks / Subtasks
 
-- [ ] Build the submission form layout in `frontend/app/page.tsx` (AC: 1, 2, 5, 7)
-  - [ ] Add labeled research topic and target audience textareas using shadcn/ui components
-  - [ ] Add the PII warning below the research topic field
-  - [ ] Use High Contrast Impact styling: pure black background, amber CTA, system font stack
-  - [ ] Ensure responsive layout: `flex flex-col md:flex-row gap-3` and `max-w-lg` form width
-- [ ] Implement form state and validation behavior (AC: 3, 4, 6)
-  - [ ] Track field values in local state; disable submit until both are non-empty
-  - [ ] Validate on blur; show inline error text below each field
-  - [ ] Preserve field values after submit and reveal inline email capture UI
-- [ ] Add inline email capture stub (UI only) below the form (AC: 6)
-  - [ ] Render an email input field with label and microcopy (no submit wiring)
-  - [ ] Do not call any Server Actions or FastAPI endpoints
-- [ ] Accessibility and UX checks (AC: 1, 2, 3, 4, 7)
-  - [ ] Ensure labels are visible and associated with inputs
-  - [ ] Confirm `aria-disabled` is set on the CTA when disabled
-  - [ ] Confirm tap targets meet 44x44px minimum
+- [x] Build the submission form layout in `frontend/app/page.tsx` (AC: 1, 2, 5, 7)
+  - [x] Add labeled research topic and target audience textareas using shadcn/ui components
+  - [x] Add the PII warning below the research topic field
+  - [x] Use High Contrast Impact styling: pure black background, amber CTA, system font stack
+  - [x] Ensure responsive layout: `flex flex-col md:flex-row gap-3` and `max-w-lg` form width
+- [x] Implement form state and validation behavior (AC: 3, 4, 6)
+  - [x] Track field values in local state; disable submit until both are non-empty
+  - [x] Validate on blur; show inline error text below each field
+  - [x] Preserve field values after submit and reveal inline email capture UI
+- [x] Add inline email capture stub (UI only) below the form (AC: 6)
+  - [x] Render an email input field with label and microcopy (no submit wiring)
+  - [x] Do not call any Server Actions or FastAPI endpoints
+- [x] Accessibility and UX checks (AC: 1, 2, 3, 4, 7)
+  - [x] Ensure labels are visible and associated with inputs
+  - [x] Confirm `aria-disabled` is set on the CTA when disabled
+  - [x] Confirm tap targets meet 44x44px minimum
 
 ## Dev Notes
 
@@ -69,6 +69,25 @@ openai/gpt-5.2-codex
 
 ### Debug Log References
 
+- 2026-03-20: Implemented landing form UI, local validation, and email capture stub; ran `pnpm test` and `pnpm lint` in `frontend/`.
+
 ### Completion Notes List
 
+- Added submission form UI with responsive layout, PII warning, and amber CTA using tokens and messages.
+- Implemented on-blur validation, disabled submit gating, and inline email capture scaffold with value preservation.
+- Added input/textarea shadcn components and expanded landing page tests for form behavior.
+- Verified `pnpm test` and `pnpm lint` pass in `frontend/`.
+
 ### File List
+
+- _bmad-output/implementation-artifacts/2-2-research-query-submission-form.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- frontend/app/page.tsx
+- frontend/app/page.test.tsx
+- frontend/components/ui/input.tsx
+- frontend/components/ui/textarea.tsx
+- frontend/lib/messages.ts
+
+### Change Log
+
+- 2026-03-20: Implemented the research submission form UI, validation, and email capture stub with supporting components and tests.

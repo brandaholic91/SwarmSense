@@ -1,6 +1,6 @@
 # Story 3.1: Email Capture with GDPR Consent & DB Check
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,37 +23,37 @@ so that the system can deliver my results and I know exactly what I'm agreeing t
 
 ## Tasks / Subtasks
 
-- [ ] Create Supabase migration `supabase/migrations/20260319_002_magic_link_tokens.sql` (AC: 8)
-  - [ ] Define `magic_link_tokens` table with: `token` UUID PK, `user_id` FK → users.id, `expires_at` timestamptz, `used_at` timestamptz null, `created_at` timestamptz default now()
-  - [ ] Enable RLS on `magic_link_tokens` with policy allowing service role only
-  - [ ] Push migration to local Supabase via `supabase db push`
-- [ ] Implement `POST /api/v1/auth/check-email` FastAPI endpoint (AC: 5, 6, 7)
-  - [ ] Add `backend/app/routers/auth.py` router with `EmailCheckRequest` Pydantic model
-  - [ ] Normalize email at input boundary: `.lower().strip()`
-  - [ ] Query `users` table for existing email; check if any completed run exists (via `runs` table with `status IN ('completed', 'partial')`)
-  - [ ] Return `{"status": "new"}` for new users or `{"status": "returning", "redirect_to": "/blocked"}` for users with completed runs
-  - [ ] Register router in `backend/app/main.py` under `/api/v1/auth` prefix
-- [ ] Wire Server Action in `frontend/app/actions/submit-run.ts` (AC: 5, 6, 7)
-  - [ ] After research form submit, call `POST /api/v1/auth/check-email` with the email and consent data
-  - [ ] Handle `status: "new"` → continue to Story 3.2 magic link flow
-  - [ ] Handle `status: "returning"` → redirect to `/blocked` via `redirect("/blocked")`
-  - [ ] Pass `has_consent=true` and `consent_timestamp=now()` with the email check (consent stored in Story 3.2)
-- [ ] Wire GDPR checkbox and submit button behavior in the existing email capture scaffold (AC: 1, 2, 3, 4)
-  - [ ] Ensure GDPR checkbox is never pre-checked
-  - [ ] Ensure Submit button is disabled until email field is non-empty AND checkbox is checked
-  - [ ] Privacy Policy and Terms of Service links open in new tab (`target="_blank" rel="noopener"`)
-  - [ ] All Hungarian strings sourced from `frontend/lib/messages.ts` (no hardcoded strings)
-- [ ] Add tests for auth check-email endpoint (AC: 5, 6, 7)
-  - [ ] Create `backend/tests/routers/test_auth.py` with pytest cases
-  - [ ] Test: normalized email stored correctly (lowercase, trimmed)
-  - [ ] Test: new email returns `status: "new"`
-  - [ ] Test: returning user with completed run returns `status: "returning"` with redirect signal
-  - [ ] Test: invalid email format returns 422 validation error
-- [ ] Accessibility and UX validation (AC: 1, 2, 3, 4)
-  - [ ] Verify email input has visible `<label>` element
-  - [ ] Verify checkbox is keyboard accessible and not pre-checked
-  - [ ] Verify external links have `rel="noopener"` for security
-  - [ ] Verify submit button disabled state uses `aria-disabled="true"`
+- [x] Create Supabase migration `supabase/migrations/20260319_002_magic_link_tokens.sql` (AC: 8)
+  - [x] Define `magic_link_tokens` table with: `token` UUID PK, `user_id` FK → users.id, `expires_at` timestamptz, `used_at` timestamptz null, `created_at` timestamptz default now()
+  - [x] Enable RLS on `magic_link_tokens` with policy allowing service role only
+  - [x] Push migration to local Supabase via `supabase db push`
+- [x] Implement `POST /api/v1/auth/check-email` FastAPI endpoint (AC: 5, 6, 7)
+  - [x] Add `backend/app/routers/auth.py` router with `EmailCheckRequest` Pydantic model
+  - [x] Normalize email at input boundary: `.lower().strip()`
+  - [x] Query `users` table for existing email; check if any completed run exists (via `runs` table with `status IN ('completed', 'partial')`)
+  - [x] Return `{"status": "new"}` for new users or `{"status": "returning", "redirect_to": "/blocked"}` for users with completed runs
+  - [x] Register router in `backend/app/main.py` under `/api/v1/auth` prefix
+- [x] Wire Server Action in `frontend/app/actions/submit-run.ts` (AC: 5, 6, 7)
+  - [x] After research form submit, call `POST /api/v1/auth/check-email` with the email and consent data
+  - [x] Handle `status: "new"` → continue to Story 3.2 magic link flow
+  - [x] Handle `status: "returning"` → redirect to `/blocked` via `redirect("/blocked")`
+  - [x] Pass `has_consent=true` and `consent_timestamp=now()` with the email check (consent stored in Story 3.2)
+- [x] Wire GDPR checkbox and submit button behavior in the existing email capture scaffold (AC: 1, 2, 3, 4)
+  - [x] Ensure GDPR checkbox is never pre-checked
+  - [x] Ensure Submit button is disabled until email field is non-empty AND checkbox is checked
+  - [x] Privacy Policy and Terms of Service links open in new tab (`target="_blank" rel="noopener"`)
+  - [x] All Hungarian strings sourced from `frontend/lib/messages.ts` (no hardcoded strings)
+- [x] Add tests for auth check-email endpoint (AC: 5, 6, 7)
+  - [x] Create `backend/tests/routers/test_auth.py` with pytest cases
+  - [x] Test: normalized email stored correctly (lowercase, trimmed)
+  - [x] Test: new email returns `status: "new"`
+  - [x] Test: returning user with completed run returns `status: "returning"` with redirect signal
+  - [x] Test: invalid email format returns 422 validation error
+- [x] Accessibility and UX validation (AC: 1, 2, 3, 4)
+  - [x] Verify email input has visible `<label>` element
+  - [x] Verify checkbox is keyboard accessible and not pre-checked
+  - [x] Verify external links have `rel="noopener"` for security
+  - [x] Verify submit button disabled state uses `aria-disabled="true"`
 
 ## Dev Notes
 
@@ -90,11 +90,41 @@ so that the system can deliver my results and I know exactly what I'm agreeing t
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+openai/gpt-5.3-codex
 
 ### Debug Log References
 
+- `supabase db push --local` (applied `20260319_002_magic_link_tokens.sql`)
+- `pytest` (backend: 15 passed)
+- `pnpm test` (frontend: 22 passed)
+- `pnpm lint` (frontend: passed)
+
 ### Completion Notes List
+
+- Added `magic_link_tokens` migration with required schema and service-role-only RLS policy.
+- Implemented `POST /api/v1/auth/check-email` with input-boundary email normalization and returning-user detection via completed/partial runs.
+- Registered auth router in FastAPI app and added backend pytest coverage for normalization/new/returning/invalid-email flows.
+- Added server action `submitRunAction` to call backend check-email endpoint with `has_consent` and `consent_timestamp`.
+- Extended research page email step with GDPR consent checkbox, disabled submit gating, and legal links opening in new tabs.
+- Added `/privacy`, `/terms`, and `/blocked` pages plus message catalog updates for all Hungarian copy.
+- Added frontend tests to validate consent gating, checkbox default state, and secure external link attributes.
 
 ### File List
 
+- supabase/migrations/20260319_002_magic_link_tokens.sql
+- backend/app/models/__init__.py
+- backend/app/models/auth.py
+- backend/app/routers/auth.py
+- backend/app/main.py
+- backend/tests/routers/test_auth.py
+- frontend/app/actions/submit-run.ts
+- frontend/app/research/page.tsx
+- frontend/app/research/page.test.tsx
+- frontend/app/privacy/page.tsx
+- frontend/app/terms/page.tsx
+- frontend/app/blocked/page.tsx
+- frontend/lib/messages.ts
+
+## Change Log
+
+- 2026-03-20: Implemented Story 3.1 email capture GDPR flow, auth check-email API, migration, legal routes, and automated tests; set status to `review`.

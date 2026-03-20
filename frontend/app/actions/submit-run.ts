@@ -1,0 +1,48 @@
+"use server";
+
+import { redirect } from "next/navigation";
+
+type SubmitRunInput = {
+  email: string;
+  hasConsent: boolean;
+  consentTimestamp: string;
+};
+
+type CheckEmailResponse =
+  | { status: "new" }
+  | { status: "returning"; redirect_to: string };
+
+export async function submitRunAction({
+  email,
+  hasConsent,
+  consentTimestamp,
+}: SubmitRunInput): Promise<{ status: "new" }> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured");
+  }
+
+  const response = await fetch(`${apiUrl}/api/v1/auth/check-email`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      has_consent: hasConsent,
+      consent_timestamp: consentTimestamp,
+    }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Email check failed");
+  }
+
+  const data = (await response.json()) as CheckEmailResponse;
+  if (data.status === "returning") {
+    redirect("/blocked");
+  }
+
+  return { status: "new" };
+}

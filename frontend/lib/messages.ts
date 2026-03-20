@@ -126,12 +126,15 @@ export const messages = {
       },
       email: {
         heading: "Hova küldjük az eredményt?",
-        subheadline:
-          "Az elemzés erre az email-címre érkezik. Nem hírlevél — csak az eredményed.",
-        label: "Email-cím",
+        subheadline: "Az eredményed erre az emailre érkezik",
+        label: "Email cím",
         placeholder: "pelda@email.hu",
         cta: "Eredmény küldése",
         privacyNote: "Adataid biztonságban vannak. Egy kattintással leiratkozhatsz.",
+        consentPrefix: "Elfogadom az ",
+        privacyPolicyLink: "Adatkezelési tájékoztatót",
+        consentConnector: " és a ",
+        termsOfServiceLink: "Felhasználási feltételeket",
       },
     },
   },
@@ -151,6 +154,16 @@ export const messages = {
       "A feldolgozás a szokásosnál tovább tart, még dolgozunk rajta.",
   },
   blockingHeadline: "Ez az emailcím már igénybe vette az ingyenes próbát",
+  blockingPage: {
+    description:
+      "Ehhez az email címhez már tartozik lezárt futás, ezért új ingyenes elemzést most nem tudunk indítani.",
+    cta: "Vissza a főoldalra",
+  },
+  legal: {
+    privacyTitle: "Adatkezelési tájékoztató",
+    termsTitle: "Felhasználási feltételek",
+    placeholder: "A részletes tartalom hamarosan érkezik.",
+  },
   piiWarning: "Ne adj meg személyes adatot vagy bizalmas információt.",
   reflectionQuestion: "Mit tennél másképp ennek alapján?",
   genericError: "Váratlan hiba történt. Kérjük, próbáld újra.",

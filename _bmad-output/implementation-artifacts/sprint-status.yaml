@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-03-19"
-last_updated: "2026-03-20" # story 2-4 done, story 3-1 created
+last_updated: "2026-03-20" # story 3-1 moved to review
 project: SwarmSense
 project_key: NOKEY
 tracking_system: file-system
@@ -61,7 +61,7 @@ development_status:
 
   # Epic 3: Email Verification & Access Control
   epic-3: in-progress
-  3-1-email-capture-with-gdpr-consent-and-db-check: ready-for-dev
+  3-1-email-capture-with-gdpr-consent-and-db-check: review
   3-2-magic-link-generation-and-verification-flow: backlog
   3-3-returning-user-blocking-screen-and-pro-waitlist-cta: backlog
   epic-3-retrospective: optional

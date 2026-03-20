@@ -81,4 +81,60 @@ describe("Research page", () => {
       screen.getByText(messages.research.form.email.privacyNote)
     ).toBeInTheDocument();
   });
+
+  it("keeps email submit disabled until email and consent are provided", () => {
+    render(<ResearchPage />);
+
+    fireEvent.change(screen.getByLabelText(messages.research.form.researchLabel), {
+      target: { value: "Csomagár teszt" },
+    });
+    fireEvent.change(screen.getByLabelText(messages.research.form.audienceLabel), {
+      target: { value: "SaaS termékvezetők" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: messages.research.form.submitCta })
+    );
+
+    const emailSubmit = screen.getByRole("button", {
+      name: messages.research.form.email.cta,
+    });
+    const consent = screen.getByRole("checkbox");
+    const email = screen.getByLabelText(messages.research.form.email.label);
+
+    expect(consent).not.toBeChecked();
+    expect(emailSubmit).toBeDisabled();
+    expect(emailSubmit).toHaveAttribute("aria-disabled", "true");
+
+    fireEvent.change(email, { target: { value: "teszt@example.com" } });
+    expect(emailSubmit).toBeDisabled();
+
+    fireEvent.click(consent);
+    expect(emailSubmit).toBeEnabled();
+  });
+
+  it("renders privacy and terms links opening in a new tab", () => {
+    render(<ResearchPage />);
+
+    fireEvent.change(screen.getByLabelText(messages.research.form.researchLabel), {
+      target: { value: "Csomagár teszt" },
+    });
+    fireEvent.change(screen.getByLabelText(messages.research.form.audienceLabel), {
+      target: { value: "SaaS termékvezetők" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: messages.research.form.submitCta })
+    );
+
+    const privacyLink = screen.getByRole("link", {
+      name: messages.research.form.email.privacyPolicyLink,
+    });
+    const termsLink = screen.getByRole("link", {
+      name: messages.research.form.email.termsOfServiceLink,
+    });
+
+    expect(privacyLink).toHaveAttribute("target", "_blank");
+    expect(privacyLink).toHaveAttribute("rel", "noopener");
+    expect(termsLink).toHaveAttribute("target", "_blank");
+    expect(termsLink).toHaveAttribute("rel", "noopener");
+  });
 });

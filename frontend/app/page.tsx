@@ -3,9 +3,9 @@
 import * as React from "react";
 
 import { PersonaCard } from "@/components/persona-card";
+import { RotatingPlaceholder } from "@/components/rotating-placeholder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { messages } from "@/lib/messages";
 import {
   accent,
@@ -104,7 +104,7 @@ export default function Home() {
                 <label className="text-sm font-semibold" htmlFor="research-topic">
                   {landing.form.researchLabel}
                 </label>
-                <Textarea
+                <RotatingPlaceholder
                   id="research-topic"
                   name="researchTopic"
                   value={researchTopic}
@@ -112,6 +112,7 @@ export default function Home() {
                   onBlur={(event) => handleBlur("researchTopic", event)}
                   maxLength={500}
                   className="min-h-[160px]"
+                  examples={landing.form.researchExamples}
                   style={{
                     backgroundColor: trueBlack,
                     borderColor: border,
@@ -132,7 +133,7 @@ export default function Home() {
                 <label className="text-sm font-semibold" htmlFor="audience-description">
                   {landing.form.audienceLabel}
                 </label>
-                <Textarea
+                <RotatingPlaceholder
                   id="audience-description"
                   name="audienceDescription"
                   value={audienceDescription}
@@ -140,6 +141,7 @@ export default function Home() {
                   onBlur={(event) => handleBlur("audienceDescription", event)}
                   maxLength={500}
                   className="min-h-[160px]"
+                  examples={landing.form.audienceExamples}
                   style={{
                     backgroundColor: trueBlack,
                     borderColor: border,

@@ -22,6 +22,16 @@ export const messages = {
       cta: "Kutatás indítása",
       emailLabel: "Email-cím",
       emailPlaceholder: "nev@ceg.hu",
+      researchExamples: [
+        "B2B SaaS bevezetéséhez milyen fő kockázatokat lát a CFO?",
+        "Milyen érvek győzik meg a középvállalati IT vezetőt egy új eszközről?",
+        "Hogyan dönt egy marketing vezető egy új automatizációs platformról?",
+      ],
+      audienceExamples: [
+        "Magyar fintech startupok termékvezetői, 20-80 fős csapatokkal",
+        "B2B szolgáltató cégek marketing vezetői 100-300 fős szervezetből",
+        "SaaS CFO-k, akik költségcsökkentési célokat kaptak 2026-ra",
+      ],
       errors: {
         researchTopic: "Add meg a kutatási témát.",
         audienceDescription: "Add meg a célcsoport leírását.",

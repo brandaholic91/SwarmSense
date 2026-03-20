@@ -1,6 +1,6 @@
 # Story 2.3: Rotating Example Placeholders on Form Fields
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -21,18 +21,18 @@ so that I understand what good input looks like and can overcome the "what do I 
 
 ## Tasks / Subtasks
 
-- [ ] Implement a RotatingPlaceholder component for textareas (AC: 1, 2, 3, 4, 5, 6)
-  - [ ] Create `frontend/components/rotating-placeholder.tsx` with per-field cycling state (topic vs audience) and a 4s interval
-  - [ ] Stop cycling immediately on focus; permanently disable cycling after first focus for that field
-  - [ ] Respect `prefers-reduced-motion` via `matchMedia` and short-circuit cycling when active
-- [ ] Wire RotatingPlaceholder into the landing page form (AC: 1, 2, 4, 5)
-  - [ ] Use RotatingPlaceholder for both topic and audience textareas in `frontend/app/page.tsx`
-  - [ ] Keep existing validation and email capture behavior unchanged (Story 2.2)
-  - [ ] Store example strings in `frontend/lib/messages.ts` and import them (no hard-coded Hungarian strings)
-- [ ] Add/update tests for rotating placeholders (AC: 1, 2, 3, 4, 5, 6)
-  - [ ] Component test for 4s cycling using fake timers
-  - [ ] Stop-on-focus and no-restart-on-blur behavior
-  - [ ] `prefers-reduced-motion` disables cycling
+- [x] Implement a RotatingPlaceholder component for textareas (AC: 1, 2, 3, 4, 5, 6)
+  - [x] Create `frontend/components/rotating-placeholder.tsx` with per-field cycling state (topic vs audience) and a 4s interval
+  - [x] Stop cycling immediately on focus; permanently disable cycling after first focus for that field
+  - [x] Respect `prefers-reduced-motion` via `matchMedia` and short-circuit cycling when active
+- [x] Wire RotatingPlaceholder into the landing page form (AC: 1, 2, 4, 5)
+  - [x] Use RotatingPlaceholder for both topic and audience textareas in `frontend/app/page.tsx`
+  - [x] Keep existing validation and email capture behavior unchanged (Story 2.2)
+  - [x] Store example strings in `frontend/lib/messages.ts` and import them (no hard-coded Hungarian strings)
+- [x] Add/update tests for rotating placeholders (AC: 1, 2, 3, 4, 5, 6)
+  - [x] Component test for 4s cycling using fake timers
+  - [x] Stop-on-focus and no-restart-on-blur behavior
+  - [x] `prefers-reduced-motion` disables cycling
 
 ## Dev Notes
 
@@ -63,7 +63,24 @@ so that I understand what good input looks like and can overcome the "what do I 
 openai/gpt-5.2-codex
 
 ### Debug Log References
+- pnpm test
+- pnpm lint
+- pnpm build
+- pnpm test
+- pnpm lint
 
 ### Completion Notes List
+- Implemented RotatingPlaceholder with 4s cycling, focus stop, and reduced-motion handling; wired it into landing page textareas and added example strings in messages.
+- Added component-level tests for cycling, focus/blur behavior, and reduced-motion handling; updated test setup with matchMedia polyfill.
+- Fixed build-time type check issue by removing legacy matchMedia listener fallback; verified build, tests, and lint.
 
 ### File List
+- frontend/app/page.tsx
+- frontend/components/rotating-placeholder.tsx
+- frontend/components/rotating-placeholder.test.tsx
+- frontend/lib/messages.ts
+- frontend/test/setup.ts
+
+### Change Log
+- 2026-03-20: Added rotating placeholder component, wired landing page, and covered behavior with component tests.
+- 2026-03-20: Fixed build-time type check issue in matchMedia handling and revalidated build/tests/lint.

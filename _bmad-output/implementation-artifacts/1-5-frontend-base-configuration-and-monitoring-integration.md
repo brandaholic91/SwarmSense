@@ -1,6 +1,6 @@
 # Story 1.5: Frontend Base Configuration & Monitoring Integration
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,22 +24,22 @@ so that all subsequent components have a single source of truth for visual token
 
 ## Tasks / Subtasks
 
-- [ ] Create shared design tokens (AC: 1, 4)
-  - [ ] Add `frontend/lib/tokens.ts` exporting the required color constants; use Tailwind color values (e.g., `tailwindcss/colors`) so the tokens resolve to actual hex values for React Email.
-  - [ ] Add matching CSS custom properties in `frontend/app/globals.css` under `@layer base :root { ... }` with stable names (e.g., `--background`, `--surface`, `--border`, `--text-primary`, `--text-secondary`, `--accent`, `--stance-reject`, `--stance-support`, `--stance-conditional`).
-  - [ ] Ensure all tokens are usable by both browser UI and React Email templates (no CSS-only values without TS constants).
-- [ ] Centralize Hungarian copy (AC: 2)
-  - [ ] Create `frontend/lib/messages.ts` with a `messages` object that includes required microcopy: email capture notice, waiting screen state labels, blocking screen headline, PII warning, reflection question, and other funnel copy defined in UX patterns.
-  - [ ] Keep Hungarian text only in `messages.ts` (no hard-coded UI strings in components).
-- [ ] Centralize API error mappings (AC: 3)
-  - [ ] Create `frontend/lib/errors.ts` exporting `errorMessages` for `COST_LIMIT_REACHED`, `TOKEN_EXPIRED`, `TOKEN_INVALID`.
-  - [ ] Use the exact Hungarian cost-limit message from Story 1.3 for `COST_LIMIT_REACHED`.
-- [ ] Monitoring + analytics wiring (AC: 5, 6, 7, 8)
-  - [ ] Update `frontend/app/layout.tsx` to include `<html lang="hu">`, initialize Sentry with `NEXT_PUBLIC_SENTRY_DSN`, and include the Plausible script tag (use env-driven `data-domain` rather than hard-coding a domain).
-  - [ ] Initialize Sentry in `backend/app/main.py` using `SWARMSENSE_SENTRY_DSN` from backend settings; keep init minimal (no performance tracing requirements in MVP).
-- [ ] Environment variable examples (AC: 9)
-  - [ ] Update `frontend/.env.example` to include `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`, and any existing frontend runtime variables (e.g., `NEXT_PUBLIC_API_URL`).
-  - [ ] Update `backend/.env.example` to include `SWARMSENSE_SENTRY_DSN` alongside existing required variables (`SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_SUPABASE_SERVICE_KEY`, `SWARMSENSE_KIMI_API_KEY`, `SWARMSENSE_OPERATOR_API_KEY`, `SWARMSENSE_FRONTEND_ORIGIN`).
+- [x] Create shared design tokens (AC: 1, 4)
+  - [x] Add `frontend/lib/tokens.ts` exporting the required color constants; use Tailwind color values (e.g., `tailwindcss/colors`) so the tokens resolve to actual hex values for React Email.
+  - [x] Add matching CSS custom properties in `frontend/app/globals.css` under `@layer base :root { ... }` with stable names (e.g., `--background`, `--surface`, `--border`, `--text-primary`, `--text-secondary`, `--accent`, `--stance-reject`, `--stance-support`, `--stance-conditional`).
+  - [x] Ensure all tokens are usable by both browser UI and React Email templates (no CSS-only values without TS constants).
+- [x] Centralize Hungarian copy (AC: 2)
+  - [x] Create `frontend/lib/messages.ts` with a `messages` object that includes required microcopy: email capture notice, waiting screen state labels, blocking screen headline, PII warning, reflection question, and other funnel copy defined in UX patterns.
+  - [x] Keep Hungarian text only in `messages.ts` (no hard-coded UI strings in components).
+- [x] Centralize API error mappings (AC: 3)
+  - [x] Create `frontend/lib/errors.ts` exporting `errorMessages` for `COST_LIMIT_REACHED`, `TOKEN_EXPIRED`, `TOKEN_INVALID`.
+  - [x] Use the exact Hungarian cost-limit message from Story 1.3 for `COST_LIMIT_REACHED`.
+- [x] Monitoring + analytics wiring (AC: 5, 6, 7, 8)
+  - [x] Update `frontend/app/layout.tsx` to include `<html lang="hu">`, initialize Sentry with `NEXT_PUBLIC_SENTRY_DSN`, and include the Plausible script tag (use env-driven `data-domain` rather than hard-coding a domain).
+  - [x] Initialize Sentry in `backend/app/main.py` using `SWARMSENSE_SENTRY_DSN` from backend settings; keep init minimal (no performance tracing requirements in MVP).
+- [x] Environment variable examples (AC: 9)
+  - [x] Update `frontend/.env.example` to include `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`, and any existing frontend runtime variables (e.g., `NEXT_PUBLIC_API_URL`).
+  - [x] Update `backend/.env.example` to include `SWARMSENSE_SENTRY_DSN` alongside existing required variables (`SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_SUPABASE_SERVICE_KEY`, `SWARMSENSE_KIMI_API_KEY`, `SWARMSENSE_OPERATOR_API_KEY`, `SWARMSENSE_FRONTEND_ORIGIN`).
 
 ## Dev Notes
 
@@ -74,6 +74,30 @@ openai/gpt-5.2-codex
 
 ### Debug Log References
 
+- 2026-03-20: `python -m pip install -r requirements.txt` (backend)
+- 2026-03-20: `python -m pytest` (backend, 11 passed)
+
 ### Completion Notes List
 
+- Added shared tokens/messages/errors constants, updated global CSS tokens, and wired frontend Sentry + Plausible.
+- Added backend Sentry settings + init with tests, plus new .env example files for both apps.
+
 ### File List
+
+- backend/.env.example
+- backend/app/core/config.py
+- backend/app/main.py
+- backend/requirements.txt
+- backend/tests/test_sentry.py
+- frontend/.env.example
+- frontend/app/globals.css
+- frontend/app/layout.tsx
+- frontend/lib/errors.ts
+- frontend/lib/messages.ts
+- frontend/lib/tokens.ts
+- frontend/package.json
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+
+- 2026-03-20: Added shared frontend tokens/messages/error mappings, wired Sentry + Plausible, added backend Sentry init + tests, and refreshed env examples; marked story ready for review.

@@ -50,6 +50,7 @@
 
 :root {
   --background: #09090b;
+  --true-black: #000000;
   --foreground: #fafafa;
   --card: #18181b;
   --card-foreground: #fafafa;

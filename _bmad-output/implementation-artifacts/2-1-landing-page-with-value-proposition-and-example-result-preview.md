@@ -1,6 +1,6 @@
 # Story 2.1: Landing Page with Value Proposition & Example Result Preview
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,21 +22,21 @@ so that I can immediately understand what the product does and whether it is wor
 
 ## Tasks / Subtasks
 
-- [ ] Build landing hero and example preview layout in `frontend/app/page.tsx` (AC: 2, 3, 5, 7)
-  - [ ] Add hero headline and supporting copy using `frontend/lib/messages.ts` keys (no hard-coded HU strings)
-  - [ ] Apply High Contrast Impact styling: `#000` background, 44px/800 headline, amber accent, tabular-nums for stats
-  - [ ] Set container sizing (`max-w-2xl`, `mx-auto`, `px-4 sm:px-6`) consistent with UX spec
-- [ ] Implement or extend `PersonaCard` for `compact` variant in `frontend/components/persona-card.tsx` (AC: 3, 4)
-  - [ ] Add 4px left-border stance indicator (rose/emerald/amber) and stance label text (not color-only)
-  - [ ] Add `aria-label` on card container
-  - [ ] Ensure compact variant truncates copy appropriately for preview
-- [ ] Add example preview content and data model in `frontend/app/page.tsx` (AC: 3, 4)
-  - [ ] Oversized persona count stat (e.g., "15 / 18 persona elutasítja") using tabular-nums
-  - [ ] Blockquote-style top objection callout
-  - [ ] Render 3 PersonaCard instances with distinct stances and roles
-- [ ] Accessibility and compliance checks (AC: 6, 7)
-  - [ ] Ensure all headings/sections are semantic and labels use proper hierarchy
-  - [ ] Confirm no English or placeholder strings appear on the landing page
+- [x] Build landing hero and example preview layout in `frontend/app/page.tsx` (AC: 2, 3, 5, 7)
+  - [x] Add hero headline and supporting copy using `frontend/lib/messages.ts` keys (no hard-coded HU strings)
+  - [x] Apply High Contrast Impact styling: `#000` background, 44px/800 headline, amber accent, tabular-nums for stats
+  - [x] Set container sizing (`max-w-2xl`, `mx-auto`, `px-4 sm:px-6`) consistent with UX spec
+- [x] Implement or extend `PersonaCard` for `compact` variant in `frontend/components/persona-card.tsx` (AC: 3, 4)
+  - [x] Add 4px left-border stance indicator (rose/emerald/amber) and stance label text (not color-only)
+  - [x] Add `aria-label` on card container
+  - [x] Ensure compact variant truncates copy appropriately for preview
+- [x] Add example preview content and data model in `frontend/app/page.tsx` (AC: 3, 4)
+  - [x] Oversized persona count stat (e.g., "15 / 18 persona elutasítja") using tabular-nums
+  - [x] Blockquote-style top objection callout
+  - [x] Render 3 PersonaCard instances with distinct stances and roles
+- [x] Accessibility and compliance checks (AC: 6, 7)
+  - [x] Ensure all headings/sections are semantic and labels use proper hierarchy
+  - [x] Confirm no English or placeholder strings appear on the landing page
 
 ## Dev Notes
 
@@ -63,12 +63,37 @@ so that I can immediately understand what the product does and whether it is wor
 
 openai/gpt-5.2-codex
 
+### Implementation Plan
+
+- Replace the default landing content with hero + preview layout using tokens/messages.
+- Add PersonaCard component with compact variant and stance indicators.
+- Wire example preview data from messages and ensure accessibility attributes.
+
 ### Debug Log References
+
+- 2026-03-20: Added vitest + jest-axe setup, implemented landing layout and PersonaCard, ran `pnpm test` (Vite CJS deprecation warning).
+- 2026-03-20: Fixed build type error for WebkitBoxOrient and added jest-axe types; `pnpm build` now passes.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created
+- Landing hero + preview layout implemented with tokens/messages; PersonaCard compact variant added with stance indicators and aria-labels.
+- Tests added for PersonaCard, landing page rendering, and axe critical violations; `pnpm test` passes.
+- Build fixed by typing WebkitBoxOrient style and adding @types/jest-axe; `pnpm build` passes.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/2-1-landing-page-with-value-proposition-and-example-result-preview.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- frontend/app/globals.css
+- frontend/app/page.tsx
+- frontend/app/page.test.tsx
+- frontend/components/persona-card.tsx
+- frontend/components/persona-card.test.tsx
+- frontend/lib/messages.ts
+- frontend/lib/tokens.ts
+- frontend/package.json
+- frontend/pnpm-lock.yaml
+- frontend/test/setup.ts
+- frontend/tsconfig.json
+- frontend/vitest.config.ts

@@ -31,4 +31,11 @@ describe("Landing page", () => {
     const ctas = screen.getAllByRole("link", { name: messages.landing.nav.cta });
     expect(ctas.length).toBeGreaterThan(0);
   });
+
+  it("renders three persona cards in the example result preview", () => {
+    render(<Home />);
+
+    const cards = screen.getAllByRole("article");
+    expect(cards).toHaveLength(messages.landing.preview.cards.length);
+  });
 });

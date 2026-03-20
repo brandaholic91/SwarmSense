@@ -1,6 +1,6 @@
 # Story 2.4: UI Redesign — Landing Page and Research Form
 
-Status: review
+Status: done
 
 ## Story
 
@@ -147,12 +147,14 @@ The Stitch design system ("Zinc Monolith / Silent Authority") introduces a new c
 ### Debug Log
 
 - 2026-03-20: `pnpm test` (frontend) — passed; React Testing Library emitted act warnings for Link.
+- 2026-03-20: Code review (3-layer: Blind Hunter, Edge Case Hunter, Acceptance Auditor) — 7 patches applied, story closed.
 
 ### Completion Notes
 
 - Added Stitch color tokens and CSS custom properties; updated font loading to Inter + Space Grotesk.
 - Implemented the redesigned landing page sections and new `/research` form with updated interaction states.
 - Updated message keys and added new tests for landing and research pages.
+- Code review patches applied: removed `"use client"` from landing page (RSC); fixed email form (controlled input + validation); cleared stale errors on field reset; navBackground uses 8-digit hex fallback; restored GDPR piiWarning; added PersonaCard and one-field-filled tests; research header brand uses accent span.
 
 ## File List
 
@@ -169,3 +171,4 @@ The Stitch design system ("Zinc Monolith / Silent Authority") introduces a new c
 ## Change Log
 
 - 2026-03-20: Added Stitch tokens, redesigned landing and research pages, and updated tests.
+- 2026-03-20: Applied code review patches (P-1, P-3, P-4, P-5, P-6a, P-6b, P-7, IG-1). All 20 tests passing.

@@ -4,6 +4,20 @@ import ResearchPage from "@/app/research/page";
 import { messages } from "@/lib/messages";
 
 describe("Research page", () => {
+  it("keeps submit disabled when only one field is filled", () => {
+    render(<ResearchPage />);
+
+    fireEvent.change(screen.getByLabelText(messages.research.form.researchLabel), {
+      target: { value: "B2B onboarding" },
+    });
+
+    const submit = screen.getByRole("button", {
+      name: messages.research.form.submitCta,
+    });
+    expect(submit).toBeDisabled();
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+  });
+
   it("disables submit when fields are empty", () => {
     render(<ResearchPage />);
 

@@ -31,9 +31,11 @@ export default function ResearchPage() {
   const [researchTopic, setResearchTopic] = React.useState("");
   const [audienceDescription, setAudienceDescription] = React.useState("");
   const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [email, setEmail] = React.useState("");
   const [errors, setErrors] = React.useState<{
     researchTopic?: string;
     audienceDescription?: string;
+    email?: string;
   }>({});
 
   const isComplete =
@@ -42,6 +44,7 @@ export default function ResearchPage() {
   React.useEffect(() => {
     if (!isComplete) {
       setIsSubmitted(false);
+      setErrors({});
     }
   }, [isComplete]);
 
@@ -90,7 +93,7 @@ export default function ResearchPage() {
           className="text-lg font-semibold tracking-tight"
           style={{ ...headlineFont, color: onSurface }}
         >
-          SwarmSense
+          Swarm<span style={{ color: accent }}>Sense</span>
         </span>
       </header>
 
@@ -229,7 +232,18 @@ export default function ResearchPage() {
                   {form.email.subheadline}
                 </p>
               </div>
-              <form className="space-y-6" onSubmit={(event) => event.preventDefault()}>
+              <form
+                className="space-y-6"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const trimmed = email.trim();
+                  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+                    setErrors((prev) => ({ ...prev, email: form.errors.email }));
+                    return;
+                  }
+                  setErrors((prev) => ({ ...prev, email: undefined }));
+                }}
+              >
                 <div className="space-y-3">
                   <label
                     className="text-xs uppercase tracking-[0.2em]"
@@ -244,6 +258,8 @@ export default function ResearchPage() {
                       name="email"
                       type="email"
                       placeholder={form.email.placeholder}
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
                       className="w-full border-none bg-transparent p-5 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
                       style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
                     />
@@ -252,6 +268,11 @@ export default function ResearchPage() {
                       style={focusLineStyle}
                     />
                   </div>
+                  {errors.email ? (
+                    <p className="text-xs font-semibold" style={{ color: errorDim }}>
+                      {errors.email}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="space-y-4">
                   <button

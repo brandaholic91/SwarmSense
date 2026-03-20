@@ -1,5 +1,3 @@
-"use client";
-
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, FilePlus, Mail, Zap } from "lucide-react";
@@ -25,7 +23,7 @@ const formatAriaLabel = (template: string, values: Record<string, string>) =>
 
 const headlineFont: CSSProperties = { fontFamily: "var(--font-headline)" };
 const labelFont: CSSProperties = { fontFamily: "var(--font-label)" };
-const navBackground = `color-mix(in srgb, ${surfaceContainer} 80%, transparent)`;
+const navBackground = `${surfaceContainer}cc`; // 8-digit hex = 80% opacity, widely supported
 
 export default function Home() {
   const { landing } = messages;

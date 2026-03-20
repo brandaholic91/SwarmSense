@@ -116,12 +116,13 @@ export const messages = {
         "SaaS CFO-k, akik költségcsökkentési célokat kaptak 2026-ra",
       ],
       piiWarning:
-        "Kérjük, fogalmazz pontosan a releváns adathalmazok eléréséhez.",
+        "Ne adj meg személyes adatokat a kutatási témában",
       submitCta: "Elemzés indítása",
       helper: "Egy ingyenes elemzés email-címenként.",
       errors: {
         researchTopic: "Add meg a kutatási témát.",
         audienceDescription: "Add meg a célközönség leírását.",
+        email: "Adj meg érvényes email-címet.",
       },
       email: {
         heading: "Hova küldjük az eredményt?",

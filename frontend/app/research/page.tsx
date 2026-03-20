@@ -2,8 +2,12 @@
 
 import * as React from "react";
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { ArrowRight, Info, Send, ShieldCheck } from "lucide-react";
 
+import { isRedirectError } from "next/dist/client/components/redirect-error";
+
+import { submitRunAction } from "@/app/actions/submit-run";
 import { RotatingPlaceholder } from "@/components/rotating-placeholder";
 import { Input } from "@/components/ui/input";
 import { messages } from "@/lib/messages";
@@ -32,6 +36,8 @@ export default function ResearchPage() {
   const [audienceDescription, setAudienceDescription] = React.useState("");
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [email, setEmail] = React.useState("");
+  const [hasConsent, setHasConsent] = React.useState(false);
+  const [isCheckingEmail, startEmailCheckTransition] = React.useTransition();
   const [errors, setErrors] = React.useState<{
     researchTopic?: string;
     audienceDescription?: string;
@@ -40,6 +46,8 @@ export default function ResearchPage() {
 
   const isComplete =
     researchTopic.trim().length > 0 && audienceDescription.trim().length > 0;
+  const canSubmitEmail =
+    email.trim().length > 0 && hasConsent && !isCheckingEmail;
 
   React.useEffect(() => {
     if (!isComplete) {
@@ -241,7 +249,27 @@ export default function ResearchPage() {
                     setErrors((prev) => ({ ...prev, email: form.errors.email }));
                     return;
                   }
+
+                  if (!hasConsent) {
+                    return;
+                  }
+
                   setErrors((prev) => ({ ...prev, email: undefined }));
+
+                  startEmailCheckTransition(async () => {
+                    try {
+                      await submitRunAction({
+                        email: trimmed,
+                        hasConsent: true,
+                        consentTimestamp: new Date().toISOString(),
+                      });
+                    } catch (error) {
+                      if (isRedirectError(error)) {
+                        throw error;
+                      }
+                      setErrors((prev) => ({ ...prev, email: messages.genericError }));
+                    }
+                  });
                 }}
               >
                 <div className="space-y-3">
@@ -274,11 +302,35 @@ export default function ResearchPage() {
                     </p>
                   ) : null}
                 </div>
+                <div className="flex items-start gap-3">
+                  <input
+                    id="gdpr-consent"
+                    name="gdprConsent"
+                    type="checkbox"
+                    checked={hasConsent}
+                    onChange={(event) => setHasConsent(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border"
+                    style={{ borderColor: outlineVariant }}
+                  />
+                  <label htmlFor="gdpr-consent" className="text-xs leading-relaxed" style={{ color: textSecondary }}>
+                    {form.email.consentPrefix}
+                    <Link href="/privacy" target="_blank" rel="noopener" className="underline">
+                      {form.email.privacyPolicyLink}
+                    </Link>
+                    {form.email.consentConnector}
+                    <Link href="/terms" target="_blank" rel="noopener" className="underline">
+                      {form.email.termsOfServiceLink}
+                    </Link>
+                    .
+                  </label>
+                </div>
                 <div className="space-y-4">
                   <button
                     type="submit"
                     className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-transform active:scale-[0.98]"
                     style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
+                    disabled={!canSubmitEmail}
+                    aria-disabled={!canSubmitEmail ? "true" : undefined}
                   >
                     {form.email.cta}
                     <Send className="h-4 w-4" aria-hidden="true" />

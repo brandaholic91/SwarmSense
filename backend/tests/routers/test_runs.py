@@ -41,6 +41,7 @@ def build_client(monkeypatch, total_usd):
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
+    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
 
     get_settings.cache_clear()
     get_supabase_client.cache_clear()
@@ -126,6 +127,7 @@ def test_docs_disabled_in_production(monkeypatch):
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "production")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
+    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
 
     get_settings.cache_clear()
     get_supabase_client.cache_clear()

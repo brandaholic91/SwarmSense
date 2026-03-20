@@ -126,12 +126,15 @@ export const messages = {
       },
       email: {
         heading: "Hova küldjük az eredményt?",
-        subheadline:
-          "Az elemzés erre az email-címre érkezik. Nem hírlevél — csak az eredményed.",
-        label: "Email-cím",
+        subheadline: "Az eredményed erre az emailre érkezik",
+        label: "Email cím",
         placeholder: "pelda@email.hu",
         cta: "Eredmény küldése",
         privacyNote: "Adataid biztonságban vannak. Egy kattintással leiratkozhatsz.",
+        consentPrefix: "Elfogadom az ",
+        privacyPolicyLink: "Adatkezelési tájékoztatót",
+        consentConnector: " és a ",
+        termsOfServiceLink: "Felhasználási feltételeket",
       },
     },
   },
@@ -150,7 +153,35 @@ export const messages = {
     delayedNotice:
       "A feldolgozás a szokásosnál tovább tart, még dolgozunk rajta.",
   },
-  blockingHeadline: "Ez az emailcím már igénybe vette az ingyenes próbát",
+  blockingScreen: {
+    heading: "Ez az email-cím már igénybe vette az ingyenes próbát",
+    body: "Ehhez az email-címhez már tartozik lezárt futás, ezért új ingyenes elemzést most nem tudunk indítani.",
+    cta: "Iratkozz fel az értesítőre",
+    submitted: "Köszönjük! Felírtunk az értesítőre. A Pro hozzáférés indulása előtt emailben szólunk.",
+    invalidEmail:
+      "A várólista-feliratkozáshoz érvényes email átadása szükséges. Menj vissza a kutatási űrlapra, majd próbáld újra.",
+    emailPrefix: "Értesítést erre az emailre küldünk:",
+  },
+  verify: {
+    title: "A link nem használható",
+    descriptionPrefix: "A bejelentkezési linkkel probléma történt:",
+    requestNewLinkCta: "Új link kérése",
+    verifying: "Link ellenőrzése…",
+  },
+  email: {
+    magicLink: {
+      subject: "SwarmSense – Bejelentkezési link",
+      heading: "Folytasd a SwarmSense elemzést",
+      intro: "Kattints a lenti gombra az azonosításhoz.",
+      buttonLabel: "Bejelentkezés magic linkkel",
+      expiry: "Ez a link 24 órán belül lejár.",
+    },
+  },
+  legal: {
+    privacyTitle: "Adatkezelési tájékoztató",
+    termsTitle: "Felhasználási feltételek",
+    placeholder: "A részletes tartalom hamarosan érkezik.",
+  },
   piiWarning: "Ne adj meg személyes adatot vagy bizalmas információt.",
   reflectionQuestion: "Mit tennél másképp ennek alapján?",
   genericError: "Váratlan hiba történt. Kérjük, próbáld újra.",

@@ -12,6 +12,7 @@ def seed_env(monkeypatch) -> None:
     monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
+    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
     get_settings.cache_clear()
     get_supabase_client.cache_clear()
 

@@ -21,7 +21,10 @@ function normalizeEmail(rawValue: string | undefined): string | null {
 
 export default async function BlockedPage({ searchParams }: BlockedPageProps) {
   const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
-  const normalizedEmail = normalizeEmail(resolvedSearchParams.email);
+  const rawEmail = Array.isArray(resolvedSearchParams.email)
+    ? resolvedSearchParams.email[0]
+    : resolvedSearchParams.email;
+  const normalizedEmail = normalizeEmail(rawEmail);
 
   return <BlockingScreen email={normalizedEmail} canSubmitWaitlist={Boolean(normalizedEmail)} />;
 }

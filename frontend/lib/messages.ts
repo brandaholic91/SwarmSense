@@ -154,13 +154,13 @@ export const messages = {
       "A feldolgozás a szokásosnál tovább tart, még dolgozunk rajta.",
   },
   blockingScreen: {
-    heading: "Ez az emailcim mar igenybe vette az ingyenes probat",
-    body: "Ehhez az email cimhez mar tartozik lezart futas, ezert uj ingyenes elemzest most nem tudunk inditani.",
-    cta: "Iratkozz fel az ertesitore",
-    submitted: "Koszonjuk! Felirtunk az ertesitore. A Pro hozzaferes indulasa elott emailben szolunk.",
+    heading: "Ez az email-cím már igénybe vette az ingyenes próbát",
+    body: "Ehhez az email-címhez már tartozik lezárt futás, ezért új ingyenes elemzést most nem tudunk indítani.",
+    cta: "Iratkozz fel az értesítőre",
+    submitted: "Köszönjük! Felírtunk az értesítőre. A Pro hozzáférés indulása előtt emailben szólunk.",
     invalidEmail:
-      "A varolista feliratkozashoz ervenyes email atadasa szukseges. Menj vissza a kutatasi urlapra, majd probald ujra.",
-    emailPrefix: "Ertesitest erre az emailre kuldunk:",
+      "A várólista-feliratkozáshoz érvényes email átadása szükséges. Menj vissza a kutatási űrlapra, majd próbáld újra.",
+    emailPrefix: "Értesítést erre az emailre küldünk:",
   },
   verify: {
     title: "A link nem használható",

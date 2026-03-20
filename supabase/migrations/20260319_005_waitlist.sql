@@ -5,7 +5,8 @@ create table if not exists public.waitlist (
   created_at timestamptz not null default now(),
   constraint waitlist_email_unique unique (email),
   constraint waitlist_email_normalized check (email = lower(trim(email))),
-  constraint waitlist_email_nonempty check (length(email) > 0)
+  constraint waitlist_email_nonempty check (length(email) > 0),
+  constraint waitlist_email_maxlen check (length(email) <= 254)
 );
 
 alter table public.waitlist enable row level security;

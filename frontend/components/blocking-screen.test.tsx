@@ -38,6 +38,22 @@ describe("BlockingScreen", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("transitions to waitlist-submitted state after already_joined response", async () => {
+    joinWaitlistImpl.mockResolvedValue({ ok: true, status: "already_joined" });
+
+    render(<BlockingScreen email="user@example.com" canSubmitWaitlist />);
+
+    fireEvent.click(screen.getByRole("button", { name: messages.blockingScreen.cta }));
+
+    await waitFor(() => {
+      expect(screen.getByText(messages.blockingScreen.submitted)).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByRole("button", { name: messages.blockingScreen.cta })
+    ).not.toBeInTheDocument();
+  });
+
   it("disables submit when email handoff is missing", () => {
     render(<BlockingScreen email={null} canSubmitWaitlist={false} />);
 

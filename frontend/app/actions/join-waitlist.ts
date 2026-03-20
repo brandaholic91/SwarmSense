@@ -29,10 +29,11 @@ type JoinWaitlistFailure = {
 export async function joinWaitlistAction({
   email,
 }: JoinWaitlistInput): Promise<JoinWaitlistSuccess | JoinWaitlistFailure> {
-  const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) {
+  const rawApiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  if (!rawApiUrl) {
     throw new Error("API_URL is not configured");
   }
+  const apiUrl = rawApiUrl.replace(/\/$/, "");
 
   try {
     const response = await fetch(`${apiUrl}/api/v1/waitlist`, {
@@ -45,11 +46,18 @@ export async function joinWaitlistAction({
     });
 
     if (response.ok) {
-      const data = (await response.json()) as JoinWaitlistSuccessResponse;
-      return {
-        ok: true,
-        status: data.status,
-      };
+      try {
+        const data = (await response.json()) as JoinWaitlistSuccessResponse;
+        return {
+          ok: true,
+          status: data.status,
+        };
+      } catch {
+        return {
+          ok: false,
+          message: messages.genericError,
+        };
+      }
     }
 
     let errorData: JoinWaitlistErrorResponse | null = null;

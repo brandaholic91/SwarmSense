@@ -47,7 +47,7 @@ describe("joinWaitlistAction", () => {
 
     expect(result).toEqual({
       ok: false,
-      message: "Most nem sikerult feliratkozni az ertesitore. Kerjuk, probald ujra.",
+      message: "Most nem sikerült feliratkozni az értesítőre. Kérjük, próbáld újra.",
     });
   });
 });

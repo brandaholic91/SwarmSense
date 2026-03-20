@@ -16,7 +16,7 @@ def _is_unique_violation(exc: Exception) -> bool:
         return True
 
     message = str(exc).lower()
-    return "duplicate key" in message or "unique" in message
+    return "duplicate key" in message
 
 
 @router.post("", response_model=WaitlistSignupResponse)
@@ -27,7 +27,7 @@ async def join_waitlist(
         supabase = get_supabase_client()
         supabase.table("waitlist").insert({"email": payload.email}).execute()
         return WaitlistSignupResponse(status="joined")
-    except Exception as exc:  # pragma: no cover - defensive server error fallback
+    except Exception as exc:
         if _is_unique_violation(exc):
             return WaitlistSignupResponse(status="already_joined")
         return error_response(

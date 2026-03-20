@@ -1,6 +1,6 @@
 # Story 3.3: Returning User Blocking Screen & Pro Waitlist CTA
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -159,6 +159,34 @@ openai/gpt-5.3-codex
 - frontend/lib/messages.ts
 - supabase/migrations/20260319_005_waitlist.sql
 
+### Code Review Record
+
+#### Reviewer
+claude-sonnet-4-6 (3-layer: Blind Hunter, Edge Case Hunter, Acceptance Auditor)
+
+#### Patches Applied (2026-03-21)
+- P1: `backend/app/routers/waitlist.py` — `_is_unique_violation` fallback szűkítve: `"unique" in message` eltávolítva, csak `"duplicate key"` marad
+- P2: `backend/app/routers/waitlist.py` — `# pragma: no cover` eltávolítva az except blokk fejlécéről
+- P3: `frontend/lib/errors.ts` — `getErrorMessageByCode` fallback generikus üzenetre cserélve (TOKEN_INVALID helyett)
+- P4: `frontend/lib/errors.ts` + `frontend/lib/messages.ts` — összes `blockingScreen` szöveg helyes magyar ékezetekkel javítva
+- P5: `frontend/app/blocked/page.tsx` — `searchParams.email` tömb típus kezelése hozzáadva
+- P6: `supabase/migrations/20260319_005_waitlist.sql` — `waitlist_email_maxlen check (length(email) <= 254)` constraint hozzáadva
+- P7: `frontend/app/actions/join-waitlist.ts` — success ág JSON parse try/catch-be csomagolva
+- P8: `frontend/app/actions/join-waitlist.ts` — trailing slash levágása az API_URL-ből
+- P9: `frontend/components/blocking-screen.test.tsx` — `already_joined` → `waitlist-submitted` átmenet tesztesete hozzáadva (AC5)
+
+#### Deferred Findings (nem javítva, jövőbeli sprint)
+- D1: Nincs auth/rate-limiting a `/api/v1/waitlist` endpointon
+- D2: `already_joined` válasz user-existence oráklumként működik (enumeration)
+- D3: RLS engedélyezve, de nem definiált policy a `waitlist` táblán
+- D4: Frontend email regex permisszív (backend validál, alacsony kockázat)
+
+#### Validation After Patches
+- `backend pytest`: 4/4 passed
+- `frontend pnpm test`: 41/41 passed
+- `frontend pnpm lint`: clean
+
 ## Change Log
 
 - 2026-03-21: Implemented Story 3.3 blocked conversion flow with waitlist API, migration, deterministic email handoff, and backend/frontend test coverage.
+- 2026-03-21: Code review complete. 9 patches applied. Story moved to done.

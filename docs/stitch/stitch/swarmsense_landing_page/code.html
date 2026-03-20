@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="hu"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SwarmSense | Precision Synthetic Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-dim": "#ba573f",
+              "error-container": "#7e2b17",
+              "on-background": "#e7e4ec",
+              "outline": "#75757c",
+              "on-surface-variant": "#acaab1",
+              "on-error": "#450900",
+              "tertiary-container": "#f8a010",
+              "inverse-on-surface": "#565457",
+              "on-primary-fixed": "#5b3700",
+              "tertiary-fixed": "#f8a010",
+              "secondary-dim": "#9f9da1",
+              "primary": "#ffb95f",
+              "secondary": "#9f9da1",
+              "primary-fixed-dim": "#ffcb8e",
+              "primary-dim": "#fea619",
+              "secondary-fixed": "#e4e1e5",
+              "surface-tint": "#ffb95f",
+              "secondary-container": "#3b3b3e",
+              "outline-variant": "#47474e",
+              "on-secondary": "#202023",
+              "on-secondary-container": "#c1bec2",
+              "surface-bright": "#2b2c32",
+              "surface-container-low": "#131316",
+              "on-error-container": "#ff9b82",
+              "primary-container": "#653e00",
+              "surface-dim": "#0e0e10",
+              "inverse-primary": "#865400",
+              "surface-container-high": "#1f1f24",
+              "surface-container-lowest": "#000000",
+              "surface": "#0e0e10",
+              "on-tertiary": "#573500",
+              "on-tertiary-fixed": "#2a1700",
+              "on-primary": "#5c3800",
+              "on-primary-fixed-variant": "#815100",
+              "tertiary": "#ffb148",
+              "error": "#ed7f64",
+              "inverse-surface": "#fcf8fb",
+              "surface-variant": "#25252b",
+              "background": "#0e0e10",
+              "on-surface": "#e7e4ec",
+              "on-primary-container": "#ffc681",
+              "surface-container": "#19191d",
+              "primary-fixed": "#ffddb8",
+              "on-tertiary-container": "#4a2c00",
+              "tertiary-dim": "#e79400",
+              "tertiary-fixed-dim": "#e79400"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #0e0e10;
+        color: #e7e4ec;
+        font-family: 'Inter', sans-serif;
+      }
+      .glass-card {
+        background: rgba(31, 31, 36, 0.6);
+        backdrop-filter: blur(20px);
+      }
+    </style>
+</head>
+<body class="selection:bg-primary/30 selection:text-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#0e0e10]/80 backdrop-blur-xl border-b border-zinc-800/50">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-bold tracking-tighter text-zinc-50 font-headline">SwarmSense</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-zinc-400 font-sans text-sm tracking-tight hover:text-zinc-100 transition-colors duration-200" href="#">Platform</a>
+<a class="text-zinc-400 font-sans text-sm tracking-tight hover:text-zinc-100 transition-colors duration-200" href="#">Methodology</a>
+<a class="text-zinc-400 font-sans text-sm tracking-tight hover:text-zinc-100 transition-colors duration-200" href="#">Solutions</a>
+<a class="text-zinc-400 font-sans text-sm tracking-tight hover:text-zinc-100 transition-colors duration-200" href="#">Pricing</a>
+</div>
+<button class="bg-primary text-on-primary font-sans text-sm font-semibold px-5 py-2 rounded active:scale-95 transition-transform">
+                Ingyen kipróbálom
+            </button>
+</div>
+</nav>
+<!-- Hero Section -->
+<header class="relative pt-48 pb-24 px-6 overflow-hidden">
+<div class="max-w-4xl mx-auto text-center relative z-10">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/20 mb-8">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label text-[10px] uppercase tracking-widest text-zinc-400">v2.0 Beta Live</span>
+</div>
+<h1 class="text-5xl md:text-7xl font-bold tracking-tight text-zinc-50 mb-8 font-headline leading-[1.1]">
+                Tudd meg, mit gondol a piacod — <span class="text-primary">90 másodperc</span> alatt.
+            </h1>
+<p class="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-12 font-body leading-relaxed">
+                15–20 attitudinálisan különböző AI persona elemzi a hipotézised. Nem egy ChatGPT válasz — strukturált piackutatás, toborzás és várakozás nélkül.
+            </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+<button class="w-full sm:w-auto px-8 py-4 bg-primary text-on-primary font-bold rounded-lg hover:bg-primary-dim transition-colors text-lg active:scale-95 transition-transform">
+                    Ingyen kipróbálom
+                </button>
+<button class="w-full sm:w-auto px-8 py-4 bg-surface-container-highest text-on-surface font-semibold rounded-lg hover:bg-surface-bright transition-colors text-lg active:scale-95 transition-transform border border-outline-variant/10">
+                    Hogyan működik?
+                </button>
+</div>
+</div>
+<!-- Abstract Background Glow -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] -z-10"></div>
+</header>
+<!-- Example Result Preview -->
+<section class="py-24 px-6 bg-surface-container-low">
+<div class="max-w-6xl mx-auto">
+<div class="mb-12 text-center md:text-left">
+<span class="font-label text-xs uppercase tracking-[0.2em] text-primary mb-4 block">Így néz ki egy eredmény</span>
+<h2 class="text-3xl font-bold text-zinc-50 font-headline">Valós idejű szimulációs output</h2>
+</div>
+<div class="bg-surface-container-high rounded-xl p-8 border border-outline-variant/10 shadow-2xl">
+<!-- Data Header -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+<div class="space-y-4">
+<div class="space-y-1">
+<label class="font-label text-[10px] text-zinc-500 uppercase tracking-wider">Kutatási téma</label>
+<p class="text-xl font-medium text-zinc-100">Érdemes-e 15%-os áremelést végrehajtani a prémium szegmensben?</p>
+</div>
+<div class="space-y-1">
+<label class="font-label text-[10px] text-zinc-500 uppercase tracking-wider">Célközönség</label>
+<p class="text-zinc-300">KKV marketing döntéshozók</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-start">
+<div class="bg-tertiary-container/10 border border-tertiary-container/30 px-4 py-2 rounded-lg flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-tertiary-container text-sm">warning</span>
+<span class="font-label text-xs font-bold text-tertiary-container uppercase tracking-tight">⚠ 9/18 elutasítja — megosztott eredmény</span>
+</div>
+<div class="w-full max-w-xs space-y-2">
+<div class="flex justify-between font-label text-[10px] text-zinc-400">
+<span>TÁMOGATJA (50%)</span>
+<span>ELLENZI (50%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full flex overflow-hidden">
+<div class="h-full bg-primary" style="width: 50%"></div>
+<div class="h-full bg-error-dim" style="width: 50%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Persona Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Reject -->
+<div class="p-6 rounded-xl bg-surface-container border-l-4 border-error-dim/40 space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h4 class="text-zinc-100 font-bold text-sm">Kovács Péter</h4>
+<p class="text-[10px] font-label text-error-dim uppercase font-bold">Elutasítva</p>
+</div>
+</div>
+<p class="text-sm text-zinc-400 italic leading-relaxed">
+                            "Ebben a gazdasági környezetben a 15% már az a lélektani határ, ami miatt elkezdenénk alternatívákat keresni. A hűségünk nem végtelen."
+                        </p>
+</div>
+<!-- Conditional -->
+<div class="p-6 rounded-xl bg-surface-container border-l-4 border-primary/40 space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h4 class="text-zinc-100 font-bold text-sm">Nagy Eszter</h4>
+<p class="text-[10px] font-label text-primary uppercase font-bold">Feltételes</p>
+</div>
+</div>
+<p class="text-sm text-zinc-400 italic leading-relaxed">
+                            "Csak akkor fogadható el, ha a szolgáltatás minősége vagy az ügyfélszolgálat elérhetősége is arányosan javul a következő negyedévben."
+                        </p>
+</div>
+<!-- Support -->
+<div class="p-6 rounded-xl bg-surface-container border-l-4 border-emerald-500/40 space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h4 class="text-zinc-100 font-bold text-sm">Horváth Gábor</h4>
+<p class="text-[10px] font-label text-emerald-500 uppercase font-bold">Támogatja</p>
+</div>
+</div>
+<p class="text-sm text-zinc-400 italic leading-relaxed">
+                            "A prémium szegmensben az ár minőségi jelzés is. A versenytársainkhoz képest még így is versenyképesek maradnának."
+                        </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- How It Works -->
+<section class="py-32 px-6">
+<div class="max-w-6xl mx-auto">
+<h2 class="text-4xl font-bold text-center text-zinc-50 font-headline mb-24">Három lépés, 90 másodperc</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-16 relative">
+<!-- Step 1 -->
+<div class="text-center group">
+<div class="w-20 h-20 mx-auto bg-surface-container-high rounded-2xl flex items-center justify-center mb-8 border border-outline-variant/10 group-hover:border-primary/40 transition-colors">
+<span class="material-symbols-outlined text-3xl text-primary" data-weight="fill">post_add</span>
+</div>
+<h3 class="text-xl font-bold text-zinc-50 mb-4 font-headline">Beküldöd</h3>
+<p class="text-zinc-400 font-body leading-relaxed">Add meg a kérdésed és határozd meg a célközönséged paramétereit.</p>
+</div>
+<!-- Step 2 -->
+<div class="text-center group">
+<div class="w-20 h-20 mx-auto bg-surface-container-high rounded-2xl flex items-center justify-center mb-8 border border-outline-variant/10 group-hover:border-primary/40 transition-colors">
+<span class="material-symbols-outlined text-3xl text-primary" data-weight="fill">hub</span>
+</div>
+<h3 class="text-xl font-bold text-zinc-50 mb-4 font-headline">A swarm fut</h3>
+<p class="text-zinc-400 font-body leading-relaxed">15-20 egyedi AI persona szimulálja a döntéshozatali folyamatot valós időben.</p>
+</div>
+<!-- Step 3 -->
+<div class="text-center group">
+<div class="w-20 h-20 mx-auto bg-surface-container-high rounded-2xl flex items-center justify-center mb-8 border border-outline-variant/10 group-hover:border-primary/40 transition-colors">
+<span class="material-symbols-outlined text-3xl text-primary" data-weight="fill">mail</span>
+</div>
+<h3 class="text-xl font-bold text-zinc-50 mb-4 font-headline">Email érkezik</h3>
+<p class="text-zinc-400 font-body leading-relaxed">Az eredményeket és a részletes elemzést azonnal megkapod a fiókodba.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Trust / Stats Bar -->
+<section class="bg-zinc-900 py-12 px-6 border-y border-zinc-800">
+<div class="max-w-7xl mx-auto flex flex-wrap justify-center md:justify-between items-center gap-8 md:gap-4 opacity-70">
+<div class="flex flex-col items-center md:items-start">
+<span class="font-label text-xl text-zinc-100 font-bold">~$0.002</span>
+<span class="font-label text-[10px] text-zinc-500 uppercase tracking-widest">/ futtatás</span>
+</div>
+<div class="h-8 w-px bg-zinc-800 hidden md:block"></div>
+<div class="flex flex-col items-center md:items-start">
+<span class="font-label text-xl text-zinc-100 font-bold">90 másodperc</span>
+<span class="font-label text-[10px] text-zinc-500 uppercase tracking-widest">átlagos várakozás</span>
+</div>
+<div class="h-8 w-px bg-zinc-800 hidden md:block"></div>
+<div class="flex flex-col items-center md:items-start">
+<span class="font-label text-xl text-zinc-100 font-bold">Nincs regisztráció</span>
+<span class="font-label text-[10px] text-zinc-500 uppercase tracking-widest">azonnali hozzáférés</span>
+</div>
+<div class="h-8 w-px bg-zinc-800 hidden md:block"></div>
+<div class="flex flex-col items-center md:items-start">
+<span class="font-label text-xl text-zinc-100 font-bold">15–20 persona</span>
+<span class="font-label text-[10px] text-zinc-500 uppercase tracking-widest">diverz nézőpont</span>
+</div>
+</div>
+</section>
+<!-- Closing CTA -->
+<section class="py-32 px-6 text-center">
+<div class="max-w-3xl mx-auto bg-surface-container-high rounded-3xl p-16 border border-outline-variant/10 relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="text-4xl font-bold text-zinc-50 font-headline mb-8">Teszteld le a következő kampányüzeneted még ma.</h2>
+<button class="bg-primary text-on-primary font-bold text-xl px-12 py-5 rounded-xl hover:bg-primary-dim transition-all mb-6 active:scale-95">
+                    Ingyen kipróbálom
+                </button>
+<p class="text-zinc-500 text-sm font-body">Egy ingyenes futtatás. Nincs hitelkártya.</p>
+</div>
+<!-- Glow background -->
+<div class="absolute -bottom-1/2 left-1/2 -translate-x-1/2 w-full h-full bg-primary/10 rounded-full blur-[80px]"></div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-[#0e0e10] border-t border-zinc-900">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 py-16 w-full max-w-7xl mx-auto">
+<div class="mb-8 md:mb-0">
+<span class="text-lg font-black text-zinc-100 font-headline">SwarmSense</span>
+<p class="font-mono text-[10px] uppercase tracking-widest text-zinc-500 mt-2">© 2026 PRECISION SYNTHETIC INTELLIGENCE.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="font-mono text-[10px] uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-mono text-[10px] uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-mono text-[10px] uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors" href="#">Security</a>
+<a class="font-mono text-[10px] uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+</div>
+</footer>
+</body></html>

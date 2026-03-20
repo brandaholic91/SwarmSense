@@ -1,65 +1,320 @@
-import Image from "next/image";
+import type { CSSProperties } from "react";
+import Link from "next/link";
+import { ArrowRight, FilePlus, Mail, Zap } from "lucide-react";
+
+import { PersonaCard } from "@/components/persona-card";
+import { messages } from "@/lib/messages";
+import {
+  accent,
+  errorDim,
+  onPrimary,
+  onSurface,
+  outlineVariant,
+  surfaceContainer,
+  surfaceContainerHigh,
+  surfaceContainerHighest,
+  surfaceContainerLow,
+  tertiaryContainer,
+  textSecondary,
+} from "@/lib/tokens";
+
+const formatAriaLabel = (template: string, values: Record<string, string>) =>
+  template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? `{${key}}`);
+
+const headlineFont: CSSProperties = { fontFamily: "var(--font-headline)" };
+const labelFont: CSSProperties = { fontFamily: "var(--font-label)" };
+const navBackground = `${surfaceContainer}cc`; // 8-digit hex = 80% opacity, widely supported
 
 export default function Home() {
+  const { landing } = messages;
+  const previewCards = landing.preview.cards;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen w-full" style={{ color: onSurface }}>
+      <nav
+        className="sticky top-0 z-50 w-full border-b backdrop-blur-xl"
+        style={{ backgroundColor: navBackground, borderColor: outlineVariant }}
+      >
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+          <span
+            className="text-lg font-semibold tracking-tight"
+            style={{ ...headlineFont, color: onSurface }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            Swarm<span style={{ color: accent }}>Sense</span>
+          </span>
+          <Link
+            href="/research"
+            className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-semibold"
+            style={{ backgroundColor: accent, color: onPrimary, ...labelFont }}
+          >
+            {landing.nav.cta}
+          </Link>
+        </div>
+      </nav>
+
+      <main className="flex w-full flex-col">
+        <header className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-28">
+          <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
+            <h1
+              className="text-4xl font-bold leading-[1.1] md:text-6xl"
+              style={{ ...headlineFont, color: onSurface }}
+            >
+              {landing.hero.headline}{" "}
+              <span style={{ color: accent }}>{landing.hero.highlight}</span>{" "}
+              {landing.hero.headlineSuffix}
+            </h1>
+            <p
+              className="mt-6 max-w-2xl text-base leading-relaxed md:text-lg"
+              style={{ color: textSecondary }}
+            >
+              {landing.hero.subheadline}
+            </p>
+            <div className="mt-10 flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/research"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-8 py-4 text-base font-semibold sm:w-auto"
+                style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
+              >
+                {landing.hero.cta}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+          <div
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 h-[640px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
+            style={{ backgroundColor: accent, opacity: 0.12 }}
+          />
+        </header>
+
+        <section className="px-6 py-20" style={{ backgroundColor: surfaceContainerLow }}>
+          <div className="mx-auto w-full max-w-6xl">
+            <div className="mb-12 text-center md:text-left">
+              <span
+                className="block text-xs uppercase tracking-[0.2em]"
+                style={{ color: accent, ...labelFont }}
+              >
+                {landing.preview.eyebrow}
+              </span>
+              <h2
+                className="mt-4 text-2xl font-semibold md:text-3xl"
+                style={{ ...headlineFont, color: onSurface }}
+              >
+                {landing.preview.heading}
+              </h2>
+            </div>
+
+            <div
+              className="rounded-2xl border p-6 shadow-2xl"
+              style={{ backgroundColor: surfaceContainerHigh, borderColor: outlineVariant }}
+            >
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div className="space-y-5">
+                  <div>
+                    <p
+                      className="text-[10px] uppercase tracking-[0.2em]"
+                      style={{ color: textSecondary, ...labelFont }}
+                    >
+                      {landing.preview.researchLabel}
+                    </p>
+                    <p className="mt-2 text-lg font-medium" style={{ color: onSurface }}>
+                      {landing.preview.researchValue}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      className="text-[10px] uppercase tracking-[0.2em]"
+                      style={{ color: textSecondary, ...labelFont }}
+                    >
+                      {landing.preview.audienceLabel}
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: textSecondary }}>
+                      {landing.preview.audienceValue}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-5">
+                  <div
+                    className="flex items-center gap-2 rounded-lg border px-4 py-2"
+                    style={{ borderColor: tertiaryContainer, backgroundColor: surfaceContainer }}
+                  >
+                    <span className="text-sm" style={{ color: tertiaryContainer }}>
+                      {landing.preview.consensusLabel}
+                    </span>
+                  </div>
+                  <div className="w-full max-w-xs space-y-2">
+                    <div
+                      className="flex justify-between text-[10px] uppercase tracking-[0.2em]"
+                      style={{ color: textSecondary, ...labelFont }}
+                    >
+                      <span>{landing.preview.supportLabel}</span>
+                      <span>{landing.preview.rejectLabel}</span>
+                    </div>
+                    <div
+                      className="flex h-2 w-full overflow-hidden rounded-full"
+                      style={{ backgroundColor: surfaceContainerHighest }}
+                    >
+                      <div
+                        className="h-full"
+                        style={{
+                          backgroundColor: accent,
+                          width: `${landing.preview.supportPercent}%`,
+                        }}
+                      />
+                      <div
+                        className="h-full"
+                        style={{
+                          backgroundColor: errorDim,
+                          width: `${landing.preview.rejectPercent}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+              {previewCards.map((card) => (
+                <PersonaCard
+                  key={`${card.name}-${card.stance}`}
+                  name={card.name}
+                  role={card.role}
+                  stance={card.stance}
+                  stanceLabel={card.stanceLabel}
+                  summary={card.summary}
+                  variant="compact"
+                  ariaLabel={formatAriaLabel(landing.preview.cardAriaTemplate, {
+                    name: card.name,
+                    stanceLabel: card.stanceLabel,
+                    role: card.role,
+                  })}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-6 py-24">
+          <div className="mx-auto w-full max-w-6xl">
+            <h2
+              className="text-center text-3xl font-semibold md:text-4xl"
+              style={{ ...headlineFont, color: onSurface }}
+            >
+              {landing.howItWorks.heading}
+            </h2>
+            <div className="mt-16 grid grid-cols-1 gap-12 md:grid-cols-3">
+              {landing.howItWorks.steps.map((step, index) => {
+                const icon =
+                  index === 0 ? (
+                    <FilePlus className="h-8 w-8" aria-hidden="true" />
+                  ) : index === 1 ? (
+                    <Zap className="h-8 w-8" aria-hidden="true" />
+                  ) : (
+                    <Mail className="h-8 w-8" aria-hidden="true" />
+                  );
+
+                return (
+                  <div key={step.title} className="flex flex-col items-center text-center">
+                    <div
+                      className="flex h-16 w-16 items-center justify-center rounded-2xl border"
+                      style={{
+                        backgroundColor: surfaceContainerHigh,
+                        borderColor: outlineVariant,
+                        color: accent,
+                      }}
+                    >
+                      {icon}
+                    </div>
+                    <h3
+                      className="mt-6 text-lg font-semibold"
+                      style={{ ...headlineFont, color: onSurface }}
+                    >
+                      {step.title}
+                    </h3>
+                    <p className="mt-3 text-sm" style={{ color: textSecondary }}>
+                      {step.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section
+          className="border-y px-6 py-10"
+          style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
+        >
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-8 opacity-80 md:justify-between">
+            {landing.stats.items.map((item) => (
+              <div key={item.label} className="flex flex-col items-center md:items-start">
+                <span
+                  className="text-lg font-semibold"
+                  style={{ ...labelFont, color: onSurface }}
+                >
+                  {item.value}
+                </span>
+                <span
+                  className="text-[10px] uppercase tracking-[0.2em]"
+                  style={{ color: textSecondary, ...labelFont }}
+                >
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="px-6 py-24 text-center">
+          <div
+            className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl border p-12"
+            style={{ backgroundColor: surfaceContainerHigh, borderColor: outlineVariant }}
+          >
+            <div className="relative z-10">
+              <h2
+                className="text-3xl font-semibold md:text-4xl"
+                style={{ ...headlineFont, color: onSurface }}
+              >
+                {landing.closingCta.heading}
+              </h2>
+              <Link
+                href="/research"
+                className="mt-8 inline-flex w-full items-center justify-center rounded-xl px-10 py-4 text-lg font-semibold sm:w-auto"
+                style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
+              >
+                {landing.closingCta.cta}
+              </Link>
+              <p className="mt-4 text-sm" style={{ color: textSecondary }}>
+                {landing.closingCta.helper}
+              </p>
+            </div>
+            <div
+              aria-hidden="true"
+              className="absolute -bottom-1/2 left-1/2 h-full w-full -translate-x-1/2 rounded-full blur-[90px]"
+              style={{ backgroundColor: accent, opacity: 0.12 }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          </div>
+        </section>
       </main>
+
+      <footer className="border-t px-6 py-12" style={{ borderColor: outlineVariant }}>
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
+          <span
+            className="text-base font-semibold tracking-tight"
+            style={{ ...headlineFont, color: onSurface }}
+          >
+            Swarm<span style={{ color: accent }}>Sense</span>
+          </span>
+          <Link
+            href="/privacy"
+            className="text-[10px] uppercase tracking-[0.3em]"
+            style={{ color: textSecondary, ...labelFont }}
+          >
+            {landing.footer.privacy}
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

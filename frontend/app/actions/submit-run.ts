@@ -19,6 +19,7 @@ export async function submitRunAction({
   hasConsent,
   consentTimestamp,
 }: SubmitRunInput): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
   const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     throw new Error("API_URL is not configured");
@@ -30,7 +31,7 @@ export async function submitRunAction({
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      email,
+      email: normalizedEmail,
       has_consent: hasConsent,
       consent_timestamp: consentTimestamp,
     }),
@@ -43,7 +44,7 @@ export async function submitRunAction({
 
   const data = (await response.json()) as CheckEmailResponse;
   if (data.status === "returning") {
-    redirect("/blocked");
+    redirect(`/blocked?email=${encodeURIComponent(normalizedEmail)}`);
   }
 
   const magicLinkResponse = await fetch(`${apiUrl}/api/v1/auth/magic-link`, {
@@ -52,7 +53,7 @@ export async function submitRunAction({
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      email,
+      email: normalizedEmail,
       has_consent: hasConsent,
       consent_timestamp: consentTimestamp,
     }),

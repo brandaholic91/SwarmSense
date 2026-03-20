@@ -1,6 +1,6 @@
 # Story 3.3: Returning User Blocking Screen & Pro Waitlist CTA
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,38 +20,38 @@ so that I understand my options and can join the Pro waitlist if I'm interested 
 
 ## Tasks / Subtasks
 
-- [ ] Build blocked-state UX with dedicated component and single CTA (AC: 1, 2)
-  - [ ] Create `frontend/components/blocking-screen.tsx` with two explicit states: `default` and `waitlist-submitted`
-  - [ ] Ensure root element uses `role="main"` and heading/description copy is sourced from `frontend/lib/messages.ts`
-  - [ ] Keep exactly one primary CTA button in `default` state; replace button with confirmation copy in `waitlist-submitted`
-  - [ ] Remove/replace current "back to homepage" behavior in `frontend/app/blocked/page.tsx` so screen is conversion-focused
+- [x] Build blocked-state UX with dedicated component and single CTA (AC: 1, 2)
+  - [x] Create `frontend/components/blocking-screen.tsx` with two explicit states: `default` and `waitlist-submitted`
+  - [x] Ensure root element uses `role="main"` and heading/description copy is sourced from `frontend/lib/messages.ts`
+  - [x] Keep exactly one primary CTA button in `default` state; replace button with confirmation copy in `waitlist-submitted`
+  - [x] Remove/replace current "back to homepage" behavior in `frontend/app/blocked/page.tsx` so screen is conversion-focused
 
-- [ ] Carry returning-user email into blocked flow without exposing new client-side DB access (AC: 1, 2, 4)
-  - [ ] Update `frontend/app/actions/submit-run.ts` returning branch to redirect with deterministic handoff contract (recommended: `/blocked?email=...`)
-  - [ ] Parse and validate email on `frontend/app/blocked/page.tsx`; if missing/invalid, render safe error state and disable waitlist submit
-  - [ ] Do not introduce frontend Supabase client usage; all persistence remains backend API only
+- [x] Carry returning-user email into blocked flow without exposing new client-side DB access (AC: 1, 2, 4)
+  - [x] Update `frontend/app/actions/submit-run.ts` returning branch to redirect with deterministic handoff contract (recommended: `/blocked?email=...`)
+  - [x] Parse and validate email on `frontend/app/blocked/page.tsx`; if missing/invalid, render safe error state and disable waitlist submit
+  - [x] Do not introduce frontend Supabase client usage; all persistence remains backend API only
 
-- [ ] Implement waitlist submission endpoint and schema (AC: 3, 4, 5)
-  - [ ] Add migration `supabase/migrations/20260319_005_waitlist.sql` with `waitlist` table (`id`, `email`, `created_at`) and unique email constraint
-  - [ ] Add backend model(s) in `backend/app/models/waitlist.py` (`WaitlistSignupRequest`, `WaitlistSignupResponse`) with input-boundary email normalization
-  - [ ] Add `POST /api/v1/waitlist` in `backend/app/routers/waitlist.py` using service-role Supabase client
-  - [ ] Ensure duplicate emails are idempotent success (`status: "already_joined"` or equivalent stable success contract) instead of 500
-  - [ ] Register waitlist router in `backend/app/main.py` under global `/api/v1` convention
+- [x] Implement waitlist submission endpoint and schema (AC: 3, 4, 5)
+  - [x] Add migration `supabase/migrations/20260319_005_waitlist.sql` with `waitlist` table (`id`, `email`, `created_at`) and unique email constraint
+  - [x] Add backend model(s) in `backend/app/models/waitlist.py` (`WaitlistSignupRequest`, `WaitlistSignupResponse`) with input-boundary email normalization
+  - [x] Add `POST /api/v1/waitlist` in `backend/app/routers/waitlist.py` using service-role Supabase client
+  - [x] Ensure duplicate emails are idempotent success (`status: "already_joined"` or equivalent stable success contract) instead of 500
+  - [x] Register waitlist router in `backend/app/main.py` under global `/api/v1` convention
 
-- [ ] Implement server action and blocked page integration (AC: 2, 4, 5)
-  - [ ] Add `frontend/app/actions/join-waitlist.ts` to call `POST /api/v1/waitlist` with `cache: "no-store"`
-  - [ ] Keep API payload and response fields in `snake_case`
-  - [ ] On successful submit (new or duplicate), transition UI to `waitlist-submitted` state and keep single-focus screen
-  - [ ] Map backend errors to Hungarian user copy through existing error/message patterns (`frontend/lib/errors.ts`, `frontend/lib/messages.ts`)
+- [x] Implement server action and blocked page integration (AC: 2, 4, 5)
+  - [x] Add `frontend/app/actions/join-waitlist.ts` to call `POST /api/v1/waitlist` with `cache: "no-store"`
+  - [x] Keep API payload and response fields in `snake_case`
+  - [x] On successful submit (new or duplicate), transition UI to `waitlist-submitted` state and keep single-focus screen
+  - [x] Map backend errors to Hungarian user copy through existing error/message patterns (`frontend/lib/errors.ts`, `frontend/lib/messages.ts`)
 
-- [ ] Update copy and message catalog with no hardcoded Hungarian strings (AC: 1, 2, 5)
-  - [ ] Add `blockingScreen` message group in `frontend/lib/messages.ts` for heading, body, CTA label, and submitted confirmation text
-  - [ ] Keep wording aligned with UX requirement: informative tone ("mar igenybe vette"), not punitive ("nem jogosult")
+- [x] Update copy and message catalog with no hardcoded Hungarian strings (AC: 1, 2, 5)
+  - [x] Add `blockingScreen` message group in `frontend/lib/messages.ts` for heading, body, CTA label, and submitted confirmation text
+  - [x] Keep wording aligned with UX requirement: informative tone ("mar igenybe vette"), not punitive ("nem jogosult")
 
-- [ ] Add automated tests across backend and frontend (AC: 1-5)
-  - [ ] Backend tests: `backend/tests/routers/test_waitlist.py` for create, duplicate idempotency, invalid email (422), and response shape
-  - [ ] Frontend tests: `frontend/app/blocked/page.test.tsx` and/or `frontend/components/blocking-screen.test.tsx` for CTA visibility, single-action state, and submitted confirmation transition
-  - [ ] Server action tests: `frontend/app/actions/join-waitlist.test.ts` for success, duplicate-success behavior, and failure mapping
+- [x] Add automated tests across backend and frontend (AC: 1-5)
+  - [x] Backend tests: `backend/tests/routers/test_waitlist.py` for create, duplicate idempotency, invalid email (422), and response shape
+  - [x] Frontend tests: `frontend/app/blocked/page.test.tsx` and/or `frontend/components/blocking-screen.test.tsx` for CTA visibility, single-action state, and submitted confirmation transition
+  - [x] Server action tests: `frontend/app/actions/join-waitlist.test.ts` for success, duplicate-success behavior, and failure mapping
 
 ## Dev Notes
 
@@ -123,13 +123,42 @@ openai/gpt-5.3-codex
 
 - `git log -5 --oneline`
 - `git log -5 --name-only --pretty=format:'%h %s'`
+- `pytest`
+- `pnpm test`
+- `pnpm lint`
+- `supabase db push` (fails locally without linked project ref)
 
 ### Completion Notes List
 
 - Story context created with implementation guardrails for frontend blocked conversion flow, backend waitlist API/schema, idempotent duplicate handling, and required tests.
 - Status set to `ready-for-dev`.
+- Replaced static blocked page with conversion-focused `BlockingScreen` that enforces single CTA in `default` state and confirmation-only `waitlist-submitted` state, with all user copy sourced from `messages.blockingScreen`.
+- Extended returning-user handoff in `submitRunAction` to deterministic `/blocked?email=...` redirect, then validated/normalized query email on blocked page and disabled submit for invalid/missing handoff.
+- Added waitlist persistence path end-to-end: Supabase migration `20260319_005_waitlist.sql`, FastAPI models/router, and `/api/v1/waitlist` idempotent duplicate handling (`already_joined`).
+- Added frontend server action `joinWaitlistAction` with `snake_case` payload, `no-store` fetch policy, and backend error-code mapping to Hungarian copy via `frontend/lib/errors.ts`.
+- Added tests: backend router coverage (`test_waitlist.py`), blocked page + component UX coverage, and server action behavior coverage (success, duplicate success, error mapping).
+- Validation complete: `backend pytest`, `frontend pnpm test`, and `frontend pnpm lint` all pass; `supabase db push` could not run in this environment due missing `supabase link` project ref.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/3-3-returning-user-blocking-screen-and-pro-waitlist-cta.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/core/errors.py
+- backend/app/main.py
+- backend/app/models/waitlist.py
+- backend/app/routers/waitlist.py
+- backend/tests/routers/test_waitlist.py
+- frontend/app/actions/join-waitlist.test.ts
+- frontend/app/actions/join-waitlist.ts
+- frontend/app/actions/submit-run.ts
+- frontend/app/blocked/page.test.tsx
+- frontend/app/blocked/page.tsx
+- frontend/components/blocking-screen.test.tsx
+- frontend/components/blocking-screen.tsx
+- frontend/lib/errors.ts
+- frontend/lib/messages.ts
+- supabase/migrations/20260319_005_waitlist.sql
+
+## Change Log
+
+- 2026-03-21: Implemented Story 3.3 blocked conversion flow with waitlist API, migration, deterministic email handoff, and backend/frontend test coverage.

@@ -3,6 +3,7 @@ export const errorMessages = {
   TOKEN_EXPIRED: "A bejelentkezési link lejárt. Kérj újat.",
   TOKEN_INVALID: "A bejelentkezési link érvénytelen. Kérj újat.",
   NO_TOKEN: "Nem érkezett bejelentkezési link. Kérj újat.",
+  WAITLIST_SIGNUP_FAILED: "Most nem sikerult feliratkozni az ertesitore. Kerjuk, probald ujra.",
 } as const;
 
 export type AppErrorCode = keyof typeof errorMessages;

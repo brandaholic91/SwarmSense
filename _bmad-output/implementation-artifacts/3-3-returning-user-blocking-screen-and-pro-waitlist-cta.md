@@ -14,7 +14,7 @@ so that I understand my options and can join the Pro waitlist if I'm interested 
 
 1. Given a returning user submits their email and the DB check confirms their free run has been used, when they are redirected to `/blocked`, then the `BlockingScreen` component is displayed with `role="main"` and the heading: "Ez az emailcim mar igenybe vette az ingyenes probat".
 2. Given a returning user is on `/blocked`, when they view available actions, then a single primary CTA button is visible: "Iratkozz fel az ertesitore" (a `<button>` element, not a link), and no competing actions are shown.
-3. Given a returning user clicks the waitlist CTA, when the Server Action calls `POST /api/v1/waitlist`, then migration `20260319_005_waitlist.sql` has created `waitlist` with columns `id` (UUID PK), `email` (text unique not null), `created_at` (timestamptz default now()).
+3. Given a returning user clicks the waitlist CTA, when the Server Action calls `POST /api/v1/waitlist`, then migration `20260319005_waitlist.sql` has created `waitlist` with columns `id` (UUID PK), `email` (text unique not null), `created_at` (timestamptz default now()).
 4. Given the waitlist submit API is called, when the email is processed, then the email and timestamp are stored in `waitlist` (FR35).
 5. Given the email is already present in `waitlist`, when the submit API is called again, then no duplicate is created and the frontend still transitions to `waitlist-submitted` confirmation state in Hungarian.
 
@@ -32,7 +32,7 @@ so that I understand my options and can join the Pro waitlist if I'm interested 
   - [x] Do not introduce frontend Supabase client usage; all persistence remains backend API only
 
 - [x] Implement waitlist submission endpoint and schema (AC: 3, 4, 5)
-  - [x] Add migration `supabase/migrations/20260319_005_waitlist.sql` with `waitlist` table (`id`, `email`, `created_at`) and unique email constraint
+  - [x] Add migration `supabase/migrations/20260319005_waitlist.sql` with `waitlist` table (`id`, `email`, `created_at`) and unique email constraint
   - [x] Add backend model(s) in `backend/app/models/waitlist.py` (`WaitlistSignupRequest`, `WaitlistSignupResponse`) with input-boundary email normalization
   - [x] Add `POST /api/v1/waitlist` in `backend/app/routers/waitlist.py` using service-role Supabase client
   - [x] Ensure duplicate emails are idempotent success (`status: "already_joined"` or equivalent stable success contract) instead of 500
@@ -76,7 +76,7 @@ so that I understand my options and can join the Pro waitlist if I'm interested 
 - Frontend server action: `frontend/app/actions/join-waitlist.ts`
 - Backend router: `backend/app/routers/waitlist.py`
 - Backend model: `backend/app/models/waitlist.py`
-- Migration: `supabase/migrations/20260319_005_waitlist.sql`
+- Migration: `supabase/migrations/20260319005_waitlist.sql`
 - Tests: `backend/tests/routers/test_waitlist.py`, `frontend/app/blocked/page.test.tsx`, `frontend/app/actions/join-waitlist.test.ts`
 
 ### Testing Requirements
@@ -134,7 +134,7 @@ openai/gpt-5.3-codex
 - Status set to `ready-for-dev`.
 - Replaced static blocked page with conversion-focused `BlockingScreen` that enforces single CTA in `default` state and confirmation-only `waitlist-submitted` state, with all user copy sourced from `messages.blockingScreen`.
 - Extended returning-user handoff in `submitRunAction` to deterministic `/blocked?email=...` redirect, then validated/normalized query email on blocked page and disabled submit for invalid/missing handoff.
-- Added waitlist persistence path end-to-end: Supabase migration `20260319_005_waitlist.sql`, FastAPI models/router, and `/api/v1/waitlist` idempotent duplicate handling (`already_joined`).
+- Added waitlist persistence path end-to-end: Supabase migration `20260319005_waitlist.sql`, FastAPI models/router, and `/api/v1/waitlist` idempotent duplicate handling (`already_joined`).
 - Added frontend server action `joinWaitlistAction` with `snake_case` payload, `no-store` fetch policy, and backend error-code mapping to Hungarian copy via `frontend/lib/errors.ts`.
 - Added tests: backend router coverage (`test_waitlist.py`), blocked page + component UX coverage, and server action behavior coverage (success, duplicate success, error mapping).
 - Validation complete: `backend pytest`, `frontend pnpm test`, and `frontend pnpm lint` all pass; `supabase db push` could not run in this environment due missing `supabase link` project ref.
@@ -157,7 +157,7 @@ openai/gpt-5.3-codex
 - frontend/components/blocking-screen.tsx
 - frontend/lib/errors.ts
 - frontend/lib/messages.ts
-- supabase/migrations/20260319_005_waitlist.sql
+- supabase/migrations/20260319005_waitlist.sql
 
 ### Code Review Record
 
@@ -170,7 +170,7 @@ claude-sonnet-4-6 (3-layer: Blind Hunter, Edge Case Hunter, Acceptance Auditor)
 - P3: `frontend/lib/errors.ts` — `getErrorMessageByCode` fallback generikus üzenetre cserélve (TOKEN_INVALID helyett)
 - P4: `frontend/lib/errors.ts` + `frontend/lib/messages.ts` — összes `blockingScreen` szöveg helyes magyar ékezetekkel javítva
 - P5: `frontend/app/blocked/page.tsx` — `searchParams.email` tömb típus kezelése hozzáadva
-- P6: `supabase/migrations/20260319_005_waitlist.sql` — `waitlist_email_maxlen check (length(email) <= 254)` constraint hozzáadva
+- P6: `supabase/migrations/20260319005_waitlist.sql` — `waitlist_email_maxlen check (length(email) <= 254)` constraint hozzáadva
 - P7: `frontend/app/actions/join-waitlist.ts` — success ág JSON parse try/catch-be csomagolva
 - P8: `frontend/app/actions/join-waitlist.ts` — trailing slash levágása az API_URL-ből
 - P9: `frontend/components/blocking-screen.test.tsx` — `already_joined` → `waitlist-submitted` átmenet tesztesete hozzáadva (AC5)

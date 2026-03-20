@@ -19,11 +19,11 @@ so that the system can deliver my results and I know exactly what I'm agreeing t
 5. Given a visitor submits a valid email with consent checked, when the Server Action calls `POST /api/v1/auth/check-email`, then the email is normalized (`.lower().strip()`) at the FastAPI input boundary before any DB operation.
 6. Given the email DB check returns a result, when the email is new (not in `users` table or no completed run), then the frontend receives a success signal to continue to magic link generation (Story 3.2).
 7. Given the email DB check returns a result, when the email is already in the `users` table with a completed run, then the frontend redirects to `/blocked`.
-8. Given migration `20260319_002_magic_link_tokens.sql` is applied, when the schema is checked, then the `magic_link_tokens` table exists with: `token` (UUID PK), `user_id` (FK → users.id), `expires_at` (timestamptz), `used_at` (timestamptz null), `created_at` (timestamptz default now()), and RLS is active on `magic_link_tokens` (service role only).
+8. Given migration `20260319002_magic_link_tokens.sql` is applied, when the schema is checked, then the `magic_link_tokens` table exists with: `token` (UUID PK), `user_id` (FK → users.id), `expires_at` (timestamptz), `used_at` (timestamptz null), `created_at` (timestamptz default now()), and RLS is active on `magic_link_tokens` (service role only).
 
 ## Tasks / Subtasks
 
-- [x] Create Supabase migration `supabase/migrations/20260319_002_magic_link_tokens.sql` (AC: 8)
+- [x] Create Supabase migration `supabase/migrations/20260319002_magic_link_tokens.sql` (AC: 8)
   - [x] Define `magic_link_tokens` table with: `token` UUID PK, `user_id` FK → users.id, `expires_at` timestamptz, `used_at` timestamptz null, `created_at` timestamptz default now()
   - [x] Enable RLS on `magic_link_tokens` with policy allowing service role only
   - [x] Push migration to local Supabase via `supabase db push`
@@ -68,7 +68,7 @@ so that the system can deliver my results and I know exactly what I'm agreeing t
 
 ### Project Structure Notes
 
-- Migration file: `supabase/migrations/20260319_002_magic_link_tokens.sql`
+- Migration file: `supabase/migrations/20260319002_magic_link_tokens.sql`
 - Backend router: `backend/app/routers/auth.py` (new file; register in `main.py`)
 - Backend models: `backend/app/models/auth.py` (EmailCheckRequest, EmailCheckResponse)
 - Server Action update: `frontend/app/actions/submit-run.ts` (extend existing)
@@ -94,7 +94,7 @@ openai/gpt-5.3-codex
 
 ### Debug Log References
 
-- `supabase db push --local` (applied `20260319_002_magic_link_tokens.sql`)
+- `supabase db push --local` (applied `20260319002_magic_link_tokens.sql`)
 - `pytest` (backend: 15 passed)
 - `pnpm test` (frontend: 22 passed)
 - `pnpm lint` (frontend: passed)
@@ -121,7 +121,7 @@ openai/gpt-5.3-codex
 
 ### File List
 
-- supabase/migrations/20260319_002_magic_link_tokens.sql
+- supabase/migrations/20260319002_magic_link_tokens.sql
 - backend/app/models/__init__.py
 - backend/app/models/auth.py
 - backend/app/routers/auth.py

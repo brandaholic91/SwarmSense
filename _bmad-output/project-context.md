@@ -4,7 +4,7 @@ user_name: 'Balazs'
 date: '2026-03-20'
 sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'quality_rules', 'workflow_rules', 'anti_patterns']
 status: 'complete'
-rule_count: 52
+rule_count: 53
 optimized_for_llm: true
 ---
 
@@ -100,6 +100,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Frontend browser-accessible env vars: `NEXT_PUBLIC_` prefix only — never for API keys
 - Backend files/functions/vars: `snake_case`; Pydantic models: `PascalCase` (`RunCreate`, `PersonaResponse`)
 - DB tables: `snake_case` plural; columns: `snake_case`; FKs: `{table_singular}_id`
+- Supabase migration files: `YYYYMMDDNNN_description.sql` (example: `20260319007_followup_tracking.sql`) — no underscore after date block
 
 **Design Tokens:**
 - All color values defined in `frontend/lib/tokens.ts` as hardcoded hex constants
@@ -189,4 +190,4 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Review periodically for outdated rules
 - Remove rules that become obvious over time
 
-Last Updated: 2026-03-20
+Last Updated: 2026-03-21

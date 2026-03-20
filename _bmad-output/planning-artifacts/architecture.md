@@ -418,10 +418,10 @@ swarmsense/
 │   ├── config.toml
 │   ├── migrations/
 │   │   ├── 20260319_001_users.sql
-│   │   ├── 20260319_002_magic_link_tokens.sql
-│   │   ├── 20260319_003_runs.sql
-│   │   ├── 20260319_004_qualifier_responses.sql
-│   │   ├── 20260319_005_waitlist.sql
+│   │   ├── 20260319002_magic_link_tokens.sql
+│   │   ├── 20260319003_runs.sql
+│   │   ├── 20260319004_qualifier_responses.sql
+│   │   ├── 20260319005_waitlist.sql
 │   │   └── 20260319_006_cost_tracking.sql
 │   └── seed.sql
 │

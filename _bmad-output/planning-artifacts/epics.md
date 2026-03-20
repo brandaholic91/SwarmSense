@@ -391,7 +391,7 @@ So that the system can deliver my results and I know exactly what I'm agreeing t
 **And** if the email is new: the flow continues to magic link generation
 **And** if the email is already in the `users` table with a completed run: the user is redirected to `/blocked`
 
-**Given** a migration `20260319_002_magic_link_tokens.sql` is applied
+**Given** a migration `20260319002_magic_link_tokens.sql` is applied
 **When** the schema is checked
 **Then** the `magic_link_tokens` table exists with: `token` (UUID PK), `user_id` (FK → users.id), `expires_at` (timestamptz), `used_at` (timestamptz null), `created_at` (timestamptz default now())
 **And** RLS is active on `magic_link_tokens` (service role only)
@@ -434,7 +434,7 @@ So that I understand my options and can join the Pro waitlist if I'm interested 
 
 **Given** a returning user clicks the waitlist CTA
 **When** the Server Action calls `POST /api/v1/waitlist`
-**Then** a migration `20260319_005_waitlist.sql` has created the `waitlist` table with: `id` (UUID PK), `email` (text unique not null), `created_at` (timestamptz default now())
+**Then** a migration `20260319005_waitlist.sql` has created the `waitlist` table with: `id` (UUID PK), `email` (text unique not null), `created_at` (timestamptz default now())
 **And** the email and timestamp are stored in the `waitlist` table (FR35)
 **And** the `BlockingScreen` transitions to its `waitlist-submitted` state: the CTA is replaced by a confirmation message in Hungarian
 **And** if the email is already in the waitlist table, no duplicate is created and the confirmation state is still shown
@@ -466,7 +466,7 @@ So that the persona generation can be calibrated to my context without adding si
 **When** the user views Question 2
 **Then** RadioGroup items are full-width with a minimum height of 48px per item
 
-**Given** migrations `20260319_003_runs.sql` and `20260319_004_qualifier_responses.sql` are applied
+**Given** migrations `20260319003_runs.sql` and `20260319004_qualifier_responses.sql` are applied
 **When** the schema is checked
 **Then** the `runs` table exists with: `id` (UUID PK), `user_id` (FK → users.id), `topic` (text), `audience` (text), `status` (text — one of: queued/running/composing/completed/partial/failed), `persona_count` (int null), `cost_usd` (numeric null), `day1_sent` (boolean default false), `day3_sent` (boolean default false), `day7_sent` (boolean default false), `created_at` (timestamptz), `completed_at` (timestamptz null)
 **And** the `qualifier_responses` table exists with: `id` (UUID PK), `run_id` (FK → runs.id), `user_id` (FK → users.id), `role_answer` (text), `use_case_answer` (text), `created_at` (timestamptz)

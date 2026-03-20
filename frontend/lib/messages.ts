@@ -138,6 +138,49 @@ export const messages = {
       },
     },
   },
+  qualifier: {
+    intro: "Segíts kalibrálni a personákat",
+    form: {
+      roleLabel: "Mi jellemzi legjobban a szerepkörét?",
+      rolePlaceholder: "Válassz szerepkört",
+      roleOptions: [
+        { value: "founder_ceo", label: "Alapító / CEO" },
+        { value: "marketing_lead", label: "Marketing vezető" },
+        { value: "product_manager", label: "Termékmenedzser" },
+        { value: "sales_lead", label: "Sales vezető" },
+        { value: "cfo_finance", label: "CFO / Pénzügy" },
+      ],
+      useCaseLabel:
+        "Milyen célra szeretné leginkább használni a szintetikus kutatást?",
+      useCaseOptions: [
+        {
+          value: "message_validation",
+          label: "Üzenetek és pozicionálás validálása",
+          description: "Kampányüzenetek és értékajánlat gyors tesztelése.",
+        },
+        {
+          value: "pricing_decisions",
+          label: "Árazási döntések előkészítése",
+          description: "Árérzékenység és várható reakciók felmérése.",
+        },
+        {
+          value: "feature_prioritization",
+          label: "Termékfeature priorizálás",
+          description: "Mely fejlesztések hoznak valódi üzleti értéket.",
+        },
+        {
+          value: "launch_feedback",
+          label: "Go-to-market és launch visszajelzés",
+          description: "Piaci fogadtatás és kockázatok előzetes becslése.",
+        },
+      ],
+      submitCta: "Elemzés indítása",
+      errors: {
+        roleAnswer: "Válaszd ki a szerepkörödet.",
+        useCaseAnswer: "Válassz egy elsődleges felhasználási célt.",
+      },
+    },
+  },
   qualifierIntro: "Segíts kalibrálni a personákat",
   waiting: {
     states: {

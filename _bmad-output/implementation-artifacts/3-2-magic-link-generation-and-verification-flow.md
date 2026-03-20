@@ -121,7 +121,7 @@ so that I can proceed to the analysis without creating a password.
 - Recent implementation concentrated in:
   - `backend/app/routers/auth.py`, `backend/app/models/auth.py`, `backend/tests/routers/test_auth.py`
   - `frontend/app/actions/submit-run.ts`, `frontend/app/research/page.tsx`
-  - `supabase/migrations/20260319_002_magic_link_tokens.sql`
+  - `supabase/migrations/20260319002_magic_link_tokens.sql`
 - Recommended path: extend these same modules for 3.2 to maintain continuity and avoid duplicate auth flow logic.
 
 ### Latest Tech Information

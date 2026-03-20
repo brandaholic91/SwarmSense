@@ -1,6 +1,6 @@
 # Story 2.1: Landing Page with Value Proposition & Example Result Preview
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -73,6 +73,7 @@ openai/gpt-5.2-codex
 
 - 2026-03-20: Added vitest + jest-axe setup, implemented landing layout and PersonaCard, ran `pnpm test` (Vite CJS deprecation warning).
 - 2026-03-20: Fixed build type error for WebkitBoxOrient and added jest-axe types; `pnpm build` now passes.
+- 2026-03-20: Code review (3-layer: Blind Hunter, Edge Case Hunter, Acceptance Auditor) — 10 patch findings, 6 deferred, 3 rejected. All patches applied; 9/9 tests pass.
 
 ### Completion Notes List
 
@@ -80,6 +81,7 @@ openai/gpt-5.2-codex
 - Landing hero + preview layout implemented with tokens/messages; PersonaCard compact variant added with stance indicators and aria-labels.
 - Tests added for PersonaCard, landing page rendering, and axe critical violations; `pnpm test` passes.
 - Build fixed by typing WebkitBoxOrient style and adding @types/jest-axe; `pnpm build` passes.
+- Code review patches applied: `satisfies PreviewCard[]` type enforcement in messages.ts; `formatAriaLabel` hoisted to module scope; `as` cast removed; `grid-cols-1` added to persona card grid; `stanceColor ?? border` fallback added; unused `toHaveNoViolations` removed from setup.ts; brittle card count test fixed; 4 new tests for support/conditional stance colors and compact/default variant variants. All 9 tests pass.
 
 ### File List
 

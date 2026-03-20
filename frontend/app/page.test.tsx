@@ -16,7 +16,7 @@ describe("Landing page", () => {
     render(<Home />);
 
     const cards = screen.getAllByRole("article");
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(messages.landing.preview.cards.length);
   });
 
   it("reports no critical axe violations", async () => {

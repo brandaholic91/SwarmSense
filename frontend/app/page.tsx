@@ -9,19 +9,12 @@ import {
   trueBlack,
 } from "@/lib/tokens";
 
-export default function Home() {
-  type PersonaCardData = {
-    name: string;
-    role: string;
-    stance: "reject" | "support" | "conditional";
-    stanceLabel: string;
-    summary: string;
-  };
+const formatAriaLabel = (template: string, values: Record<string, string>) =>
+  template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
 
+export default function Home() {
   const { landing } = messages;
-  const personaCards = landing.preview.cards as PersonaCardData[];
-  const formatAriaLabel = (template: string, values: Record<string, string>) =>
-    template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
+  const personaCards = landing.preview.cards;
 
   return (
     <div
@@ -73,7 +66,7 @@ export default function Home() {
             {landing.preview.objection}
           </blockquote>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {personaCards.map((card) => (
               <PersonaCard
                 key={`${card.name}-${card.stance}`}

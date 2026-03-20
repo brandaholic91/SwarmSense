@@ -1,3 +1,11 @@
+type PreviewCard = {
+  name: string;
+  role: string;
+  stance: "reject" | "support" | "conditional";
+  stanceLabel: string;
+  summary: string;
+};
+
 export const messages = {
   landing: {
     hero: {
@@ -15,7 +23,7 @@ export const messages = {
       objection:
         "Ez túl drága a csapatunknak, és nem látjuk a gyors ROI-t.",
       cardAriaTemplate: "{name} - {stanceLabel} - {role}",
-      cards: [
+      cards: ([
         {
           name: "Kovács Réka",
           role: "CFO, 280 fős SaaS",
@@ -40,7 +48,7 @@ export const messages = {
           summary:
             "Érdekes, ha látja a pontos outputot és a bevezetés nem terheli a csapatát.",
         },
-      ],
+      ] satisfies PreviewCard[]),
     },
   },
   emailCaptureNotice: "Az eredményed erre az emailre érkezik",

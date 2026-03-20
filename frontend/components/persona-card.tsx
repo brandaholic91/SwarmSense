@@ -38,7 +38,7 @@ export function PersonaCard({
   variant = "default",
 }: PersonaCardProps) {
   const isCompact = variant === "compact";
-  const stanceColor = stanceColors[stance];
+  const stanceColor = stanceColors[stance] ?? border;
   const summaryStyle: CSSProperties | undefined = isCompact
     ? {
         display: "-webkit-box",

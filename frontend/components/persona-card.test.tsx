@@ -2,7 +2,9 @@ import { render, screen } from "@testing-library/react";
 
 import { PersonaCard } from "@/components/persona-card";
 import {
+  stanceConditional,
   stanceReject,
+  stanceSupport,
   surface,
   textPrimary,
   textSecondary,
@@ -50,5 +52,71 @@ describe("PersonaCard", () => {
 
     const meta = screen.getByText("Termekvezeto");
     expect(meta).toHaveStyle(`color: ${textSecondary}`);
+  });
+
+  it("applies support stance color", () => {
+    render(
+      <PersonaCard
+        name="Varga Daniel"
+        role="PM"
+        stance="support"
+        stanceLabel="Tamogatja"
+        summary="Pozitiv visszajelzes."
+        ariaLabel="Varga Daniel - Tamogatja - PM"
+      />
+    );
+
+    const card = screen.getByLabelText("Varga Daniel - Tamogatja - PM");
+    expect(card).toHaveStyle(`border-left-color: ${stanceSupport}`);
+  });
+
+  it("applies conditional stance color", () => {
+    render(
+      <PersonaCard
+        name="Toth Eszter"
+        role="Marketing"
+        stance="conditional"
+        stanceLabel="Feltételes"
+        summary="Felteteles visszajelzes."
+        ariaLabel="Toth Eszter - Feltételes - Marketing"
+      />
+    );
+
+    const card = screen.getByLabelText("Toth Eszter - Feltételes - Marketing");
+    expect(card).toHaveStyle(`border-left-color: ${stanceConditional}`);
+  });
+
+  it("default variant does not apply line-clamp overflow to summary", () => {
+    render(
+      <PersonaCard
+        name="Test User"
+        role="Engineer"
+        stance="reject"
+        stanceLabel="Elutasitja"
+        summary="Hosszu szoveg."
+        ariaLabel="Test User - Elutasitja - Engineer"
+        variant="default"
+      />
+    );
+
+    const summary = screen.getByText("Hosszu szoveg.");
+    expect(summary).not.toHaveStyle("overflow: hidden");
+  });
+
+  it("compact variant applies line-clamp overflow to summary", () => {
+    render(
+      <PersonaCard
+        name="Test User"
+        role="Engineer"
+        stance="reject"
+        stanceLabel="Elutasitja"
+        summary="Hosszu szoveg."
+        ariaLabel="Test User - Elutasitja - Engineer"
+        variant="compact"
+      />
+    );
+
+    const summary = screen.getByText("Hosszu szoveg.");
+    expect(summary).toHaveStyle("overflow: hidden");
   });
 });

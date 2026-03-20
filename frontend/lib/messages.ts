@@ -160,17 +160,18 @@ export const messages = {
     cta: "Vissza a főoldalra",
   },
   verify: {
-    title: "A link nem hasznalhato",
-    descriptionPrefix: "A bejelentkezesi linkkel problema tortent:",
-    requestNewLinkCta: "Uj link kerese",
+    title: "A link nem használható",
+    descriptionPrefix: "A bejelentkezési linkkel probléma történt:",
+    requestNewLinkCta: "Új link kérése",
+    verifying: "Link ellenőrzése…",
   },
   email: {
     magicLink: {
-      subject: "SwarmSense - Bejelentkezesi link",
-      heading: "Folytasd a SwarmSense elemzest",
-      intro: "Kattints a lenti gombra az azonositashoz.",
-      buttonLabel: "Bejelentkezes magic linkkel",
-      expiry: "Ez a link 24 oran belul lejar.",
+      subject: "SwarmSense – Bejelentkezési link",
+      heading: "Folytasd a SwarmSense elemzést",
+      intro: "Kattints a lenti gombra az azonosításhoz.",
+      buttonLabel: "Bejelentkezés magic linkkel",
+      expiry: "Ez a link 24 órán belül lejár.",
     },
   },
   legal: {

@@ -94,6 +94,15 @@ async def create_magic_link(payload: MagicLinkCreateRequest) -> MagicLinkCreateR
     users = existing_user.data or []
     if users:
         user_id = users[0]["id"]
+        try:
+            # P-11: Update consent for returning user with server-side timestamp
+            supabase.table("users").update(
+                {"has_consent": True, "consent_timestamp": now.isoformat()}
+            ).eq("id", user_id).execute()
+        except Exception as exc:  # pragma: no cover - defensive server error fallback
+            raise HTTPException(
+                status_code=500, detail="Failed to generate magic link"
+            ) from exc
     else:
         try:
             created_user = (
@@ -102,7 +111,7 @@ async def create_magic_link(payload: MagicLinkCreateRequest) -> MagicLinkCreateR
                     {
                         "email": payload.email,
                         "has_consent": True,
-                        "consent_timestamp": payload.consent_timestamp.isoformat(),
+                        "consent_timestamp": now.isoformat(),  # P-6: server-side now()
                     }
                 )
                 .execute()
@@ -121,6 +130,11 @@ async def create_magic_link(payload: MagicLinkCreateRequest) -> MagicLinkCreateR
     expires_at = now + timedelta(hours=24)
 
     try:
+        # P-3: Invalidate existing unused tokens for this user before issuing a new one
+        supabase.table("magic_link_tokens").update(
+            {"used_at": now.isoformat()}
+        ).eq("user_id", user_id).is_("used_at", "null").execute()
+
         supabase.table("magic_link_tokens").insert(
             {
                 "token": token,
@@ -180,8 +194,16 @@ async def verify_magic_link(payload: VerifyTokenRequest):
     if not isinstance(expires_at_raw, str):
         raise HTTPException(status_code=500, detail="Failed to verify token")
 
-    expires_at = datetime.fromisoformat(expires_at_raw.replace("Z", "+00:00"))
+    # P-14: Handle all Postgres timestamptz formats (space separator, Z suffix, offset)
+    expires_at = datetime.fromisoformat(expires_at_raw.replace(" ", "T").replace("Z", "+00:00"))
     if expires_at <= now:
+        # P-10: Mark expired token as used to prevent indefinite replay probing
+        try:
+            supabase.table("magic_link_tokens").update(
+                {"used_at": now.isoformat()}
+            ).eq("token", token).is_("used_at", "null").execute()
+        except Exception:  # pragma: no cover
+            pass  # best-effort; don't block the error response
         return error_response(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Magic link token expired",

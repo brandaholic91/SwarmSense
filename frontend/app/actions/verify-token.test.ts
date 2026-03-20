@@ -63,4 +63,30 @@ describe("verifyTokenAction", () => {
       code: "TOKEN_INVALID",
     });
   });
+
+  it("returns TOKEN_INVALID when fetch throws a network error", async () => {
+    vi.spyOn(global, "fetch").mockRejectedValueOnce(new Error("Failed to fetch"));
+
+    const result = await verifyTokenAction({ token: "token-123" });
+
+    expect(result).toEqual({
+      ok: false,
+      code: "TOKEN_INVALID",
+      detail: "Failed to fetch",
+    });
+  });
+
+  it("returns TOKEN_INVALID when backend returns a non-JSON body", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValueOnce(
+      new Response("Internal Server Error", { status: 500 })
+    );
+
+    const result = await verifyTokenAction({ token: "token-123" });
+
+    expect(result).toEqual({
+      ok: false,
+      code: "TOKEN_INVALID",
+      detail: "Magic link token invalid",
+    });
+  });
 });

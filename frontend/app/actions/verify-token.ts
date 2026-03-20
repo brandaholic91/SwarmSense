@@ -42,14 +42,24 @@ export async function verifyTokenAction({
     throw new Error("API_URL is not configured");
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/auth/verify`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ token }),
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiUrl}/api/v1/auth/verify`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ token }),
+      cache: "no-store",
+    });
+  } catch (err) {
+    // P-4: Handle network errors (timeout, DNS failure, etc.)
+    return {
+      ok: false,
+      code: "TOKEN_INVALID",
+      detail: err instanceof Error ? err.message : "Network error",
+    };
+  }
 
   if (response.ok) {
     const data = (await response.json()) as VerifyResponse;
@@ -59,7 +69,18 @@ export async function verifyTokenAction({
     };
   }
 
-  const errorData = (await response.json()) as VerifyErrorResponse;
+  // P-5: Guard against non-JSON error bodies (5xx from proxy, etc.)
+  let errorData: VerifyErrorResponse;
+  try {
+    errorData = (await response.json()) as VerifyErrorResponse;
+  } catch {
+    return {
+      ok: false,
+      code: "TOKEN_INVALID",
+      detail: "Magic link token invalid",
+    };
+  }
+
   if (errorData.code === "TOKEN_EXPIRED") {
     return {
       ok: false,

@@ -78,6 +78,17 @@ class FakeQuery:
             self._supabase.users_by_email[email] = user_id
             return FakeResponse([{"id": user_id}])
 
+        if self._operation == "update":
+            assert self._payload is not None
+            user_id = self._filters.get("id")
+            if not isinstance(user_id, str):
+                return FakeResponse([])
+            for record in self._supabase.user_records.values():
+                if record.get("id") == user_id:
+                    record.update(self._payload)
+                    return FakeResponse([record])
+            return FakeResponse([])
+
         email = self._filters.get("email")
         self._supabase.last_email_lookup = email
         if not isinstance(email, str):
@@ -112,17 +123,31 @@ class FakeQuery:
 
         if self._operation == "update":
             assert self._payload is not None
-            token = self._filters.get("token")
-            if not isinstance(token, str):
-                return FakeResponse([])
-            token_record = self._supabase.magic_link_tokens.get(token)
-            if token_record is None:
-                return FakeResponse([])
+            token_filter = self._filters.get("token")
+            user_id_filter = self._filters.get("user_id")
             requires_unused = self._is_filters.get("used_at") == "null"
-            if requires_unused and token_record.get("used_at") is not None:
-                return FakeResponse([])
-            token_record.update(self._payload)
-            return FakeResponse([token_record])
+
+            if token_filter is not None:
+                # Single token update (verify path or expired token mark)
+                token_record = self._supabase.magic_link_tokens.get(str(token_filter))
+                if token_record is None:
+                    return FakeResponse([])
+                if requires_unused and token_record.get("used_at") is not None:
+                    return FakeResponse([])
+                token_record.update(self._payload)
+                return FakeResponse([token_record])
+
+            if user_id_filter is not None:
+                # Batch invalidation by user_id (new token issuance path)
+                updated = []
+                for token_record in self._supabase.magic_link_tokens.values():
+                    if token_record.get("user_id") == user_id_filter:
+                        if not requires_unused or token_record.get("used_at") is None:
+                            token_record.update(self._payload)
+                            updated.append(token_record)
+                return FakeResponse(updated)
+
+            return FakeResponse([])
 
         token = self._filters.get("token")
         if not isinstance(token, str):
@@ -301,6 +326,7 @@ def test_magic_link_creates_user_token_and_sends_email(monkeypatch):
         auth_router, "send_magic_link_email", fake_send_magic_link_email
     )
 
+    before = datetime.now(UTC)
     response = client.post(
         "/api/v1/auth/magic-link",
         json={
@@ -309,6 +335,7 @@ def test_magic_link_creates_user_token_and_sends_email(monkeypatch):
             "consent_timestamp": "2026-03-20T18:00:00Z",
         },
     )
+    after = datetime.now(UTC)
 
     assert response.status_code == 200
     assert response.json() == {"status": "sent"}
@@ -316,7 +343,12 @@ def test_magic_link_creates_user_token_and_sends_email(monkeypatch):
     created_user = fake_supabase.user_records.get("teszt@example.hu")
     assert created_user is not None
     assert created_user["has_consent"] is True
-    assert created_user["consent_timestamp"] == "2026-03-20T18:00:00+00:00"
+    # P-6: consent_timestamp must be server-side now(), not the request payload value
+    stored_ts = datetime.fromisoformat(str(created_user["consent_timestamp"]))
+    if stored_ts.tzinfo is None:
+        stored_ts = stored_ts.replace(tzinfo=UTC)
+    assert stored_ts >= before
+    assert stored_ts <= after
 
     assert len(fake_supabase.magic_link_tokens) == 1
     token_record = list(fake_supabase.magic_link_tokens.values())[0]
@@ -415,3 +447,114 @@ def test_verify_returns_token_invalid_for_used_or_unknown_token(monkeypatch):
         "detail": "Magic link token invalid",
         "code": "TOKEN_INVALID",
     }
+
+
+def test_magic_link_uses_server_side_consent_timestamp(monkeypatch):
+    fake_supabase = FakeSupabase(users_by_email={}, users_with_completed_runs=set())
+    client = build_client(monkeypatch, fake_supabase)
+    import app.routers.auth as auth_router
+
+    monkeypatch.setattr(auth_router, "send_magic_link_email", lambda *a: None)
+
+    before = datetime.now(UTC)
+    client.post(
+        "/api/v1/auth/magic-link",
+        json={
+            "email": "new@example.com",
+            "has_consent": True,
+            "consent_timestamp": "2020-01-01T00:00:00Z",  # old payload timestamp
+        },
+    )
+    after = datetime.now(UTC)
+
+    created_user = fake_supabase.user_records.get("new@example.com")
+    assert created_user is not None
+    stored_ts = datetime.fromisoformat(str(created_user["consent_timestamp"]))
+    if stored_ts.tzinfo is None:
+        stored_ts = stored_ts.replace(tzinfo=UTC)
+    assert before <= stored_ts <= after
+
+
+def test_magic_link_invalidates_existing_unused_tokens(monkeypatch):
+    old_token = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    fake_supabase = FakeSupabase(
+        users_by_email={"user@example.com": "user-1"},
+        users_with_completed_runs=set(),
+        magic_link_tokens={
+            old_token: {
+                "token": old_token,
+                "user_id": "user-1",
+                "expires_at": (datetime.now(UTC) + timedelta(hours=12)).isoformat(),
+                "used_at": None,
+            }
+        },
+    )
+    client = build_client(monkeypatch, fake_supabase)
+    import app.routers.auth as auth_router
+
+    monkeypatch.setattr(auth_router, "send_magic_link_email", lambda *a: None)
+
+    response = client.post(
+        "/api/v1/auth/magic-link",
+        json={
+            "email": "user@example.com",
+            "has_consent": True,
+            "consent_timestamp": "2026-03-20T18:00:00Z",
+        },
+    )
+
+    assert response.status_code == 200
+    assert fake_supabase.magic_link_tokens[old_token]["used_at"] is not None
+    assert len(fake_supabase.magic_link_tokens) == 2
+
+
+def test_magic_link_updates_returning_user_consent(monkeypatch):
+    fake_supabase = FakeSupabase(
+        users_by_email={"returning@example.com": "user-5"},
+        users_with_completed_runs=set(),
+    )
+    client = build_client(monkeypatch, fake_supabase)
+    import app.routers.auth as auth_router
+
+    monkeypatch.setattr(auth_router, "send_magic_link_email", lambda *a: None)
+
+    before = datetime.now(UTC)
+    response = client.post(
+        "/api/v1/auth/magic-link",
+        json={
+            "email": "returning@example.com",
+            "has_consent": True,
+            "consent_timestamp": "2026-03-20T18:00:00Z",
+        },
+    )
+    after = datetime.now(UTC)
+
+    assert response.status_code == 200
+    user = fake_supabase.user_records["returning@example.com"]
+    stored_ts = datetime.fromisoformat(str(user["consent_timestamp"]))
+    if stored_ts.tzinfo is None:
+        stored_ts = stored_ts.replace(tzinfo=UTC)
+    assert before <= stored_ts <= after
+
+
+def test_verify_marks_expired_token_as_used(monkeypatch):
+    token = "55555555-5555-4555-8555-555555555555"
+    fake_supabase = FakeSupabase(
+        users_by_email={"user@example.com": "user-1"},
+        users_with_completed_runs=set(),
+        magic_link_tokens={
+            token: {
+                "token": token,
+                "user_id": "user-1",
+                "expires_at": (datetime.now(UTC) - timedelta(minutes=1)).isoformat(),
+                "used_at": None,
+            }
+        },
+    )
+    client = build_client(monkeypatch, fake_supabase)
+
+    response = client.post("/api/v1/auth/verify", json={"token": token})
+
+    assert response.status_code == 401
+    assert response.json()["code"] == "TOKEN_EXPIRED"
+    assert fake_supabase.magic_link_tokens[token]["used_at"] is not None

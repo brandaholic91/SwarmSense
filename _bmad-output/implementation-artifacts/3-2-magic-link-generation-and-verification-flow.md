@@ -157,9 +157,19 @@ openai/gpt-5.3-codex
 
 - Implemented `POST /api/v1/auth/magic-link` and `POST /api/v1/auth/verify` with UUID v4 token lifecycle, 24-hour expiry, single-use enforcement, and structured token error codes.
 - Added Resend-backed magic-link dispatch service plus sender/reply-to config wiring (`SWARMSENSE_RESEND_API_KEY`, `SWARMSENSE_EMAIL_FROM`, `SWARMSENSE_EMAIL_REPLY_TO`).
-- Added frontend verify flow with Server Action integration, `/verify` page redirect contract to `/qualifier?user_id=...`, and Hungarian full-screen fallback state with "Új link kérése" CTA.
+- Added frontend verify flow with client-side `VerifyClient` component (P-1: prevents bot token burn during SSR), `/verify` page redirect contract to `/qualifier?user_id=...`, and Hungarian full-screen fallback state with "Új link kérése" CTA.
 - Added/updated automated tests for backend token creation and validation logic, frontend verify success/error rendering, and error payload contract mapping.
-- Executed full backend and frontend test suites plus frontend lint; all checks are green.
+- Code review patches applied (adversarial review, 2026-03-20):
+  - P-3: Invalidate existing unused tokens before inserting new one (prevents token accumulation)
+  - P-6: Use server-side `now` for `consent_timestamp` instead of client-supplied value
+  - P-7: Fixed diacritics in Hungarian email copy (UTF-8 escape sequences → literal characters)
+  - P-8: `resend_api_key` marked required in config (Field(...)); added to test env fixtures
+  - P-10: Expired token marked as used before returning TOKEN_EXPIRED (best-effort cleanup)
+  - P-11: Returning user's `has_consent` / `consent_timestamp` updated on re-request
+  - P-12: Added `NO_TOKEN` to frontend error map; `VerifyClient` initial state computed from token prop (avoids synchronous setState in effect, satisfies ESLint react-hooks/set-state-in-effect)
+  - P-14: Fixed ISO timestamp parsing for Supabase `expires_at` (handles space separator and Z suffix)
+  - Test: `page.test.tsx` mock router returns stable object via `vi.hoisted()` (prevents useEffect infinite loop caused by new object reference on every render)
+- Executed full backend (25/25) and frontend (32/32) test suites plus frontend lint; all checks green.
 
 ### File List
 
@@ -173,11 +183,14 @@ openai/gpt-5.3-codex
 - backend/app/services/__init__.py
 - backend/app/services/email_service.py
 - backend/tests/routers/test_auth.py
+- backend/tests/routers/test_runs.py
+- backend/tests/test_sentry.py
 - frontend/app/actions/submit-run.ts
 - frontend/app/actions/verify-token.test.ts
 - frontend/app/actions/verify-token.ts
 - frontend/app/verify/page.test.tsx
 - frontend/app/verify/page.tsx
+- frontend/app/verify/verify-client.tsx
 - frontend/emails/magic-link-email.tsx
 - frontend/lib/errors.ts
 - frontend/lib/messages.ts
@@ -185,3 +198,4 @@ openai/gpt-5.3-codex
 ### Change Log
 
 - 2026-03-20: Implemented magic-link generation + verification backend flow, connected frontend `/verify` UX and server action, added email template/dispatch path, and expanded backend/frontend tests for AC coverage.
+- 2026-03-20: Applied code review patches (P-3, P-6, P-7, P-8, P-10, P-11, P-12, P-14); fixed test infinite-loop root cause in page.test.tsx; all checks green. Story closed.

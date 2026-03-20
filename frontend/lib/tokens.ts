@@ -1,11 +1,11 @@
-import colors from "tailwindcss/colors";
-
-export const background = colors.zinc[950];
-export const surface = colors.zinc[900];
-export const border = colors.zinc[800];
-export const textPrimary = colors.zinc[50];
-export const textSecondary = colors.zinc[400];
-export const accent = colors.amber[400];
-export const stanceReject = colors.rose[400];
-export const stanceSupport = colors.emerald[400];
-export const stanceConditional = colors.amber[400];
+// Hardcoded hex values for React Email compatibility (no CSS custom property / Tailwind dependency).
+// Must stay in sync with the CSS custom properties in globals.css.
+export const background = "#09090b"; // zinc-950
+export const surface = "#18181b"; // zinc-900
+export const border = "#27272a"; // zinc-800
+export const textPrimary = "#fafafa"; // zinc-50
+export const textSecondary = "#a1a1aa"; // zinc-400
+export const accent = "#fbbf24"; // amber-400
+export const stanceReject = "#fb7185"; // rose-400
+export const stanceSupport = "#34d399"; // emerald-400
+export const stanceConditional = "#fbbf24"; // amber-400

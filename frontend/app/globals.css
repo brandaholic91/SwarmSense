@@ -124,17 +124,6 @@
 }
 
 @layer base {
-  :root {
-    --background: #09090b;
-    --surface: #18181b;
-    --border: #27272a;
-    --text-primary: #fafafa;
-    --text-secondary: #a1a1aa;
-    --accent: #fbbf24;
-    --stance-reject: #fb7185;
-    --stance-support: #34d399;
-    --stance-conditional: #fbbf24;
-  }
   * {
     @apply border-border outline-ring/50;
   }

@@ -1,6 +1,6 @@
 # Story 1.5: Frontend Base Configuration & Monitoring Integration
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -95,9 +95,22 @@ openai/gpt-5.2-codex
 - frontend/lib/errors.ts
 - frontend/lib/messages.ts
 - frontend/lib/tokens.ts
+- frontend/next.config.ts
 - frontend/package.json
+- frontend/sentry.client.config.ts
+- frontend/sentry.server.config.ts
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ### Change Log
 
 - 2026-03-20: Added shared frontend tokens/messages/error mappings, wired Sentry + Plausible, added backend Sentry init + tests, and refreshed env examples; marked story ready for review.
+- 2026-03-20: Code review patches applied (claude-sonnet-4-6):
+  - P-1: Moved frontend Sentry init to sentry.client.config.ts + sentry.server.config.ts; wrapped next.config.ts with withSentryConfig; removed Sentry.init() from layout.tsx
+  - P-2: Added sentry_sdk.is_initialized() guard to _init_sentry() helper extracted from create_app()
+  - P-3: Changed sentry_dsn field type from str|None to AnyHttpUrl|None for startup validation
+  - P-4: Removed duplicate @layer base :root token block from globals.css
+  - P-5: Replaced tailwindcss/colors import in tokens.ts with hardcoded hex values (React Email + Tailwind v4 compatibility)
+  - P-6: Rewrote test_sentry.py to test _init_sentry() directly, eliminating fragile importlib.reload pattern
+  - P-7: Added JSDoc interpolation notices to template strings in messages.ts
+  - P-8: Added genericError key to messages.ts
+  - P-9: Added SWARMSENSE_ENVIRONMENT to backend/.env.example

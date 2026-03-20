@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import importlib
-
 import sentry_sdk
 
 from app.core.config import get_settings
@@ -24,18 +22,21 @@ def test_sentry_init_called_when_dsn_set(monkeypatch) -> None:
     def fake_init(*, dsn=None, **_kwargs):
         calls["dsn"] = dsn
 
+    # Patch before any create_app invocation within this test scope
     monkeypatch.setattr(sentry_sdk, "init", fake_init)
+    monkeypatch.setattr(sentry_sdk, "is_initialized", lambda: False)
     seed_env(monkeypatch)
     monkeypatch.setenv(
         "SWARMSENSE_SENTRY_DSN",
         "https://examplePublicKey@o0.ingest.sentry.io/0",
     )
 
-    import app.main as main
+    # Test _init_sentry directly — avoids re-running module-level app = create_app()
+    from app.main import _init_sentry
 
-    importlib.reload(main)
+    _init_sentry("https://examplePublicKey@o0.ingest.sentry.io/0")
 
-    assert calls["dsn"] == "https://examplePublicKey@o0.ingest.sentry.io/0"
+    assert calls.get("dsn") == "https://examplePublicKey@o0.ingest.sentry.io/0"
 
 
 def test_sentry_init_skipped_without_dsn(monkeypatch) -> None:
@@ -45,11 +46,13 @@ def test_sentry_init_skipped_without_dsn(monkeypatch) -> None:
         called["value"] = True
 
     monkeypatch.setattr(sentry_sdk, "init", fake_init)
+    monkeypatch.setattr(sentry_sdk, "is_initialized", lambda: False)
     seed_env(monkeypatch)
     monkeypatch.delenv("SWARMSENSE_SENTRY_DSN", raising=False)
 
-    import app.main as main
+    # create_app() with no DSN must not call sentry_sdk.init
+    from app.main import create_app
 
-    importlib.reload(main)
+    create_app()
 
     assert called["value"] is False

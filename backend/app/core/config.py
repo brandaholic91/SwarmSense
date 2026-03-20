@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     supabase_service_key: str = Field(...)
     kimi_api_key: str = Field(...)
     operator_api_key: str = Field(...)
-    sentry_dsn: str | None = Field(default=None)
+    sentry_dsn: AnyHttpUrl | None = Field(default=None)
     environment: str = Field(default="development")
     frontend_origin: AnyHttpUrl = Field(...)
 

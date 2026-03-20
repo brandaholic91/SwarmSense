@@ -8,10 +8,16 @@ from app.core.cost_enforcement import cost_enforcement_middleware
 from app.routers import runs, status
 
 
+def _init_sentry(dsn: str) -> None:
+    """Initialize Sentry once. Idempotent — skips if already initialized."""
+    if not sentry_sdk.is_initialized():
+        sentry_sdk.init(dsn=dsn)
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     if settings.sentry_dsn:
-        sentry_sdk.init(dsn=settings.sentry_dsn)
+        _init_sentry(str(settings.sentry_dsn))
     docs_url = None if settings.is_production else "/docs"
     redoc_url = None if settings.is_production else "/redoc"
 

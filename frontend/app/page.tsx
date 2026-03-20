@@ -18,7 +18,7 @@ import {
 } from "@/lib/tokens";
 
 const formatAriaLabel = (template: string, values: Record<string, string>) =>
-  template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
+  template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? `{${key}}`);
 
 export default function Home() {
   const { landing } = messages;
@@ -26,16 +26,21 @@ export default function Home() {
   const [researchTopic, setResearchTopic] = React.useState("");
   const [audienceDescription, setAudienceDescription] = React.useState("");
   const [showEmailCapture, setShowEmailCapture] = React.useState(false);
+  const [email, setEmail] = React.useState("");
   const [errors, setErrors] = React.useState<{
     researchTopic?: string;
     audienceDescription?: string;
+    email?: string;
   }>({});
 
   const isComplete =
     researchTopic.trim().length > 0 && audienceDescription.trim().length > 0;
 
   React.useEffect(() => {
-    if (!isComplete) setShowEmailCapture(false);
+    if (!isComplete) {
+      setShowEmailCapture(false);
+      setErrors({});
+    }
   }, [isComplete]);
 
   const handleBlur = (
@@ -168,7 +173,21 @@ export default function Home() {
           </form>
 
           {showEmailCapture ? (
-            <div className="mx-auto flex w-full max-w-lg flex-col gap-2">
+            <form
+              className="mx-auto flex w-full max-w-lg flex-col gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const trimmed = email.trim();
+                if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    email: landing.form.errors.email,
+                  }));
+                  return;
+                }
+                setErrors((prev) => ({ ...prev, email: undefined }));
+              }}
+            >
               <label className="text-sm font-semibold" htmlFor="email-capture">
                 {landing.form.emailLabel}
               </label>
@@ -176,6 +195,9 @@ export default function Home() {
                 id="email-capture"
                 name="email"
                 type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder={landing.form.emailPlaceholder}
                 className="min-h-[44px]"
                 style={{
@@ -184,10 +206,22 @@ export default function Home() {
                   color: textPrimary,
                 }}
               />
+              {errors.email ? (
+                <p className="text-xs font-semibold" style={{ color: stanceReject }}>
+                  {errors.email}
+                </p>
+              ) : null}
+              <Button
+                type="submit"
+                className="min-h-[44px] px-6 text-base font-extrabold"
+                style={{ backgroundColor: accent, color: trueBlack }}
+              >
+                {landing.form.emailCta}
+              </Button>
               <p className="text-xs" style={{ color: textSecondary }}>
                 {messages.emailCaptureNotice}
               </p>
-            </div>
+            </form>
           ) : null}
         </section>
 

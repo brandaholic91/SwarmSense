@@ -32,9 +32,11 @@ export const messages = {
         "B2B szolgáltató cégek marketing vezetői 100-300 fős szervezetből",
         "SaaS CFO-k, akik költségcsökkentési célokat kaptak 2026-ra",
       ],
+      emailCta: "Eredmény küldése",
       errors: {
         researchTopic: "Add meg a kutatási témát.",
         audienceDescription: "Add meg a célcsoport leírását.",
+        email: "Adj meg érvényes email-címet.",
       },
     },
     preview: {

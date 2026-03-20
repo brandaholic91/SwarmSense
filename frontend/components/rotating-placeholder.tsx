@@ -33,6 +33,13 @@ export function RotatingPlaceholder({
     if ("addEventListener" in mediaQuery) {
       mediaQuery.addEventListener("change", updatePreference);
       return () => mediaQuery.removeEventListener("change", updatePreference);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mediaQuery as any).addListener(updatePreference);
+      return () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (mediaQuery as any).removeListener(updatePreference);
+      };
     }
   }, []);
 
@@ -48,7 +55,7 @@ export function RotatingPlaceholder({
 
     intervalRef.current = window.setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % examples.length);
-    }, intervalMs);
+    }, Math.max(intervalMs, 100));
 
     return () => {
       if (intervalRef.current !== null) {

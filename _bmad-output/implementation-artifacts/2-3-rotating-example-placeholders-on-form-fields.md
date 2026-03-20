@@ -1,6 +1,6 @@
 # Story 2.3: Rotating Example Placeholders on Form Fields
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -84,3 +84,4 @@ openai/gpt-5.2-codex
 ### Change Log
 - 2026-03-20: Added rotating placeholder component, wired landing page, and covered behavior with component tests.
 - 2026-03-20: Fixed build-time type check issue in matchMedia handling and revalidated build/tests/lint.
+- 2026-03-20: Applied code review patches (claude-sonnet-4-6): email capture made functional (controlled state, form wrapper, submit handler, validation); formatAriaLabel fallback changed from "" to "{key}" for missing tokens; legacy addListener cleanup added; intervalMs clamped to min 100ms; isComplete effect now also clears errors; matchMedia mock restored in afterEach; zero-tick focus test and aria-live absence test added; emailCta and errors.email strings added to messages.ts. All tests pass (21/21), lint clean, build successful.

@@ -16,13 +16,17 @@ const setMatchMedia = (matches: boolean) => {
 };
 
 describe("RotatingPlaceholder", () => {
+  let originalMatchMedia: typeof window.matchMedia;
+
   beforeEach(() => {
+    originalMatchMedia = window.matchMedia;
     vi.useFakeTimers();
     setMatchMedia(false);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    window.matchMedia = originalMatchMedia;
   });
 
   it("cycles placeholder examples every 4 seconds", () => {
@@ -80,6 +84,41 @@ describe("RotatingPlaceholder", () => {
     });
 
     expect(field).toHaveAttribute("placeholder", "Sample B");
+  });
+
+  it("stops cycling when focused before any timer tick (zero-tick focus)", () => {
+    render(
+      <RotatingPlaceholder
+        aria-label="Zero tick"
+        examples={["First", "Second", "Third"]}
+      />
+    );
+
+    const field = screen.getByLabelText("Zero tick");
+    expect(field).toHaveAttribute("placeholder", "First");
+
+    fireEvent.focus(field);
+
+    act(() => {
+      vi.advanceTimersByTime(8000);
+    });
+
+    expect(field).toHaveAttribute("placeholder", "First");
+  });
+
+  it("does not add aria-live or role=status to the textarea", () => {
+    const { container } = render(
+      <RotatingPlaceholder
+        aria-label="Accessible field"
+        examples={["One", "Two", "Three"]}
+      />
+    );
+
+    const field = screen.getByLabelText("Accessible field");
+    expect(field).not.toHaveAttribute("aria-live");
+    expect(field).not.toHaveAttribute("role", "status");
+    expect(container.querySelector("[aria-live]")).toBeNull();
+    expect(container.querySelector("[role='status']")).toBeNull();
   });
 
   it("disables cycling when prefers-reduced-motion is enabled", () => {

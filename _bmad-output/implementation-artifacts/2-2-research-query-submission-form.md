@@ -1,6 +1,6 @@
 # Story 2.2: Research Query Submission Form
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -91,3 +91,4 @@ openai/gpt-5.2-codex
 ### Change Log
 
 - 2026-03-20: Implemented the research submission form UI, validation, and email capture stub with supporting components and tests.
+- 2026-03-20: Applied code review patches: fixed aria-disabled (omit on enabled), added maxLength=500 to textareas, focus-visible ring color (#fbbf24) on Input/Textarea, showEmailCapture reset via useEffect, handleBlur reads event.target.value, added missing tests (audienceDescription blur, partial-fill, no-keystroke-validation). All 16 tests pass.

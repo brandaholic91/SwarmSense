@@ -34,9 +34,15 @@ export default function Home() {
   const isComplete =
     researchTopic.trim().length > 0 && audienceDescription.trim().length > 0;
 
-  const handleBlur = (field: "researchTopic" | "audienceDescription") => {
-    const value =
-      field === "researchTopic" ? researchTopic : audienceDescription;
+  React.useEffect(() => {
+    if (!isComplete) setShowEmailCapture(false);
+  }, [isComplete]);
+
+  const handleBlur = (
+    field: "researchTopic" | "audienceDescription",
+    event: React.FocusEvent<HTMLTextAreaElement>
+  ) => {
+    const value = event.target.value;
     const message =
       field === "researchTopic"
         ? landing.form.errors.researchTopic
@@ -103,7 +109,8 @@ export default function Home() {
                   name="researchTopic"
                   value={researchTopic}
                   onChange={(event) => setResearchTopic(event.target.value)}
-                  onBlur={() => handleBlur("researchTopic")}
+                  onBlur={(event) => handleBlur("researchTopic", event)}
+                  maxLength={500}
                   className="min-h-[160px]"
                   style={{
                     backgroundColor: trueBlack,
@@ -130,7 +137,8 @@ export default function Home() {
                   name="audienceDescription"
                   value={audienceDescription}
                   onChange={(event) => setAudienceDescription(event.target.value)}
-                  onBlur={() => handleBlur("audienceDescription")}
+                  onBlur={(event) => handleBlur("audienceDescription", event)}
+                  maxLength={500}
                   className="min-h-[160px]"
                   style={{
                     backgroundColor: trueBlack,
@@ -151,7 +159,7 @@ export default function Home() {
               className="min-h-[44px] px-6 text-base font-extrabold"
               style={{ backgroundColor: accent, color: trueBlack }}
               disabled={!isComplete}
-              aria-disabled={!isComplete ? "true" : "false"}
+              aria-disabled={!isComplete ? "true" : undefined}
             >
               {landing.form.cta}
             </Button>

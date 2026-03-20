@@ -64,7 +64,22 @@ describe("Landing page", () => {
     });
 
     expect(submit).not.toBeDisabled();
-    expect(submit).toHaveAttribute("aria-disabled", "false");
+    expect(submit).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("keeps submit disabled when only one field is filled", () => {
+    render(<Home />);
+
+    const submit = screen.getByRole("button", {
+      name: messages.landing.form.cta,
+    });
+
+    fireEvent.change(screen.getByLabelText(messages.landing.form.researchLabel), {
+      target: { value: "B2B onboarding" },
+    });
+
+    expect(submit).toBeDisabled();
+    expect(submit).toHaveAttribute("aria-disabled", "true");
   });
 
   it("shows inline validation errors on blur only", () => {
@@ -87,6 +102,48 @@ describe("Landing page", () => {
     expect(
       screen.getByText(messages.landing.form.errors.researchTopic)
     ).toBeInTheDocument();
+  });
+
+  it("shows inline validation error for audienceDescription on blur only", () => {
+    render(<Home />);
+
+    const audienceField = screen.getByLabelText(messages.landing.form.audienceLabel);
+
+    expect(
+      screen.queryByText(messages.landing.form.errors.audienceDescription)
+    ).not.toBeInTheDocument();
+
+    fireEvent.blur(audienceField);
+
+    expect(
+      screen.getByText(messages.landing.form.errors.audienceDescription)
+    ).toBeInTheDocument();
+
+    fireEvent.change(audienceField, { target: { value: "SaaS termékvezetők" } });
+
+    expect(
+      screen.getByText(messages.landing.form.errors.audienceDescription)
+    ).toBeInTheDocument();
+  });
+
+  it("does not show validation errors on keystroke without blur", () => {
+    render(<Home />);
+
+    fireEvent.change(
+      screen.getByLabelText(messages.landing.form.researchLabel),
+      { target: { value: "" } }
+    );
+    fireEvent.change(
+      screen.getByLabelText(messages.landing.form.audienceLabel),
+      { target: { value: "" } }
+    );
+
+    expect(
+      screen.queryByText(messages.landing.form.errors.researchTopic)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(messages.landing.form.errors.audienceDescription)
+    ).not.toBeInTheDocument();
   });
 
   it("reveals the email capture stub on submit and preserves values", () => {

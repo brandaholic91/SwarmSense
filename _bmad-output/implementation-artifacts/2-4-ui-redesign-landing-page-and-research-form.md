@@ -1,6 +1,6 @@
 # Story 2.4: UI Redesign — Landing Page and Research Form
 
-Status: ready
+Status: review
 
 ## Story
 
@@ -73,38 +73,38 @@ The Stitch design system ("Zinc Monolith / Silent Authority") introduces a new c
 
 ## Tasks / Subtasks
 
-- [ ] Extend design system tokens and fonts (AC: 1, 2, 3, 4)
-  - [ ] Add new Stitch color tokens to `frontend/lib/tokens.ts` (surfaceContainer, surfaceContainerLow, surfaceContainerHigh, surfaceContainerHighest, onSurface, onPrimary, outlineVariant, errorDim, tertiaryContainer)
-  - [ ] Add new CSS custom properties to `frontend/app/globals.css` `@layer base` block for Tailwind v4 compatibility
-  - [ ] Load Inter and Space Grotesk fonts via `next/font/google` in `frontend/app/layout.tsx`; expose as `--font-headline` and `--font-label` CSS variables; apply to `<html>` element
-  - [ ] Verify `lucide-react` is available (already a shadcn/ui dependency); no new packages needed
+- [x] Extend design system tokens and fonts (AC: 1, 2, 3, 4)
+  - [x] Add new Stitch color tokens to `frontend/lib/tokens.ts` (surfaceContainer, surfaceContainerLow, surfaceContainerHigh, surfaceContainerHighest, onSurface, onPrimary, outlineVariant, errorDim, tertiaryContainer)
+  - [x] Add new CSS custom properties to `frontend/app/globals.css` `@layer base` block for Tailwind v4 compatibility
+  - [x] Load Inter and Space Grotesk fonts via `next/font/google` in `frontend/app/layout.tsx`; expose as `--font-headline` and `--font-label` CSS variables; apply to `<html>` element
+  - [x] Verify `lucide-react` is available (already a shadcn/ui dependency); no new packages needed
 
-- [ ] Build new landing page at `app/page.tsx` (AC: 5–16, 25, 26, 27, 28)
-  - [ ] Replace current `app/page.tsx` content with new Server Component landing page
-  - [ ] Implement sticky nav: logo (left) + "Ingyen kipróbálom" button (right) only — `<Link href="/research">`
-  - [ ] Implement Hero section: headline with amber "90 másodperc" span, subheadline, primary CTA `<Link href="/research">`
-  - [ ] Implement Example Result Preview section: reuse `PersonaCard` component with `variant="compact"` for 3 mock cards; sentiment bar; consensus badge
-  - [ ] Implement How It Works section: 3 steps with lucide-react icons
-  - [ ] Implement Trust Stats Bar: 4 statistics
-  - [ ] Implement Closing CTA section: heading + CTA `<Link href="/research">` + helper note
-  - [ ] Implement Footer: logo + Privacy Policy link only
-  - [ ] Add decorative amber glow blobs as `aria-hidden="true"`
-  - [ ] Add all new Hungarian strings to `frontend/lib/messages.ts`
-  - [ ] Ensure all colors reference `tokens.ts` — no hardcoded hex in JSX
+- [x] Build new landing page at `app/page.tsx` (AC: 5–16, 25, 26, 27, 28)
+  - [x] Replace current `app/page.tsx` content with new Server Component landing page
+  - [x] Implement sticky nav: logo (left) + "Ingyen kipróbálom" button (right) only — `<Link href="/research">`
+  - [x] Implement Hero section: headline with amber "90 másodperc" span, subheadline, primary CTA `<Link href="/research">`
+  - [x] Implement Example Result Preview section: reuse `PersonaCard` component with `variant="compact"` for 3 mock cards; sentiment bar; consensus badge
+  - [x] Implement How It Works section: 3 steps with lucide-react icons
+  - [x] Implement Trust Stats Bar: 4 statistics
+  - [x] Implement Closing CTA section: heading + CTA `<Link href="/research">` + helper note
+  - [x] Implement Footer: logo + Privacy Policy link only
+  - [x] Add decorative amber glow blobs as `aria-hidden="true"`
+  - [x] Add all new Hungarian strings to `frontend/lib/messages.ts`
+  - [x] Ensure all colors reference `tokens.ts` — no hardcoded hex in JSX
 
-- [ ] Build new research form at `app/research/page.tsx` (AC: 17–24, 25, 26, 29)
-  - [ ] Create `frontend/app/research/` directory and `page.tsx` with `"use client"`
-  - [ ] Migrate form state, validation logic, and email capture logic from current `app/page.tsx`
-  - [ ] Apply Stitch visual design: bottom-border focus style, centered layout, `max-w-[600px]`
-  - [ ] Reuse `RotatingPlaceholder` for both textareas
-  - [ ] Apply new font variables (`font-headline`, `font-label`) to appropriate elements
-  - [ ] Add lucide-react icons: `ArrowRight` on submit CTA, `Send` on email CTA, `ShieldCheck` on privacy note, `Info` on PII warning
-  - [ ] Add fixed background gradient blobs as `aria-hidden="true"` decorative elements
-  - [ ] Add new research form strings to `frontend/lib/messages.ts` under `research` key
+- [x] Build new research form at `app/research/page.tsx` (AC: 17–24, 25, 26, 29)
+  - [x] Create `frontend/app/research/` directory and `page.tsx` with `"use client"`
+  - [x] Migrate form state, validation logic, and email capture logic from current `app/page.tsx`
+  - [x] Apply Stitch visual design: bottom-border focus style, centered layout, `max-w-[600px]`
+  - [x] Reuse `RotatingPlaceholder` for both textareas
+  - [x] Apply new font variables (`font-headline`, `font-label`) to appropriate elements
+  - [x] Add lucide-react icons: `ArrowRight` on submit CTA, `Send` on email CTA, `ShieldCheck` on privacy note, `Info` on PII warning
+  - [x] Add fixed background gradient blobs as `aria-hidden="true"` decorative elements
+  - [x] Add new research form strings to `frontend/lib/messages.ts` under `research` key
 
-- [ ] Update and add tests (AC: 30, 31)
-  - [ ] Update `frontend/app/page.test.tsx`: remove form-related tests (form is now at `/research`); add basic landing page render tests (nav CTA present, hero headline present, example result preview present)
-  - [ ] Create `frontend/app/research/page.test.tsx`: submit disabled when fields empty; blur empty field shows error; fill both + submit reveals email capture; email capture microcopy correct
+- [x] Update and add tests (AC: 30, 31)
+  - [x] Update `frontend/app/page.test.tsx`: remove form-related tests (form is now at `/research`); add basic landing page render tests (nav CTA present, hero headline present, example result preview present)
+  - [x] Create `frontend/app/research/page.test.tsx`: submit disabled when fields empty; blur empty field shows error; fill both + submit reveals email capture; email capture microcopy correct
 
 ## Dev Notes
 
@@ -134,3 +134,38 @@ The Stitch design system ("Zinc Monolith / Silent Authority") introduces a new c
 - Project-wide rules (tokens, messages, no shadcn edits): `_bmad-output/project-context.md`
 - Existing PersonaCard component: `frontend/components/persona-card.tsx`
 - Existing RotatingPlaceholder component: `frontend/components/rotating-placeholder.tsx`
+
+## Dev Agent Record
+
+### Implementation Plan
+
+- Extend tokens, CSS variables, and font loading to match Stitch requirements.
+- Rebuild landing page as a Server Component with the new section structure.
+- Create the research page as a Client Component with migrated form logic and new visuals.
+- Update messages and tests to reflect the new routes and copy.
+
+### Debug Log
+
+- 2026-03-20: `pnpm test` (frontend) — passed; React Testing Library emitted act warnings for Link.
+
+### Completion Notes
+
+- Added Stitch color tokens and CSS custom properties; updated font loading to Inter + Space Grotesk.
+- Implemented the redesigned landing page sections and new `/research` form with updated interaction states.
+- Updated message keys and added new tests for landing and research pages.
+
+## File List
+
+- frontend/lib/tokens.ts
+- frontend/app/globals.css
+- frontend/app/layout.tsx
+- frontend/lib/messages.ts
+- frontend/app/page.tsx
+- frontend/app/research/page.tsx
+- frontend/app/page.test.tsx
+- frontend/app/research/page.test.tsx
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+## Change Log
+
+- 2026-03-20: Added Stitch tokens, redesigned landing and research pages, and updated tests.

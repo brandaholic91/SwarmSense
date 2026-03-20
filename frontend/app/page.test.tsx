@@ -1,22 +1,18 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
 
 import Home from "@/app/page";
 import { messages } from "@/lib/messages";
 
 describe("Landing page", () => {
-  it("renders the hero headline and preview stat", () => {
+  it("renders the hero headline and preview content", () => {
     render(<Home />);
 
-    expect(screen.getByText(messages.landing.hero.headline)).toBeInTheDocument();
-    expect(screen.getByText(messages.landing.preview.stat)).toBeInTheDocument();
-  });
-
-  it("shows three persona cards", () => {
-    render(<Home />);
-
-    const cards = screen.getAllByRole("article");
-    expect(cards).toHaveLength(messages.landing.preview.cards.length);
+    const heroText = `${messages.landing.hero.headline} ${messages.landing.hero.highlight} ${messages.landing.hero.headlineSuffix}`;
+    expect(
+      screen.getByRole("heading", { name: heroText })
+    ).toBeInTheDocument();
+    expect(screen.getByText(messages.landing.preview.heading)).toBeInTheDocument();
   });
 
   it("reports no critical axe violations", async () => {
@@ -29,139 +25,10 @@ describe("Landing page", () => {
     expect(critical).toHaveLength(0);
   });
 
-  it("renders the submission form fields and warning", () => {
+  it("renders the nav CTA button", () => {
     render(<Home />);
 
-    expect(
-      screen.getByLabelText(messages.landing.form.researchLabel)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(messages.landing.form.audienceLabel)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(messages.landing.form.piiWarning)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: messages.landing.form.cta })
-    ).toBeInTheDocument();
-  });
-
-  it("disables submit until both fields are filled", () => {
-    render(<Home />);
-
-    const submit = screen.getByRole("button", {
-      name: messages.landing.form.cta,
-    });
-
-    expect(submit).toBeDisabled();
-    expect(submit).toHaveAttribute("aria-disabled", "true");
-
-    fireEvent.change(screen.getByLabelText(messages.landing.form.researchLabel), {
-      target: { value: "B2B onboarding" },
-    });
-    fireEvent.change(screen.getByLabelText(messages.landing.form.audienceLabel), {
-      target: { value: "SaaS termékvezetők" },
-    });
-
-    expect(submit).not.toBeDisabled();
-    expect(submit).not.toHaveAttribute("aria-disabled");
-  });
-
-  it("keeps submit disabled when only one field is filled", () => {
-    render(<Home />);
-
-    const submit = screen.getByRole("button", {
-      name: messages.landing.form.cta,
-    });
-
-    fireEvent.change(screen.getByLabelText(messages.landing.form.researchLabel), {
-      target: { value: "B2B onboarding" },
-    });
-
-    expect(submit).toBeDisabled();
-    expect(submit).toHaveAttribute("aria-disabled", "true");
-  });
-
-  it("shows inline validation errors on blur only", () => {
-    render(<Home />);
-
-    const researchField = screen.getByLabelText(messages.landing.form.researchLabel);
-
-    expect(
-      screen.queryByText(messages.landing.form.errors.researchTopic)
-    ).not.toBeInTheDocument();
-
-    fireEvent.blur(researchField);
-
-    expect(
-      screen.getByText(messages.landing.form.errors.researchTopic)
-    ).toBeInTheDocument();
-
-    fireEvent.change(researchField, { target: { value: "Persona kutatás" } });
-
-    expect(
-      screen.getByText(messages.landing.form.errors.researchTopic)
-    ).toBeInTheDocument();
-  });
-
-  it("shows inline validation error for audienceDescription on blur only", () => {
-    render(<Home />);
-
-    const audienceField = screen.getByLabelText(messages.landing.form.audienceLabel);
-
-    expect(
-      screen.queryByText(messages.landing.form.errors.audienceDescription)
-    ).not.toBeInTheDocument();
-
-    fireEvent.blur(audienceField);
-
-    expect(
-      screen.getByText(messages.landing.form.errors.audienceDescription)
-    ).toBeInTheDocument();
-
-    fireEvent.change(audienceField, { target: { value: "SaaS termékvezetők" } });
-
-    expect(
-      screen.getByText(messages.landing.form.errors.audienceDescription)
-    ).toBeInTheDocument();
-  });
-
-  it("does not show validation errors on keystroke without blur", () => {
-    render(<Home />);
-
-    fireEvent.change(
-      screen.getByLabelText(messages.landing.form.researchLabel),
-      { target: { value: "" } }
-    );
-    fireEvent.change(
-      screen.getByLabelText(messages.landing.form.audienceLabel),
-      { target: { value: "" } }
-    );
-
-    expect(
-      screen.queryByText(messages.landing.form.errors.researchTopic)
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(messages.landing.form.errors.audienceDescription)
-    ).not.toBeInTheDocument();
-  });
-
-  it("reveals the email capture stub on submit and preserves values", () => {
-    render(<Home />);
-
-    const researchField = screen.getByLabelText(messages.landing.form.researchLabel);
-    const audienceField = screen.getByLabelText(messages.landing.form.audienceLabel);
-
-    fireEvent.change(researchField, { target: { value: "Árazási teszt" } });
-    fireEvent.change(audienceField, { target: { value: "Középvállalati CFO-k" } });
-
-    fireEvent.click(
-      screen.getByRole("button", { name: messages.landing.form.cta })
-    );
-
-    expect(screen.getByLabelText(messages.landing.form.emailLabel)).toBeInTheDocument();
-    expect(screen.getByText(messages.emailCaptureNotice)).toBeInTheDocument();
-    expect(researchField).toHaveValue("Árazási teszt");
-    expect(audienceField).toHaveValue("Középvállalati CFO-k");
+    const ctas = screen.getAllByRole("link", { name: messages.landing.nav.cta });
+    expect(ctas.length).toBeGreaterThan(0);
   });
 });

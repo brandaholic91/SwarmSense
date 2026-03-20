@@ -56,7 +56,7 @@ development_status:
   2-1-landing-page-with-value-proposition-and-example-result-preview: done
   2-2-research-query-submission-form: done
   2-3-rotating-example-placeholders-on-form-fields: done
-  2-4-ui-redesign-landing-page-and-research-form: ready-for-dev
+  2-4-ui-redesign-landing-page-and-research-form: review
   epic-2-retrospective: optional
 
   # Epic 3: Email Verification & Access Control

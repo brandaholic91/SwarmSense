@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-headline);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-headline);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -125,6 +125,17 @@
 }
 
 @layer base {
+  :root {
+    --color-surface-container: #19191d;
+    --color-surface-container-low: #131316;
+    --color-surface-container-high: #1f1f24;
+    --color-surface-container-highest: #25252b;
+    --color-on-surface: #e7e4ec;
+    --color-on-primary: #5c3800;
+    --color-outline-variant: #47474e;
+    --color-error-dim: #ba573f;
+    --color-tertiary-container: #f8a010;
+  }
   * {
     @apply border-border outline-ring/50;
   }

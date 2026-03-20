@@ -1,5 +1,5 @@
 # generated: 2026-03-19
-# last_updated: 2026-03-19
+# last_updated: 2026-03-20
 # project: SwarmSense
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-03-19"
-last_updated: "2026-03-20" # story 1-5 done
+last_updated: "2026-03-20" # story 2-4 done
 project: SwarmSense
 project_key: NOKEY
 tracking_system: file-system
@@ -52,10 +52,11 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Landing Page & Research Query Submission
-  epic-2: backlog
-  2-1-landing-page-with-value-proposition-and-example-result-preview: backlog
-  2-2-research-query-submission-form: backlog
-  2-3-rotating-example-placeholders-on-form-fields: backlog
+  epic-2: done
+  2-1-landing-page-with-value-proposition-and-example-result-preview: done
+  2-2-research-query-submission-form: done
+  2-3-rotating-example-placeholders-on-form-fields: done
+  2-4-ui-redesign-landing-page-and-research-form: done
   epic-2-retrospective: optional
 
   # Epic 3: Email Verification & Access Control

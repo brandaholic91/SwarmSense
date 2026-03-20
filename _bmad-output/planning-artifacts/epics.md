@@ -331,6 +331,39 @@ So that I understand what good input looks like and can overcome the "what do I 
 **When** the RotatingPlaceholder is active
 **Then** the cycling animation does not affect screen reader announcements (placeholder is supplemental; the `<label>` is the accessible name)
 
+### Story 2.4: UI Redesign — Landing Page and Research Form
+
+As a visitor,
+I want to experience a polished, professional landing page with a clear CTA that leads to a focused research submission screen,
+So that I immediately understand the product's value and can submit my hypothesis without friction.
+
+**Acceptance Criteria:**
+
+**Given** the Stitch "Zinc Monolith" design is adopted
+**When** the app renders
+**Then** `tokens.ts` contains the new Stitch color tokens and `globals.css` defines corresponding CSS custom properties
+**And** Inter and Space Grotesk fonts are loaded via `next/font/google` in `layout.tsx`
+**And** all Material Symbols icons are replaced with `lucide-react` equivalents
+
+**Given** a visitor navigates to `/`
+**When** the page loads
+**Then** a scrollable landing page renders with: sticky nav (logo + "Ingyen kipróbálom" CTA only), Hero section, Example Result Preview (reusing `PersonaCard` compact variant), How It Works (3 steps), Trust Stats Bar (4 stats), Closing CTA section, and Footer
+**And** all CTA buttons navigate to `/research`
+**And** the page is a React Server Component (no `"use client"`)
+
+**Given** a visitor navigates to `/research`
+**When** the page loads
+**Then** a focused, centered (max-w-[600px]) submission screen renders with "Mi a hipotézised?" heading, two textareas with bottom-border focus style, `RotatingPlaceholder` on both fields, and a full-width amber "Elemzés indítása →" CTA
+**And** after filling both fields and submitting, the email capture section appears inline (no page reload)
+**And** all existing form validation and email capture behavior is preserved
+
+**Given** all new pages use colors and copy
+**When** implemented
+**Then** all color values are imported from `tokens.ts`, all Hungarian strings are in `messages.ts`, no hardcoded hex values or inline strings appear in JSX
+
+> **Reference:** Full acceptance criteria and task breakdown in `_bmad-output/implementation-artifacts/2-4-ui-redesign-landing-page-and-research-form.md`
+> **Stitch source files:** `docs/stitch/stitch/swarmsense_landing_page/code.html`, `docs/stitch/stitch/swarmsense_research_submission/code.html`
+
 ---
 
 ## Epic 3: Email Verification & Access Control

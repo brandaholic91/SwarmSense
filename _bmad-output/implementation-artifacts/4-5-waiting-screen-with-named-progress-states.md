@@ -1,6 +1,6 @@
 # Story 4.5: Waiting Screen with Named Progress States
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -178,3 +178,4 @@ openai/gpt-5.3-codex
 ### Change Log
 
 - 2026-03-21: Implemented Story 4.5 waiting screen end-to-end (backend status endpoint, live progress updates, waiting UI polling/state mapping/accessibility, and test coverage).
+- 2026-03-21: Code review (claude-sonnet-4-6) — applied 11 patches: persona_count float coercion fix, apiBaseUrl empty-string guard, asyncio.to_thread for blocking DB callback, buildUiState explicit branches, as_completed task cancellation cleanup, retry:1, normalizedApiBaseUrl in queryKey, run_id length validation, RUN_STATUSES derived from get_args, aria-label on progressbar, hasShownNoticeRef for delayed notice. All tests green (58 backend, 56 frontend).

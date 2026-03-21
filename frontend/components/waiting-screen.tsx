@@ -100,8 +100,17 @@ function buildUiState(payload: RunStatusResponse | undefined): UiState {
     };
   }
 
+  if (payload.status === "queued") {
+    return {
+      label: waiting.states.queued,
+      status: "queued",
+      current,
+      total,
+    };
+  }
+
   return {
-    label: waiting.states[payload.status],
+    label: waiting.states.composing,
     status: payload.status,
     current,
     total,
@@ -111,12 +120,16 @@ function buildUiState(payload: RunStatusResponse | undefined): UiState {
 function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) {
   const waiting = messages.waiting;
   const [showDelayedNotice, setShowDelayedNotice] = React.useState(false);
+  const hasShownNoticeRef = React.useRef(false);
 
   const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, "");
 
   const query = useQuery<RunStatusResponse>({
-    queryKey: ["run-status", runId],
+    queryKey: ["run-status", runId, normalizedApiBaseUrl],
     queryFn: async () => {
+      if (!normalizedApiBaseUrl) {
+        throw new Error("API base URL is not configured");
+      }
       const endpoint = `${normalizedApiBaseUrl}/api/v1/runs/${encodeURIComponent(runId)}/status`;
       const response = await fetch(endpoint, { cache: "no-store" });
       if (!response.ok) {
@@ -140,7 +153,13 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
       return;
     }
 
+    if (hasShownNoticeRef.current) {
+      setShowDelayedNotice(true);
+      return;
+    }
+
     const timeout = window.setTimeout(() => {
+      hasShownNoticeRef.current = true;
       setShowDelayedNotice(true);
     }, 120_000);
 
@@ -180,6 +199,7 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
           >
             <div
               role="progressbar"
+              aria-label="Elemzés folyamata"
               aria-valuemin={0}
               aria-valuemax={uiState.total}
               aria-valuenow={progressNow}
@@ -229,7 +249,7 @@ export function WaitingScreen(props: WaitingScreenProps) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: false,
+            retry: 1,
           },
         },
       })

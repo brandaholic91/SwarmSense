@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, get_args
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import JSONResponse
@@ -14,14 +14,7 @@ from app.services.run_processor import dispatch_run_processing
 
 router = APIRouter(prefix="/api/v1/runs", tags=["runs"])
 RunStatus = Literal["queued", "running", "composing", "completed", "partial", "failed"]
-RUN_STATUSES: set[str] = {
-    "queued",
-    "running",
-    "composing",
-    "completed",
-    "partial",
-    "failed",
-}
+RUN_STATUSES: frozenset[str] = frozenset(get_args(RunStatus))
 
 
 @router.post("", response_model=RunCreateResponse)
@@ -88,6 +81,12 @@ def create_run(
 
 @router.get("/{run_id}/status", response_model=RunStatusResponse)
 def get_run_status(run_id: str) -> RunStatusResponse | JSONResponse:
+    if not run_id or len(run_id) > 100:
+        return error_response(
+            status_code=404,
+            detail="Run not found",
+            code=ErrorCode.RUN_NOT_FOUND,
+        )
     supabase = get_supabase_client()
     try:
         result = (
@@ -120,7 +119,7 @@ def get_run_status(run_id: str) -> RunStatusResponse | JSONResponse:
         raise HTTPException(status_code=500, detail="Failed to load run status")
 
     persona_count_raw = row_data.get("persona_count")
-    persona_count = int(persona_count_raw) if isinstance(persona_count_raw, int) else 0
+    persona_count = int(persona_count_raw) if isinstance(persona_count_raw, (int, float)) else 0
     updated_at_raw = row_data.get("completed_at") or row_data.get("created_at")
     updated_at = (
         datetime.fromisoformat(updated_at_raw.replace("Z", "+00:00"))

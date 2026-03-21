@@ -300,47 +300,54 @@ async def execute_persona_engine(
     total_cost_usd = 0.0
 
     processed_count = 0
-    for task in asyncio.as_completed(tasks):
-        persona_name = "unknown"
-        try:
-            item = await task
-        except Exception as exc:  # pragma: no cover - defensive fallback
-            item = exc
+    try:
+        for task in asyncio.as_completed(tasks):
+            persona_name = "unknown"
+            try:
+                item = await task
+            except Exception as exc:  # pragma: no cover - defensive fallback
+                item = exc
 
-        if isinstance(item, tuple) and len(item) == 3:
-            _, result_item, cost_usd = item
-            if isinstance(result_item, PersonaResponse):
-                persona_name = result_item.name
-            elif isinstance(result_item, PersonaFailure):
-                persona_name = result_item.persona_name
-        else:
-            result_item, cost_usd = (
-                PersonaFailure(
-                    persona_name=persona_name,
-                    error_code="UNEXPECTED_ENGINE_ERROR",
-                    error_message=str(item),
-                ),
-                0.0,
-            )
-
-        total_cost_usd += max(cost_usd, 0.0)
-
-        if isinstance(result_item, PersonaResponse):
-            responses.append(result_item)
-        elif isinstance(result_item, PersonaFailure):
-            failures.append(result_item)
-        else:
-            failures.append(
-                PersonaFailure(
-                    persona_name=persona_name,
-                    error_code="UNEXPECTED_ENGINE_ERROR",
-                    error_message=str(result_item),
+            if isinstance(item, tuple) and len(item) == 3:
+                _, result_item, cost_usd = item
+                if isinstance(result_item, PersonaResponse):
+                    persona_name = result_item.name
+                elif isinstance(result_item, PersonaFailure):
+                    persona_name = result_item.persona_name
+            else:
+                result_item, cost_usd = (
+                    PersonaFailure(
+                        persona_name=persona_name,
+                        error_code="UNEXPECTED_ENGINE_ERROR",
+                        error_message=str(item),
+                    ),
+                    0.0,
                 )
-            )
 
-        processed_count += 1
-        if on_persona_completed is not None:
-            on_persona_completed(processed_count, len(personas))
+            total_cost_usd += max(cost_usd, 0.0)
+
+            if isinstance(result_item, PersonaResponse):
+                responses.append(result_item)
+            elif isinstance(result_item, PersonaFailure):
+                failures.append(result_item)
+            else:
+                failures.append(
+                    PersonaFailure(
+                        persona_name=persona_name,
+                        error_code="UNEXPECTED_ENGINE_ERROR",
+                        error_message=str(result_item),
+                    )
+                )
+
+            processed_count += 1
+            if on_persona_completed is not None:
+                await asyncio.to_thread(on_persona_completed, processed_count, len(personas))
+    except BaseException:
+        for t in tasks:
+            if not t.done():
+                t.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        raise
 
     handoff_payload = [response.model_dump() for response in responses]
 

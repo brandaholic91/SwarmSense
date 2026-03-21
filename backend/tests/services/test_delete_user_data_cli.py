@@ -11,7 +11,7 @@ def test_cli_rejects_invalid_email(capsys) -> None:
     code = delete_user_data.main(["--email", "invalid", "--confirm"])
 
     captured = json.loads(capsys.readouterr().out)
-    assert code == 2
+    assert code == 1
     assert captured["status"] == "validation_error"
 
 
@@ -20,11 +20,8 @@ def test_cli_requires_confirm(capsys) -> None:
 
     captured = json.loads(capsys.readouterr().out)
     assert code == 2
-    assert captured == {
-        "status": "guard_blocked",
-        "detail": "Deletion requires --confirm",
-        "email": "user@example.com",
-    }
+    assert captured["status"] == "guard_blocked"
+    assert "confirmation" in captured["detail"]
 
 
 def test_cli_executes_dry_run(monkeypatch, capsys) -> None:
@@ -64,3 +61,20 @@ def test_cli_executes_dry_run(monkeypatch, capsys) -> None:
             "users": 1,
         },
     }
+
+
+def test_cli_returns_exit_3_on_runtime_error(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        delete_user_data,
+        "delete_user_data_by_email",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("database policy blocked the operation")
+        ),
+    )
+
+    code = delete_user_data.main(["--email", "user@example.com", "--confirm"])
+
+    captured = json.loads(capsys.readouterr().out)
+    assert code == 3
+    assert captured["status"] == "error"
+    assert "blocked" in captured["detail"]

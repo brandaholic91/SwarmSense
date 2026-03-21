@@ -8,8 +8,9 @@ from app.services import data_deletion_service
 
 
 class FakeResponse:
-    def __init__(self, data: list[dict[str, Any]]):
+    def __init__(self, data: list[dict[str, Any]], count: int | None = None):
         self.data = data
+        self.count = count
 
 
 class FakeQuery:
@@ -19,9 +20,11 @@ class FakeQuery:
         self._operation = "select"
         self._filters_eq: dict[str, Any] = {}
         self._limit: int | None = None
+        self._count_mode: str | None = None
 
-    def select(self, _fields: str):
+    def select(self, _fields: str, count: str | None = None):
         self._operation = "select"
+        self._count_mode = count
         return self
 
     def delete(self):
@@ -45,9 +48,9 @@ class FakeQuery:
         ]
 
         if self._operation == "select":
-            if self._limit is not None:
-                return FakeResponse([dict(row) for row in filtered[: self._limit]])
-            return FakeResponse([dict(row) for row in filtered])
+            total_count = len(filtered) if self._count_mode else None
+            data_result = filtered[: self._limit] if self._limit is not None else filtered
+            return FakeResponse([dict(row) for row in data_result], count=total_count)
 
         self._supabase.tables[self._table_name] = [
             row
@@ -136,6 +139,7 @@ def test_delete_user_data_by_email_dry_run_reports_counts_only(monkeypatch) -> N
         "waitlist": 1,
         "users": 1,
     }
+    # No rows were actually deleted
     assert len(fake_supabase.tables["users"]) == 1
     assert len(fake_supabase.tables["runs"]) == 2
     assert len(fake_supabase.tables["qualifier_responses"]) == 2
@@ -165,6 +169,51 @@ def test_delete_user_data_by_email_is_idempotent_for_missing_user(monkeypatch) -
         "waitlist": 0,
         "users": 0,
     }
+
+
+def test_delete_user_data_by_email_cleans_waitlist_when_user_not_found(
+    monkeypatch,
+) -> None:
+    fake_supabase = FakeSupabase()
+    # Remove the user row but keep the waitlist entry to simulate orphaned PII
+    fake_supabase.tables["users"] = []
+    monkeypatch.setattr(
+        data_deletion_service, "get_supabase_client", lambda: fake_supabase
+    )
+
+    result = data_deletion_service.delete_user_data_by_email(
+        email="user@example.com",
+        confirm=True,
+    )
+
+    assert result.user_found is False
+    assert result.deleted_rows["waitlist"] == 1
+    assert fake_supabase.tables["waitlist"] == []
+
+
+def test_delete_user_data_by_email_raises_when_user_delete_silently_blocked(
+    monkeypatch,
+) -> None:
+    fake_supabase = FakeSupabase()
+    monkeypatch.setattr(
+        data_deletion_service, "get_supabase_client", lambda: fake_supabase
+    )
+
+    # Simulate RLS silently blocking the users DELETE by patching _delete_by
+    original_delete_by = data_deletion_service._delete_by
+
+    def patched_delete_by(supabase, table: str, field: str, value: str) -> int:
+        if table == "users":
+            return 0  # silent block
+        return original_delete_by(supabase, table, field, value)
+
+    monkeypatch.setattr(data_deletion_service, "_delete_by", patched_delete_by)
+
+    with pytest.raises(RuntimeError, match="not deleted"):
+        data_deletion_service.delete_user_data_by_email(
+            email="user@example.com",
+            confirm=True,
+        )
 
 
 def test_delete_user_data_by_email_requires_confirmation() -> None:

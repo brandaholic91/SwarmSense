@@ -4,10 +4,7 @@ import argparse
 import json
 import sys
 
-from app.services.data_deletion_service import (
-    delete_user_data_by_email,
-    normalize_and_validate_email,
-)
+from app.services.data_deletion_service import delete_user_data_by_email
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -33,35 +30,22 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        normalized_email = normalize_and_validate_email(args.email)
-    except ValueError:
-        print(
-            json.dumps(
-                {
-                    "status": "validation_error",
-                    "detail": "Invalid email format",
-                }
-            )
+        result = delete_user_data_by_email(
+            email=args.email,
+            confirm=args.confirm,
+            dry_run=args.dry_run,
         )
-        return 2
+    except ValueError as exc:
+        msg = str(exc)
+        if "confirmation" in msg:
+            print(json.dumps({"status": "guard_blocked", "detail": msg}))
+            return 2
+        print(json.dumps({"status": "validation_error", "detail": msg}))
+        return 1
+    except RuntimeError as exc:
+        print(json.dumps({"status": "error", "detail": str(exc)}))
+        return 3
 
-    if not args.confirm:
-        print(
-            json.dumps(
-                {
-                    "status": "guard_blocked",
-                    "detail": "Deletion requires --confirm",
-                    "email": normalized_email,
-                }
-            )
-        )
-        return 2
-
-    result = delete_user_data_by_email(
-        email=normalized_email,
-        confirm=True,
-        dry_run=args.dry_run,
-    )
     print(
         json.dumps(
             {

@@ -1,6 +1,6 @@
 # Story 5.5: Data Deletion Request Handling
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -14,7 +14,7 @@ so that I can exercise my GDPR right to erasure.
 
 1. Given a user sends a data deletion request email to the operator's designated address, when the operator receives the request, then the Privacy Policy documents the deletion contact email address and the expected response timeline.
 2. Given a deletion request is received, when inbox automation evaluates inbound mail, then an automated acknowledgement email is sent to the requester within 15 minutes (FR33), implemented as an inbox auto-responder (Resend inbound, Gmail filter, or equivalent) without introducing a custom FastAPI endpoint for MVP.
-3. Given a valid deletion request is confirmed, when the operator executes the deletion workflow, then the user's records are deleted from `users`, `runs`, and `qualifier_responses` within 7 calendar days (FR33).
+3. Given a valid deletion request is confirmed, when the operator executes the deletion workflow, then the user's records are deleted from `users`, `runs`, `qualifier_responses`, `magic_link_tokens`, and `waitlist` within 7 calendar days (FR33), leaving no orphaned PII in any table.
 4. Given deletion is completed, when closure communication is sent, then the user receives a deletion completion confirmation email within 7 calendar days.
 5. Given deletion has completed, when the same email address is later submitted in the product flow, then the system treats it as a new first-time user with no blocking and no prior run history.
 
@@ -75,7 +75,7 @@ so that I can exercise my GDPR right to erasure.
 - Primary backend targets:
   - `backend/app/services/` (new deletion workflow module)
   - `backend/tests/services/` (deletion workflow tests)
-  - `backend/tests/routers/test_auth.py` (post-deletion new-user regression)
+  - `backend/tests/routers/test_auth_post_deletion.py` (post-deletion new-user regression)
 - Primary frontend/legal targets:
   - `frontend/app/privacy/page.tsx`
   - `frontend/lib/messages.ts`
@@ -148,6 +148,11 @@ openai/gpt-5.3-codex
 - Replaced privacy placeholder with complete MVP policy sections and FR33 deletion SLA details in `frontend/app/privacy/page.tsx` + `frontend/lib/messages.ts`.
 - Added operations runbook `docs/data-deletion-operations.md` with SLA guardrails, escalation policy, timestamp logging requirements, and exact Hungarian templates.
 - Validation completed: `cd backend && pytest` (88 passed), `cd frontend && pnpm lint` (pass).
+- Code review completed (claude-sonnet-4-6): 3-layer adversarial review (Blind Hunter, Edge Case Hunter, Acceptance Auditor).
+- Applied code review patches: atomicity/error handling wrappers (_count_by/_delete_by helpers), P-2 waitlist cleanup for user_found=False path, P-4 RLS silent-block detection, P-5/P-11 dry-run refactored to count queries, P-6 confirm=args.confirm passthrough, P-7 select("token") removed, P-8 all Hungarian diacritics fixed in messages.ts, P-9 distinct CLI exit codes (1/2/3), P-10 double normalize removed.
+- Added 3 new backend tests (waitlist cleanup when user not found, RLS block detection, CLI exit-3 on RuntimeError).
+- Spec amendments: AC3 updated to include magic_link_tokens and waitlist tables; File Structure Requirements updated to test_auth_post_deletion.py.
+- Post-patch validation: `cd backend && pytest` (91 passed), `cd frontend && pnpm lint` (pass).
 
 ### File List
 
@@ -165,3 +170,4 @@ openai/gpt-5.3-codex
 ### Change Log
 
 - 2026-03-21: Implemented FR33 deletion workflow, operator CLI execution path, policy/runbook updates, and full automated regression coverage for post-deletion first-time-user behavior.
+- 2026-03-21: Applied code review patches (P-1–P-11): error handling, atomicity guards, waitlist PII cleanup, RLS detection, dry-run count refactor, CLI exit codes, Hungarian diacritics. Spec updated (AC3, file structure). 91 tests passing.

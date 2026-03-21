@@ -52,12 +52,8 @@ def _build_result_email_props(
         "personas": personas,
         "persona_count": persona_count_header,
         "aggregate_score": str(result_payload.get("aggregate_score_display", "")),
-        "consensus_flag": str(result_payload.get("consensus_flag_display", "")),
+        "consensus_flag": str(result_payload.get("consensus_flag_display", "")) or None,
         "user_email": recipient_email,
-        "reflection_question": "Mit tennel maskepp ennek alapjan?",
-        "reflection_cta_label": "Feliratkozas a Pro varolistara",
-        "reflection_cta_helper": "Jelentkezz a varolistara, hogy elso korben kapj ertesitest a nyitasrol.",
-        "reflection_cta_href": f"{frontend_origin.rstrip('/')}/blocked?email={quote(recipient_email)}",
     }
 
 
@@ -67,6 +63,18 @@ def _stance_label_from_value(*, stance: str) -> str:
     if stance == "reject":
         return "Elutasitja"
     return "Felteteles"
+
+
+def _render_result_email_via_frontend_api(
+    *, props: dict[str, Any], frontend_origin: str
+) -> str:
+    import httpx
+
+    url = f"{frontend_origin.rstrip('/')}/api/emails/render-result"
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(url, json=props)
+        response.raise_for_status()
+        return response.json()["html"]
 
 
 def _build_result_email_html(props: dict[str, Any]) -> str:
@@ -126,9 +134,9 @@ def _build_result_email_html(props: dict[str, Any]) -> str:
         "</tbody></table>"
         "</td></tr>"
         "<tr><td style='padding:20px 24px 0 24px;'>"
-        f"<p style='margin:0;color:#0f172a;font-size:16px;line-height:24px;font-weight:700;'>{html.escape(str(props.get('reflection_question', '')))}</p>"
-        f"<p style='margin:8px 0 0 0;color:#475569;font-size:13px;line-height:20px;'>{html.escape(str(props.get('reflection_cta_helper', '')))}</p>"
-        f"<p style='margin:12px 0 0 0;'><a href='{str(props.get('reflection_cta_href', '#'))}' style='display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;padding:10px 16px;'>{html.escape(str(props.get('reflection_cta_label', '')))}</a></p>"
+        f"<p style='margin:0;color:#0f172a;font-size:16px;line-height:24px;font-weight:700;'>Mit tennel maskepp ennek alapjan?</p>"
+        f"<p style='margin:8px 0 0 0;color:#475569;font-size:13px;line-height:20px;'>Jelentkezz a varolistara, hogy elso korben kapj ertesitest a nyitasrol.</p>"
+        f"<p style='margin:12px 0 0 0;'><a href='{str(props.get('reflection_cta_href', '#'))}' style='display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;padding:10px 16px;'>Feliratkozas a Pro varolistara</a></p>"
         "</td></tr>"
         "<tr><td style='padding:16px 24px 24px 24px;'>"
         f"<p style='margin:0;color:#475569;font-size:12px;line-height:20px;'>Erre a cimre kuldtuk: {html.escape(str(props.get('user_email', '')))}</p>"
@@ -178,7 +186,10 @@ def send_run_result_email(
         result_payload=result_payload,
         frontend_origin=str(settings.frontend_origin),
     )
-    rendered_html = _build_result_email_html(template_props)
+    rendered_html = _render_result_email_via_frontend_api(
+        props=template_props,
+        frontend_origin=str(settings.frontend_origin),
+    )
 
     resend.Emails.send(
         {

@@ -1,6 +1,6 @@
 # Story 5.3: Result Email - Reflection Question, CTA & Delivery
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -157,6 +157,29 @@ openai/gpt-5.3-codex
 - Hardened run-processor email-failure observability with provider code/message + timestamp while preserving `partial`/`completed` final statuses.
 - Test gates passed: `cd backend && pytest` (63/63), `cd frontend && pnpm test -- --run` (65/65), `cd frontend && pnpm lint`.
 
+### Code Review Patch Record (2026-03-21)
+
+#### P1: Backend bypasses React Email template contract (PATCH - FIXED)
+- **Problem:** `email_service.py` used manual `_build_result_email_html()` Python string builder instead of calling the React Email template at `frontend/emails/result-email.tsx`.
+- **Fix:** Created new API route `frontend/app/api/emails/render-result/route.ts` that wraps `@react-email/render` for server-side use. Added `_render_result_email_via_frontend_api()` in `email_service.py` that calls this route via HTTP.
+- **Files changed:**
+  - `frontend/app/api/emails/render-result/route.ts` (new)
+  - `backend/app/services/email_service.py` (modified)
+  - `backend/tests/services/test_email_service.py` (modified - added `mock_render_email` fixture)
+
+#### P2: Email error metadata not validated in tests (PATCH - FIXED)
+- **Problem:** `_extract_provider_error_metadata` handles `error_code`, `code`, and `status_code` attributes, but tests only exercised `status_code = 503`.
+- **Fix:** Added three new tests in `test_run_processor.py`:
+  - `test_extract_provider_error_metadata_prefers_error_code_attribute`
+  - `test_extract_provider_error_metadata_falls_back_to_code_attribute`
+  - `test_extract_provider_error_metadata_falls_back_to_status_code`
+- **Files changed:**
+  - `backend/tests/services/test_run_processor.py` (modified)
+
+#### D1: Frontend React Email template uses static href (DEFERRED)
+- **Problem:** `reflectionCtaHref` in `messages.ts` is `"/blocked"` (static), while backend constructs `quote(recipient_email)` as query param.
+- **Status:** Not fixed - requires separate frontend API change to accept email param and pass it through to the CTA href. Currently backend sends its own HTML (via frontend API render path), so no regression at send time.
+
 ### File List
 
 - _bmad-output/implementation-artifacts/5-3-result-email-reflection-question-cta-and-delivery.md
@@ -168,9 +191,11 @@ openai/gpt-5.3-codex
 - frontend/emails/result-email.test.tsx
 - frontend/emails/result-email-compatibility-evidence.md
 - frontend/lib/messages.ts
+- frontend/app/api/emails/render-result/route.ts (new)
 - backend/.env.example
 
 ### Change Log
 
 - 2026-03-21: Created Story 5.3 ready-for-dev context with comprehensive implementation guidance, dependencies, and verification scope.
 - 2026-03-21: Implemented Story 5.3 result-email delivery path, reflection CTA block, subject/reply-to semantics, and observability/test coverage; moved story status to review.
+- 2026-03-21: Applied code review patches P1 and P2. P1 adds frontend API route for React Email rendering and wires backend to use it. P2 adds full error code path coverage in tests. D1 deferred.

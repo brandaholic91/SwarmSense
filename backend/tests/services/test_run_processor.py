@@ -380,6 +380,55 @@ def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
     assert fake_supabase.cost_rows[0]["total_usd"] == "2.30"
 
 
+def test_extract_provider_error_metadata_prefers_error_code_attribute(
+    monkeypatch,
+) -> None:
+    _seed_env(monkeypatch)
+    import app.services.run_processor as run_processor
+
+    class FakeResendErrorWithErrorCode(Exception):
+        error_code = "rate_limit_exceeded"
+        status_code = 200
+
+    code, message = run_processor._extract_provider_error_metadata(
+        FakeResendErrorWithErrorCode("daily limit reached")
+    )
+    assert code == "rate_limit_exceeded"
+    assert message == "daily limit reached"
+
+
+def test_extract_provider_error_metadata_falls_back_to_code_attribute(
+    monkeypatch,
+) -> None:
+    _seed_env(monkeypatch)
+    import app.services.run_processor as run_processor
+
+    class FakeResendErrorWithCode(Exception):
+        code = "authentication_failed"
+
+    code, message = run_processor._extract_provider_error_metadata(
+        FakeResendErrorWithCode("invalid API key")
+    )
+    assert code == "authentication_failed"
+    assert message == "invalid API key"
+
+
+def test_extract_provider_error_metadata_falls_back_to_status_code(
+    monkeypatch,
+) -> None:
+    _seed_env(monkeypatch)
+    import app.services.run_processor as run_processor
+
+    class FakeResendErrorWithStatusCode(Exception):
+        status_code = 503
+
+    code, message = run_processor._extract_provider_error_metadata(
+        FakeResendErrorWithStatusCode("service unavailable")
+    )
+    assert code == "503"
+    assert message == "service unavailable"
+
+
 def test_process_run_logs_email_failure_and_preserves_partial_status(
     monkeypatch,
 ) -> None:

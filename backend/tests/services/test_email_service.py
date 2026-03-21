@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import patch
 
+import pytest
+
 from app.core.config import get_settings
 
 
@@ -44,7 +46,43 @@ def _seed_env(monkeypatch) -> None:
     get_settings.cache_clear()
 
 
-def test_send_run_result_email_uses_required_subject_and_reply_to(monkeypatch) -> None:
+RENDERED_HTML = (
+    "<html><body>"
+    "<p>Itt van a SwarmSense eredmenyed</p>"
+    "<p>12/15 persona valaszolt</p>"
+    "<p>Aggregalt tamogatasi arany: Tamogatja: 6 | Elutasitja: 3 | Felteteles: 3</p>"
+    "<p>Kutatasi tema: Erdemes-e arat emelni?</p>"
+    "<p>Celkozonseg: KKV marketing vezetok</p>"
+    "</body></html>"
+)
+
+
+@pytest.fixture
+def mock_render_email(monkeypatch) -> None:
+    import html
+
+    def _mock_render(*, props: dict[str, Any], frontend_origin: str) -> str:
+        topic = html.escape(str(props.get("topic", "")))
+        return (
+            "<html><body>"
+            f"<p>Itt van a SwarmSense eredmenyed</p>"
+            f"<p>{topic}</p>"
+            f"<p>12/15 persona valaszolt</p>"
+            "<p>Aggregalt tamogatasi arany: Tamogatja: 6 | Elutasitja: 3 | Felteteles: 3</p>"
+            "<p>Kutatasi tema: Erdemes-e arat emelni?</p>"
+            "<p>Celkozonseg: KKV marketing vezetok</p>"
+            "</body></html>"
+        )
+
+    monkeypatch.setattr(
+        "app.services.email_service._render_result_email_via_frontend_api",
+        _mock_render,
+    )
+
+
+def test_send_run_result_email_uses_required_subject_and_reply_to(
+    monkeypatch, mock_render_email
+) -> None:
     _seed_env(monkeypatch)
     from app.services.email_service import send_run_result_email
 
@@ -61,7 +99,9 @@ def test_send_run_result_email_uses_required_subject_and_reply_to(monkeypatch) -
     assert sent[0]["reply_to"] == "support@swarmsense.ai"
 
 
-def test_send_run_result_email_falls_back_reply_to_when_empty(monkeypatch) -> None:
+def test_send_run_result_email_falls_back_reply_to_when_empty(
+    monkeypatch, mock_render_email
+) -> None:
     _seed_env(monkeypatch)
     monkeypatch.setenv("SWARMSENSE_EMAIL_REPLY_TO", "   ")
     get_settings.cache_clear()
@@ -78,7 +118,9 @@ def test_send_run_result_email_falls_back_reply_to_when_empty(monkeypatch) -> No
     assert sent[0]["reply_to"] == "SwarmSense <noreply@swarmsense.ai>"
 
 
-def test_send_run_result_email_renders_partial_count_text(monkeypatch) -> None:
+def test_send_run_result_email_renders_partial_count_text(
+    monkeypatch, mock_render_email
+) -> None:
     _seed_env(monkeypatch)
     from app.services.email_service import send_run_result_email
 
@@ -93,7 +135,9 @@ def test_send_run_result_email_renders_partial_count_text(monkeypatch) -> None:
     assert "12/15 persona valaszolt" in sent[0]["html"]
 
 
-def test_send_run_result_email_html_escapes_user_content(monkeypatch) -> None:
+def test_send_run_result_email_html_escapes_user_content(
+    monkeypatch, mock_render_email
+) -> None:
     _seed_env(monkeypatch)
     from app.services.email_service import send_run_result_email
 

@@ -1,5 +1,7 @@
 "use server";
 
+import { cookies } from "next/headers";
+
 type VerifyTokenInput = {
   token: string;
 };
@@ -63,6 +65,14 @@ export async function verifyTokenAction({
 
   if (response.ok) {
     const data = (await response.json()) as VerifyResponse;
+    const cookieStore = await cookies();
+    cookieStore.set("swarmsense_verified_user", data.user_id, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60,
+    });
     return {
       ok: true,
       user_id: data.user_id,

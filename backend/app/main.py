@@ -5,7 +5,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
 from app.core.cost_enforcement import cost_enforcement_middleware
-from app.routers import auth, runs, status, waitlist
+from app.routers import auth, qualifier, runs, status, waitlist
 
 
 def _init_sentry(dsn: str) -> None:
@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(runs.router)
+    app.include_router(qualifier.router)
     app.include_router(auth.router)
     app.include_router(status.router)
     app.include_router(waitlist.router)

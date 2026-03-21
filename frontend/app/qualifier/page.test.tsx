@@ -4,11 +4,22 @@ import QualifierPage from "@/app/qualifier/page";
 import { messages } from "@/lib/messages";
 
 const mockPush = vi.fn();
+const startRunActionMock = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+vi.mock("@/app/actions/start-run", () => ({
+  startRunAction: (...args: unknown[]) => startRunActionMock(...args),
+}));
+
 describe("Qualifier page", () => {
+  beforeEach(() => {
+    mockPush.mockReset();
+    startRunActionMock.mockReset();
+  });
+
   it("renders intro copy and keeps a single disabled primary CTA by default", () => {
     render(<QualifierPage />);
 
@@ -85,7 +96,9 @@ describe("Qualifier page", () => {
     expect(submit).not.toHaveAttribute("aria-disabled");
   });
 
-  it("navigates to /waiting after successful submit", async () => {
+  it("navigates to /waiting/[run_id] after successful submit", async () => {
+    startRunActionMock.mockResolvedValue({ ok: true, run_id: "run-42" });
+
     render(<QualifierPage />);
 
     fireEvent.click(
@@ -101,7 +114,40 @@ describe("Qualifier page", () => {
     fireEvent.submit(screen.getByRole("button", { name: messages.qualifier.form.submitCta }));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/waiting");
+      expect(startRunActionMock).toHaveBeenCalledWith({
+        role_answer: messages.qualifier.form.roleOptions[0].value,
+        use_case_answer: messages.qualifier.form.useCaseOptions[0].value,
+      });
+      expect(mockPush).toHaveBeenCalledWith("/waiting/run-42");
+    });
+  });
+
+  it("shows mapped Hungarian message on 402 cost-limit error code", async () => {
+    startRunActionMock.mockResolvedValue({
+      ok: false,
+      code: "COST_LIMIT_REACHED",
+      detail: "A havi ingyenes kapacitás elérte a határát.",
+    });
+
+    render(<QualifierPage />);
+
+    fireEvent.click(
+      screen.getByRole("combobox", { name: messages.qualifier.form.roleLabel })
+    );
+    fireEvent.click(
+      screen.getByRole("option", { name: messages.qualifier.form.roleOptions[0].label })
+    );
+    fireEvent.click(
+      screen.getByRole("radio", { name: messages.qualifier.form.useCaseOptions[0].label })
+    );
+
+    fireEvent.submit(screen.getByRole("button", { name: messages.qualifier.form.submitCta }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("A havi ingyenes kapacitás elérte a határát.")
+      ).toBeInTheDocument();
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 

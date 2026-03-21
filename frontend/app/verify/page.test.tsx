@@ -34,7 +34,7 @@ describe("VerifyClient", () => {
 
     await waitFor(() => {
       expect(verifyTokenImpl).toHaveBeenCalledWith({ token: "token-7" });
-      expect(mockPush).toHaveBeenCalledWith("/qualifier?user_id=user-7");
+      expect(mockPush).toHaveBeenCalledWith("/qualifier");
     });
   });
 

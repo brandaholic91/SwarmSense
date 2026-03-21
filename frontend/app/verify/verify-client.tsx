@@ -33,7 +33,7 @@ export function VerifyClient({ token }: { token: string }) {
       try {
         const result = await verifyTokenAction({ token });
         if (result.ok) {
-          router.push(`/qualifier?user_id=${encodeURIComponent(result.user_id)}`);
+          router.push("/qualifier");
         } else {
           setState({ status: "error", code: result.code });
         }

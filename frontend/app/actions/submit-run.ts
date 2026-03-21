@@ -1,11 +1,14 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 type SubmitRunInput = {
   email: string;
   hasConsent: boolean;
   consentTimestamp: string;
+  topic: string;
+  audience: string;
 };
 
 type CheckEmailResponse =
@@ -18,12 +21,37 @@ export async function submitRunAction({
   email,
   hasConsent,
   consentTimestamp,
+  topic,
+  audience,
 }: SubmitRunInput): Promise<void> {
   const normalizedEmail = email.trim().toLowerCase();
+  const normalizedTopic = topic.trim();
+  const normalizedAudience = audience.trim();
+
+  if (!normalizedTopic || !normalizedAudience) {
+    throw new Error("Run context is missing");
+  }
+
   const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     throw new Error("API_URL is not configured");
   }
+
+  const cookieStore = await cookies();
+  cookieStore.set(
+    "swarmsense_run_context",
+    JSON.stringify({
+      topic: normalizedTopic,
+      audience: normalizedAudience,
+    }),
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60,
+    }
+  );
 
   const response = await fetch(`${apiUrl}/api/v1/auth/check-email`, {
     method: "POST",

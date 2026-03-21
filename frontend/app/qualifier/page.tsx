@@ -4,6 +4,7 @@ import * as React from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 
+import { startRunAction } from "@/app/actions/start-run";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { getErrorMessageByCode } from "@/lib/errors";
 import { messages } from "@/lib/messages";
 import {
   accent,
@@ -49,6 +51,8 @@ export default function QualifierPage() {
   const router = useRouter();
   const [roleAnswer, setRoleAnswer] = React.useState("");
   const [useCaseAnswer, setUseCaseAnswer] = React.useState("");
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errors, setErrors] = React.useState<Partial<Record<QualifierField, string>>>({});
 
   const roleContainerRef = React.useRef<HTMLDivElement>(null);
@@ -90,7 +94,7 @@ export default function QualifierPage() {
     }, 0);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!isComplete) {
@@ -99,9 +103,19 @@ export default function QualifierPage() {
       return;
     }
 
-    const payload = createQualifierPayload(roleAnswer, useCaseAnswer);
-    void payload; // API call wired in Story 4.2
-    router.push("/waiting");
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    const payload = createQualifierPayload(roleAnswerRef.current, useCaseAnswerRef.current);
+    const result = await startRunAction(payload);
+
+    setIsSubmitting(false);
+    if (!result.ok) {
+      setSubmitError(getErrorMessageByCode(result.code));
+      return;
+    }
+
+    router.push(`/waiting/${encodeURIComponent(result.run_id)}`);
   };
 
   return (
@@ -128,6 +142,11 @@ export default function QualifierPage() {
           </h1>
 
           <form className="space-y-8" onSubmit={handleSubmit}>
+            {submitError ? (
+              <p className="text-sm font-semibold" style={{ color: errorDim }}>
+                {submitError}
+              </p>
+            ) : null}
             <div className="space-y-3">
               <label
                 htmlFor="role-answer"
@@ -231,8 +250,8 @@ export default function QualifierPage() {
               type="submit"
               className="flex w-full items-center justify-center rounded-lg px-6 py-4 text-base font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
-              disabled={!isComplete}
-              aria-disabled={!isComplete ? "true" : undefined}
+              disabled={!isComplete || isSubmitting}
+              aria-disabled={!isComplete || isSubmitting ? "true" : undefined}
             >
               {qualifier.form.submitCta}
             </button>

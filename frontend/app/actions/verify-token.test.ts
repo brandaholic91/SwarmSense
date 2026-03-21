@@ -1,3 +1,11 @@
+const setCookieMock = vi.fn();
+
+vi.mock("next/headers", () => ({
+  cookies: async () => ({
+    set: setCookieMock,
+  }),
+}));
+
 import { verifyTokenAction } from "@/app/actions/verify-token";
 
 describe("verifyTokenAction", () => {
@@ -6,6 +14,7 @@ describe("verifyTokenAction", () => {
   beforeEach(() => {
     process.env.API_URL = "http://localhost:8000";
     vi.restoreAllMocks();
+    setCookieMock.mockReset();
   });
 
   afterAll(() => {

@@ -262,6 +262,8 @@ export default function ResearchPage() {
                         email: trimmed,
                         hasConsent: true,
                         consentTimestamp: new Date().toISOString(),
+                        topic: researchTopic,
+                        audience: audienceDescription,
                       });
                     } catch (error) {
                       if (isRedirectError(error)) {

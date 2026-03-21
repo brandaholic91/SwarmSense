@@ -37,22 +37,6 @@ export async function submitRunAction({
     throw new Error("API_URL is not configured");
   }
 
-  const cookieStore = await cookies();
-  cookieStore.set(
-    "swarmsense_run_context",
-    JSON.stringify({
-      topic: normalizedTopic,
-      audience: normalizedAudience,
-    }),
-    {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60,
-    }
-  );
-
   const response = await fetch(`${apiUrl}/api/v1/auth/check-email`, {
     method: "POST",
     headers: {
@@ -74,6 +58,22 @@ export async function submitRunAction({
   if (data.status === "returning") {
     redirect(`/blocked?email=${encodeURIComponent(normalizedEmail)}`);
   }
+
+  const cookieStore = await cookies();
+  cookieStore.set(
+    "swarmsense_run_context",
+    JSON.stringify({
+      topic: normalizedTopic,
+      audience: normalizedAudience,
+    }),
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60,
+    }
+  );
 
   const magicLinkResponse = await fetch(`${apiUrl}/api/v1/auth/magic-link`, {
     method: "POST",

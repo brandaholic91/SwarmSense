@@ -23,7 +23,7 @@ type RunContext = {
   audience: string;
 };
 
-type RunResponse = {
+type RunSessionResponse = {
   run_id: string;
   status: string;
   created_at: string;
@@ -67,6 +67,11 @@ export async function startRunAction({
     throw new Error("API_URL is not configured");
   }
 
+  const internalSecret = process.env.INTERNAL_SECRET;
+  if (!internalSecret) {
+    throw new Error("INTERNAL_SECRET is not configured");
+  }
+
   const cookieStore = await cookies();
   const userId = cookieStore.get("swarmsense_verified_user")?.value;
   const runContext = parseRunContext(cookieStore.get("swarmsense_run_context")?.value);
@@ -79,21 +84,24 @@ export async function startRunAction({
     };
   }
 
-  const runResponse = await fetch(`${apiUrl}/api/v1/runs`, {
+  const response = await fetch(`${apiUrl}/api/v1/run-sessions`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      "X-Internal-Secret": internalSecret,
     },
     body: JSON.stringify({
       user_id: userId,
       topic: runContext.topic,
       audience: runContext.audience,
+      role_answer: role_answer.trim(),
+      use_case_answer: use_case_answer.trim(),
     }),
     cache: "no-store",
   });
 
-  if (!runResponse.ok) {
-    const errorPayload = (await runResponse.json().catch(() => null)) as ErrorResponse | null;
+  if (!response.ok) {
+    const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
     return {
       ok: false,
       code: errorPayload?.code ?? "RUN_START_FAILED",
@@ -101,32 +109,17 @@ export async function startRunAction({
     };
   }
 
-  const runData = (await runResponse.json()) as RunResponse;
-  const qualifierResponse = await fetch(`${apiUrl}/api/v1/qualifier`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      run_id: runData.run_id,
-      user_id: userId,
-      role_answer: role_answer.trim(),
-      use_case_answer: use_case_answer.trim(),
-    }),
-    cache: "no-store",
-  });
-
-  if (!qualifierResponse.ok) {
-    const errorPayload = (await qualifierResponse.json().catch(() => null)) as ErrorResponse | null;
+  const data = (await response.json()) as RunSessionResponse;
+  if (!data.run_id || typeof data.run_id !== "string") {
     return {
       ok: false,
-      code: errorPayload?.code ?? "QUALIFIER_SAVE_FAILED",
-      detail: errorPayload?.detail ?? "Failed to save qualifier",
+      code: "RUN_START_FAILED",
+      detail: "Failed to start run",
     };
   }
 
   return {
     ok: true,
-    run_id: runData.run_id,
+    run_id: data.run_id,
   };
 }

@@ -106,16 +106,21 @@ export default function QualifierPage() {
     setSubmitError(null);
     setIsSubmitting(true);
 
-    const payload = createQualifierPayload(roleAnswerRef.current, useCaseAnswerRef.current);
-    const result = await startRunAction(payload);
+    try {
+      const payload = createQualifierPayload(roleAnswerRef.current, useCaseAnswerRef.current);
+      const result = await startRunAction(payload);
 
-    setIsSubmitting(false);
-    if (!result.ok) {
-      setSubmitError(getErrorMessageByCode(result.code));
-      return;
+      if (!result.ok) {
+        setSubmitError(getErrorMessageByCode(result.code));
+        return;
+      }
+
+      router.push(`/waiting/${encodeURIComponent(result.run_id)}`);
+    } catch {
+      setSubmitError(getErrorMessageByCode("RUN_START_FAILED"));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.push(`/waiting/${encodeURIComponent(result.run_id)}`);
   };
 
   return (

@@ -82,11 +82,16 @@ class FakeSupabase:
         return FakeQuery(self, name)
 
 
+TEST_INTERNAL_SECRET = "test-internal-secret"
+INTERNAL_SECRET_HEADER = {"X-Internal-Secret": TEST_INTERNAL_SECRET}
+
+
 def build_client(monkeypatch, fake_supabase: FakeSupabase) -> TestClient:
     monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
     monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
+    monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", TEST_INTERNAL_SECRET)
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
     monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
@@ -115,6 +120,7 @@ def test_run_blocked_at_cap_and_no_row_created(monkeypatch):
     response = client.post(
         "/api/v1/runs",
         json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 402
@@ -152,6 +158,7 @@ def test_run_allowed_below_cap_inserts_row_and_dispatches(monkeypatch):
     response = client.post(
         "/api/v1/runs",
         json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 200
@@ -177,6 +184,7 @@ def test_run_allowed_when_no_month_row(monkeypatch):
     response = client.post(
         "/api/v1/runs",
         json={"user_id": "user-2", "topic": "Positioning", "audience": "CMO"},
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 200
@@ -190,9 +198,23 @@ def test_run_payload_validation_failure(monkeypatch):
     response = client.post(
         "/api/v1/runs",
         json={"user_id": "user-3", "topic": "   ", "audience": "SMB"},
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 422
+
+
+def test_run_missing_secret_returns_401(monkeypatch):
+    fake_supabase = FakeSupabase("1.00")
+    client = build_client(monkeypatch, fake_supabase)
+
+    response = client.post(
+        "/api/v1/runs",
+        json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["code"] == "UNAUTHORIZED"
 
 
 def test_qualifier_insert_success(monkeypatch):
@@ -200,18 +222,25 @@ def test_qualifier_insert_success(monkeypatch):
     client = build_client(monkeypatch, fake_supabase)
 
     response = client.post(
-        "/api/v1/qualifier",
+        "/api/v1/qualifier-responses",
         json={
             "run_id": "run-1",
             "user_id": "user-1",
             "role_answer": "founder_ceo",
             "use_case_answer": "message_validation",
         },
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 200
-    assert response.json()["status"] == "recorded"
+    body = response.json()
+    assert body["status"] == "recorded"
+    assert isinstance(body["qualifier_id"], str) and body["qualifier_id"]
+    assert isinstance(body["created_at"], str) and body["created_at"]
     assert len(fake_supabase.inserted_qualifiers) == 1
+    inserted = fake_supabase.inserted_qualifiers[0]
+    assert inserted["run_id"] == "run-1"
+    assert inserted["user_id"] == "user-1"
 
 
 def test_qualifier_payload_validation_failure(monkeypatch):
@@ -219,13 +248,14 @@ def test_qualifier_payload_validation_failure(monkeypatch):
     client = build_client(monkeypatch, fake_supabase)
 
     response = client.post(
-        "/api/v1/qualifier",
+        "/api/v1/qualifier-responses",
         json={
             "run_id": "run-1",
             "user_id": "user-1",
             "role_answer": "",
             "use_case_answer": "message_validation",
         },
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 422
@@ -248,6 +278,7 @@ def test_trailing_slash_still_enforced(monkeypatch):
     response = client.post(
         "/api/v1/runs/",
         json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 402
@@ -267,6 +298,7 @@ def test_cost_check_failure_returns_503(monkeypatch):
     response = client.post(
         "/api/v1/runs",
         json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
+        headers=INTERNAL_SECRET_HEADER,
     )
 
     assert response.status_code == 503
@@ -278,6 +310,7 @@ def test_docs_disabled_in_production(monkeypatch):
     monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
     monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
+    monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", TEST_INTERNAL_SECRET)
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "production")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
     monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")

@@ -1,6 +1,6 @@
 # Story 4.2: Run Initiation & BackgroundTask Dispatch
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -151,13 +151,23 @@ openai/gpt-5.3-codex
 
 - _bmad-output/implementation-artifacts/4-2-run-initiation-and-backgroundtask-dispatch.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/core/config.py
+- backend/app/core/cost_enforcement.py
+- backend/app/core/errors.py
+- backend/app/core/internal_auth.py
 - backend/app/main.py
 - backend/app/models/qualifier.py
 - backend/app/models/run.py
+- backend/app/models/run_session.py
 - backend/app/routers/qualifier.py
+- backend/app/routers/run_sessions.py
 - backend/app/routers/runs.py
 - backend/app/services/run_processor.py
+- backend/tests/routers/test_auth.py
+- backend/tests/routers/test_run_sessions.py
 - backend/tests/routers/test_runs.py
+- backend/tests/routers/test_waitlist.py
+- backend/tests/test_sentry.py
 - frontend/app/actions/start-run.test.ts
 - frontend/app/actions/start-run.ts
 - frontend/app/actions/submit-run.ts
@@ -169,7 +179,9 @@ openai/gpt-5.3-codex
 - frontend/app/verify/page.test.tsx
 - frontend/app/verify/verify-client.tsx
 - frontend/lib/errors.ts
+- supabase/migrations/20260321001_qualifier_responses_unique_run_id.sql
 
 ### Change Log
 
 - 2026-03-21: Implemented Story 4.2 end-to-end run initiation and qualifier persistence flow; added dispatch seam, server-side run context handoff, and test coverage updates for backend/frontend.
+- 2026-03-21: Code review applied — 7 patches (P-1–P-7): endpoint renamed to `/api/v1/qualifier-responses`, `run_id` runtime validation, `isSubmitting` try/catch/finally, cookie write moved post-email-check, `RunCreateResponse` Pydantic guard, ID field validators, test assertion gaps filled. 3 intent gaps resolved: IG-1 shared secret middleware (`X-Internal-Secret`) protecting all write endpoints, IG-2 combined `POST /api/v1/run-sessions` endpoint eliminating two-phase failure window, IG-3 `UNIQUE(run_id)` DB migration on `qualifier_responses`.

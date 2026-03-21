@@ -59,6 +59,7 @@ def build_client(monkeypatch, fake_supabase: FakeSupabase) -> TestClient:
     monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
     monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
+    monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", "test-internal-secret")
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
     monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_key")

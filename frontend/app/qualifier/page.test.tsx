@@ -148,6 +148,29 @@ describe("Qualifier page", () => {
         screen.getByText("A havi ingyenes kapacitás elérte a határát.")
       ).toBeInTheDocument();
       expect(mockPush).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: messages.qualifier.form.submitCta })).not.toBeDisabled();
+    });
+  });
+
+  it("re-enables submit button when startRunAction throws", async () => {
+    startRunActionMock.mockRejectedValue(new Error("Network error"));
+
+    render(<QualifierPage />);
+
+    fireEvent.click(
+      screen.getByRole("combobox", { name: messages.qualifier.form.roleLabel })
+    );
+    fireEvent.click(
+      screen.getByRole("option", { name: messages.qualifier.form.roleOptions[0].label })
+    );
+    fireEvent.click(
+      screen.getByRole("radio", { name: messages.qualifier.form.useCaseOptions[0].label })
+    );
+
+    fireEvent.submit(screen.getByRole("button", { name: messages.qualifier.form.submitCta }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: messages.qualifier.form.submitCta })).not.toBeDisabled();
     });
   });
 

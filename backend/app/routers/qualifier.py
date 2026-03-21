@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from app.core.database import get_supabase_client
 from app.models.qualifier import QualifierCreateRequest, QualifierCreateResponse
 
-router = APIRouter(prefix="/api/v1/qualifier", tags=["qualifier"])
+router = APIRouter(prefix="/api/v1/qualifier-responses", tags=["qualifier"])
 
 
 @router.post("", response_model=QualifierCreateResponse)

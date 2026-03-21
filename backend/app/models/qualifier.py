@@ -13,6 +13,20 @@ class QualifierCreateRequest(BaseModel):
     role_answer: str
     use_case_answer: str
 
+    @field_validator("run_id", "user_id", mode="before")
+    @classmethod
+    def strip_id(cls, value: str) -> str:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator("run_id", "user_id")
+    @classmethod
+    def require_non_empty_id(cls, value: str) -> str:
+        if not value:
+            raise ValueError("Must not be empty")
+        return value
+
     @field_validator("role_answer", "use_case_answer", mode="before")
     @classmethod
     def strip_text(cls, value: str) -> str:

@@ -9,7 +9,7 @@ from fastapi import Request
 from app.core.database import get_supabase_client
 from app.core.errors import ErrorCode, error_response
 
-RUN_INITIATING_ENDPOINTS = {("POST", "/api/v1/runs")}
+RUN_INITIATING_ENDPOINTS = {("POST", "/api/v1/runs"), ("POST", "/api/v1/run-sessions")}
 MONTHLY_CAP_USD = Decimal("50.00")
 
 

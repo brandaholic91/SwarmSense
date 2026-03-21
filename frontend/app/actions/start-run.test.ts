@@ -10,18 +10,21 @@ import { startRunAction } from "@/app/actions/start-run";
 
 describe("startRunAction", () => {
   const originalApiUrl = process.env.API_URL;
+  const originalInternalSecret = process.env.INTERNAL_SECRET;
 
   beforeEach(() => {
     process.env.API_URL = "http://localhost:8000";
+    process.env.INTERNAL_SECRET = "test-secret";
     vi.restoreAllMocks();
     getCookieMock.mockReset();
   });
 
   afterAll(() => {
     process.env.API_URL = originalApiUrl;
+    process.env.INTERNAL_SECRET = originalInternalSecret;
   });
 
-  it("posts /runs then /qualifier in deterministic sequence", async () => {
+  it("posts /run-sessions with combined payload and auth header", async () => {
     getCookieMock.mockImplementation((name: string) => {
       if (name === "swarmsense_verified_user") {
         return { value: "user-11" };
@@ -32,28 +35,16 @@ describe("startRunAction", () => {
       return undefined;
     });
 
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            run_id: "run-11",
-            status: "queued",
-            created_at: "2026-03-21T11:00:00Z",
-          }),
-          { status: 200 }
-        )
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          run_id: "run-11",
+          status: "queued",
+          created_at: "2026-03-21T11:00:00Z",
+        }),
+        { status: 200 }
       )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            status: "recorded",
-            qualifier_id: "qualifier-11",
-            created_at: "2026-03-21T11:00:01Z",
-          }),
-          { status: 200 }
-        )
-      );
+    );
 
     const result = await startRunAction({
       role_answer: "founder_ceo",
@@ -61,15 +52,13 @@ describe("startRunAction", () => {
     });
 
     expect(result).toEqual({ ok: true, run_id: "run-11" });
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      "http://localhost:8000/api/v1/runs",
-      expect.objectContaining({ method: "POST" })
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      "http://localhost:8000/api/v1/qualifier",
-      expect.objectContaining({ method: "POST" })
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/run-sessions",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ "X-Internal-Secret": "test-secret" }),
+      })
     );
   });
 
@@ -119,5 +108,15 @@ describe("startRunAction", () => {
       code: "RUN_CONTEXT_MISSING",
       detail: "Run context is missing",
     });
+  });
+
+  it("throws when INTERNAL_SECRET is not configured", async () => {
+    delete process.env.INTERNAL_SECRET;
+
+    getCookieMock.mockReturnValue(undefined);
+
+    await expect(
+      startRunAction({ role_answer: "founder_ceo", use_case_answer: "message_validation" })
+    ).rejects.toThrow("INTERNAL_SECRET is not configured");
   });
 });

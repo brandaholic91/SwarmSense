@@ -21,12 +21,15 @@ class FakeQuery:
         self._table_name = table_name
         self._payload: dict[str, object] | None = None
         self._operation = "select"
+        self._eq_value: str | None = None
 
     def select(self, _fields: str):
         self._operation = "select"
         return self
 
     def eq(self, _field: str, _value: object):
+        if isinstance(_value, str):
+            self._eq_value = _value
         return self
 
     def limit(self, _n: int):
@@ -41,6 +44,14 @@ class FakeQuery:
         if self._table_name == "cost_tracking" and self._operation == "select":
             return FakeResponse(self._supabase.cost_rows)
 
+        if self._table_name == "runs" and self._operation == "select":
+            if self._eq_value is None:
+                return FakeResponse([])
+            row = self._supabase.run_rows.get(self._eq_value)
+            if row is None:
+                return FakeResponse([])
+            return FakeResponse([row])
+
         if self._table_name == "runs" and self._operation == "insert":
             assert self._payload is not None
             run_id = f"run-{len(self._supabase.inserted_runs) + 1}"
@@ -53,6 +64,7 @@ class FakeQuery:
                 "created_at": datetime.now(UTC).isoformat(),
             }
             self._supabase.inserted_runs.append(row)
+            self._supabase.run_rows[run_id] = dict(row)
             return FakeResponse([row])
 
         if self._table_name == "qualifier_responses" and self._operation == "insert":
@@ -77,6 +89,15 @@ class FakeSupabase:
         self.cost_rows = [] if total_usd is None else [{"total_usd": total_usd}]
         self.inserted_runs: list[dict[str, object]] = []
         self.inserted_qualifiers: list[dict[str, object]] = []
+        self.run_rows: dict[str, dict[str, object]] = {
+            "run-1": {
+                "id": "run-1",
+                "status": "running",
+                "persona_count": 5,
+                "created_at": datetime.now(UTC).isoformat(),
+                "completed_at": None,
+            }
+        }
 
     def table(self, name: str):
         return FakeQuery(self, name)
@@ -304,6 +325,38 @@ def test_cost_check_failure_returns_503(monkeypatch):
 
     assert response.status_code == 503
     assert response.json()["code"] == "COST_CHECK_FAILED"
+
+
+def test_get_run_status_success(monkeypatch):
+    fake_supabase = FakeSupabase("1.00")
+    client = build_client(monkeypatch, fake_supabase)
+
+    response = client.get("/api/v1/runs/run-1/status")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body == {
+        "run_id": "run-1",
+        "status": "running",
+        "persona_count": 5,
+        "total_personas": 18,
+        "updated_at": str(fake_supabase.run_rows["run-1"]["created_at"]).replace(
+            "+00:00", "Z"
+        ),
+    }
+
+
+def test_get_run_status_not_found(monkeypatch):
+    fake_supabase = FakeSupabase("1.00")
+    client = build_client(monkeypatch, fake_supabase)
+
+    response = client.get("/api/v1/runs/missing/status")
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": "Run not found",
+        "code": "RUN_NOT_FOUND",
+    }
 
 
 def test_docs_disabled_in_production(monkeypatch):

@@ -22,14 +22,27 @@ async def process_run(
     topic: str,
     audience: str,
 ) -> PersonaRunResult:
-    _update_run_row(run_id=run_id, payload={"status": "running"})
+    _update_run_row(run_id=run_id, payload={"status": "running", "persona_count": 0})
+
+    def on_persona_completed(processed_count: int, total_personas: int) -> None:
+        _ = total_personas
+        _update_run_row(
+            run_id=run_id,
+            payload={"status": "running", "persona_count": processed_count},
+        )
 
     try:
-        result = await execute_persona_engine(topic=topic, audience=audience)
+        result = await execute_persona_engine(
+            topic=topic,
+            audience=audience,
+            on_persona_completed=on_persona_completed,
+        )
     except Exception as exc:
         failure_timestamp = datetime.now(UTC).isoformat()
         final_cost = Decimal("0")
-        should_increment = _should_increment_monthly_cost(run_id=run_id)  # P1: check right before write
+        should_increment = _should_increment_monthly_cost(
+            run_id=run_id
+        )  # P1: check right before write
         _update_run_row(
             run_id=run_id,
             payload={
@@ -137,14 +150,19 @@ async def process_run(
     return result
 
 
-def _resolve_final_status(*, result: PersonaRunResult) -> str:  # P3: dead "failed" branch removed
+def _resolve_final_status(
+    *, result: PersonaRunResult
+) -> str:  # P3: dead "failed" branch removed
     if result.successful_count < result.total_personas:
         return "partial"
     return "completed"
 
 
 def _build_result_payload(
-    *, run_id: str, result: PersonaRunResult, final_status: str  # P12: status passed in, not recomputed
+    *,
+    run_id: str,
+    result: PersonaRunResult,
+    final_status: str,  # P12: status passed in, not recomputed
 ) -> dict[str, Any]:
     stance_counts: dict[str, int] = {"support": 0, "reject": 0, "conditional": 0}
     arguments_frequency: dict[str, int] = {}
@@ -233,7 +251,9 @@ def _increment_monthly_cost(
     if not should_increment:
         return
 
-    month = datetime.now(UTC).strftime("%Y-%m")  # P7: UTC instead of date.today() local time
+    month = datetime.now(UTC).strftime(
+        "%Y-%m"
+    )  # P7: UTC instead of date.today() local time
     try:
         supabase = get_supabase_client()
         existing = (
@@ -242,11 +262,16 @@ def _increment_monthly_cost(
             .eq("month", month)
             .limit(1)
             .execute()
-            .data or []
+            .data
+            or []
         )
-        existing_total = _normalize_cost(existing[0].get("total_usd")) if existing else Decimal("0")
+        existing_total = (
+            _normalize_cost(existing[0].get("total_usd")) if existing else Decimal("0")
+        )
         updated_total = existing_total + run_cost
-        supabase.table("cost_tracking").upsert(  # P2: upsert prevents duplicate-insert race
+        supabase.table(
+            "cost_tracking"
+        ).upsert(  # P2: upsert prevents duplicate-insert race
             {"month": month, "total_usd": str(updated_total)},
             on_conflict="month",
         ).execute()

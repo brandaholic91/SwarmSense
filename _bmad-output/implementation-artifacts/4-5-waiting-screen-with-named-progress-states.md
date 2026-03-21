@@ -1,6 +1,6 @@
 # Story 4.5: Waiting Screen with Named Progress States
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,37 +23,37 @@ so that I feel anticipation rather than anxiety and understand that my result wi
 
 ## Tasks / Subtasks
 
-- [ ] Add run status read endpoint with polling-safe response contract (AC: 1, 2, 4, 8)
-  - [ ] Add `GET /api/v1/runs/{run_id}/status` in `backend/app/routers/runs.py` using canonical status values only.
-  - [ ] Add response model(s) in `backend/app/models/run.py` (or a dedicated model file) including `run_id`, `status`, `persona_count`, `total_personas`, and timestamp field if needed.
-  - [ ] Return `total_personas` from backend consistently (current engine default is 18) so frontend can render `[N]/[total]` without hardcoding.
-  - [ ] Keep response/error shape aligned with project conventions (`snake_case`, structured errors).
+- [x] Add run status read endpoint with polling-safe response contract (AC: 1, 2, 4, 8)
+  - [x] Add `GET /api/v1/runs/{run_id}/status` in `backend/app/routers/runs.py` using canonical status values only.
+  - [x] Add response model(s) in `backend/app/models/run.py` (or a dedicated model file) including `run_id`, `status`, `persona_count`, `total_personas`, and timestamp field if needed.
+  - [x] Return `total_personas` from backend consistently (current engine default is 18) so frontend can render `[N]/[total]` without hardcoding.
+  - [x] Keep response/error shape aligned with project conventions (`snake_case`, structured errors).
 
-- [ ] Expose live persona progress during `running` state (AC: 2, 4)
-  - [ ] Extend persona execution flow to surface per-persona completion counts while status is `running`.
-  - [ ] Update `runs.persona_count` incrementally during `running` to support real progress display (without introducing non-canonical run statuses).
-  - [ ] Preserve existing finalization semantics from Story 4.4 (`queued -> running -> composing -> completed|partial|failed`).
+- [x] Expose live persona progress during `running` state (AC: 2, 4)
+  - [x] Extend persona execution flow to surface per-persona completion counts while status is `running`.
+  - [x] Update `runs.persona_count` incrementally during `running` to support real progress display (without introducing non-canonical run statuses).
+  - [x] Preserve existing finalization semantics from Story 4.4 (`queued -> running -> composing -> completed|partial|failed`).
 
-- [ ] Implement waiting route and screen component (AC: 1, 2, 3, 4, 6, 7, 8)
-  - [ ] Create `frontend/app/waiting/[run_id]/page.tsx` and `frontend/components/waiting-screen.tsx`.
-  - [ ] Add TanStack Query dependency and local/provider setup needed for polling every 5000ms.
-  - [ ] Implement deterministic state mapping from backend run status + transient UI-only `generating` state.
-  - [ ] Render dominant numeric counter for `running` and handle final states (`completed`, `partial`, `failed`).
-  - [ ] Stop polling automatically on final status (`completed|partial|failed`) per architecture rule.
+- [x] Implement waiting route and screen component (AC: 1, 2, 3, 4, 6, 7, 8)
+  - [x] Create `frontend/app/waiting/[run_id]/page.tsx` and `frontend/components/waiting-screen.tsx`.
+  - [x] Add TanStack Query dependency and local/provider setup needed for polling every 5000ms.
+  - [x] Implement deterministic state mapping from backend run status + transient UI-only `generating` state.
+  - [x] Render dominant numeric counter for `running` and handle final states (`completed`, `partial`, `failed`).
+  - [x] Stop polling automatically on final status (`completed|partial|failed`) per architecture rule.
 
-- [ ] Add email notice and accessibility semantics (AC: 5, 6)
-  - [ ] Reuse Hungarian strings from `frontend/lib/messages.ts` only; no hardcoded user-facing copy in component.
-  - [ ] Ensure waiting UI has `aria-live="polite"` progress text and `role="progressbar"` with bounded `aria-valuenow`.
-  - [ ] Source user email for notice from safe existing flow context (cookie/session-derived), not by introducing unnecessary PII exposure in public status API.
+- [x] Add email notice and accessibility semantics (AC: 5, 6)
+  - [x] Reuse Hungarian strings from `frontend/lib/messages.ts` only; no hardcoded user-facing copy in component.
+  - [x] Ensure waiting UI has `aria-live="polite"` progress text and `role="progressbar"` with bounded `aria-valuenow`.
+  - [x] Source user email for notice from safe existing flow context (cookie/session-derived), not by introducing unnecessary PII exposure in public status API.
 
-- [ ] Implement delayed-notice and failed-state UX handling (AC: 7, 8)
-  - [ ] Trigger delayed notice client-side when elapsed waiting time exceeds 120s and run not final.
-  - [ ] On `failed`, show Hungarian failure message with retry guidance and keep one primary action pattern.
+- [x] Implement delayed-notice and failed-state UX handling (AC: 7, 8)
+  - [x] Trigger delayed notice client-side when elapsed waiting time exceeds 120s and run not final.
+  - [x] On `failed`, show Hungarian failure message with retry guidance and keep one primary action pattern.
 
-- [ ] Add tests for backend + frontend waiting flow (AC: 1-8)
-  - [ ] Backend router tests for status endpoint shape and canonical status handling.
-  - [ ] Backend service tests validating `running` progress updates do not break Story 4.4 completion/cost logic.
-  - [ ] Frontend tests for state mapping, polling-stop behavior on final status, delayed notice timing, and accessibility attributes.
+- [x] Add tests for backend + frontend waiting flow (AC: 1-8)
+  - [x] Backend router tests for status endpoint shape and canonical status handling.
+  - [x] Backend service tests validating `running` progress updates do not break Story 4.4 completion/cost logic.
+  - [x] Frontend tests for state mapping, polling-stop behavior on final status, delayed notice timing, and accessibility attributes.
 
 ## Dev Notes
 
@@ -150,8 +150,31 @@ openai/gpt-5.3-codex
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story context includes backend status endpoint, live progress tracking strategy, waiting-screen UX mapping, accessibility constraints, and test coverage guardrails.
+- Added `GET /api/v1/runs/{run_id}/status` with canonical status validation, snake_case payload, `total_personas`, and structured `RUN_NOT_FOUND` response code.
+- Extended persona execution + run processing pipeline to publish incremental `running` progress updates (`persona_count`) while preserving Story 4.4 finalization + cost tracking semantics.
+- Implemented waiting route and client UI with TanStack Query polling (`5000ms`), transient UI-only `generating` state, final-state polling stop, delayed-notice handling, and failed-state retry UX.
+- Added secure email handoff via HTTP-only `swarmsense_result_email` cookie and rendered delivery notice from waiting page server context without exposing email in public status API.
+- Added/updated backend and frontend tests; executed `pytest tests/routers/test_runs.py tests/services/test_run_processor.py`, full `pytest`, and full `pnpm test` (all green).
 
 ### File List
 
 - _bmad-output/implementation-artifacts/4-5-waiting-screen-with-named-progress-states.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/core/errors.py
+- backend/app/models/run.py
+- backend/app/routers/runs.py
+- backend/app/services/persona_engine.py
+- backend/app/services/run_processor.py
+- backend/tests/routers/test_runs.py
+- backend/tests/services/test_run_processor.py
+- frontend/app/actions/submit-run.ts
+- frontend/app/waiting/[run_id]/page.tsx
+- frontend/components/waiting-screen.tsx
+- frontend/components/waiting-screen.test.tsx
+- frontend/lib/messages.ts
+- frontend/package.json
+- frontend/pnpm-lock.yaml
+
+### Change Log
+
+- 2026-03-21: Implemented Story 4.5 waiting screen end-to-end (backend status endpoint, live progress updates, waiting UI polling/state mapping/accessibility, and test coverage).

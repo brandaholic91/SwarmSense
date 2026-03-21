@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-03-19"
-last_updated: "2026-03-21" # story 4-5 moved to ready-for-dev
+last_updated: "2026-03-21" # story 4-5 implemented and moved to review
 project: SwarmSense
 project_key: NOKEY
 tracking_system: file-system
@@ -72,7 +72,7 @@ development_status:
   4-2-run-initiation-and-backgroundtask-dispatch: done
   4-3-persona-engine-parallel-llm-execution: done
   4-4-partial-result-handling-and-run-completion: done
-  4-5-waiting-screen-with-named-progress-states: ready-for-dev
+  4-5-waiting-screen-with-named-progress-states: review
   epic-4-retrospective: optional
 
   # Epic 5: Result Delivery & User Communication Lifecycle

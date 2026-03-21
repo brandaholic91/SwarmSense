@@ -227,8 +227,10 @@ def _build_result(
 
 
 def _patch_fake_engine(monkeypatch, run_processor, result: PersonaRunResult) -> None:
-    async def fake_engine(*, topic: str, audience: str):
+    async def fake_engine(*, topic: str, audience: str, on_persona_completed=None):
         _ = (topic, audience)
+        if on_persona_completed is not None:
+            on_persona_completed(result.total_personas, result.total_personas)
         return result
 
     monkeypatch.setattr(run_processor, "execute_persona_engine", fake_engine)
@@ -266,11 +268,18 @@ def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
     )
 
     assert fake_supabase.updates[0]["payload"]["status"] == "running"
-    assert fake_supabase.updates[1]["payload"]["status"] == "composing"
-    assert fake_supabase.updates[2]["payload"]["status"] == "partial"
-    assert fake_supabase.updates[2]["payload"]["persona_count"] == 12
-    assert fake_supabase.updates[2]["payload"]["cost_usd"] == "0.25"
-    assert isinstance(fake_supabase.updates[2]["payload"]["completed_at"], str)
+    assert fake_supabase.updates[0]["payload"]["persona_count"] == 0
+    running_updates = [
+        item
+        for item in fake_supabase.updates
+        if item["payload"].get("status") == "running"
+    ]
+    assert running_updates[-1]["payload"]["persona_count"] == 15
+    assert fake_supabase.updates[-2]["payload"]["status"] == "composing"
+    assert fake_supabase.updates[-1]["payload"]["status"] == "partial"
+    assert fake_supabase.updates[-1]["payload"]["persona_count"] == 12
+    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0.25"
+    assert isinstance(fake_supabase.updates[-1]["payload"]["completed_at"], str)
     assert email_calls[0]["recipient_email"] == "test@example.com"
     assert email_calls[0]["result_payload"]["persona_count_label"] == "12/15 persona"
     assert fake_supabase.cost_rows[0]["total_usd"] == "1.25"
@@ -307,9 +316,10 @@ def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
         )
     )
 
-    assert fake_supabase.updates[2]["payload"]["status"] == "completed"
-    assert fake_supabase.updates[2]["payload"]["persona_count"] == 15
-    assert fake_supabase.updates[2]["payload"]["cost_usd"] == "0.3"
+    assert fake_supabase.updates[-2]["payload"]["status"] == "composing"
+    assert fake_supabase.updates[-1]["payload"]["status"] == "completed"
+    assert fake_supabase.updates[-1]["payload"]["persona_count"] == 15
+    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0.3"
     assert email_calls[0]["result_payload"]["persona_count_label"] == "15/15 persona"
     assert fake_supabase.cost_rows[0]["total_usd"] == "2.30"
 
@@ -356,10 +366,11 @@ def test_process_run_fails_when_successful_personas_below_threshold(
 
     assert result.successful_count == 11
     assert fake_supabase.updates[0]["payload"]["status"] == "running"
-    assert fake_supabase.updates[1]["payload"]["status"] == "failed"
-    assert fake_supabase.updates[1]["payload"]["persona_count"] == 11
-    assert fake_supabase.updates[1]["payload"]["cost_usd"] == "0.15"
-    assert isinstance(fake_supabase.updates[1]["payload"]["completed_at"], str)
+    assert fake_supabase.updates[0]["payload"]["persona_count"] == 0
+    assert fake_supabase.updates[-1]["payload"]["status"] == "failed"
+    assert fake_supabase.updates[-1]["payload"]["persona_count"] == 11
+    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0.15"
+    assert isinstance(fake_supabase.updates[-1]["payload"]["completed_at"], str)
     assert captured_sentry
     assert not email_calls
     assert fake_supabase.cost_rows[0]["total_usd"] == "1.15"

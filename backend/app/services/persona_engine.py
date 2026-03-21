@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import ValidationError
@@ -252,6 +253,7 @@ async def execute_persona_engine(
     llm_client: OpenRouterClient | None = None,
     concurrency_limit: int = 5,
     total_personas: int = DEFAULT_PERSONA_COUNT,
+    on_persona_completed: Callable[[int, int], None] | None = None,
 ) -> PersonaRunResult:
     client = llm_client or OpenRouterClient()
     personas = build_persona_blueprints(total_personas)
@@ -259,7 +261,7 @@ async def execute_persona_engine(
 
     async def _run_persona(
         persona: PersonaBlueprint,
-    ) -> tuple[PersonaResponse | PersonaFailure, float]:
+    ) -> tuple[PersonaBlueprint, PersonaResponse | PersonaFailure, float]:
         async with semaphore:
             prompt = build_persona_user_prompt(
                 persona=persona, topic=topic, audience=audience
@@ -269,9 +271,10 @@ async def execute_persona_engine(
                     system_prompt=HUNGARIAN_SYSTEM_PROMPT,
                     user_prompt=prompt,
                 )
-                return normalize_persona_response(raw), cost_usd
+                return persona, normalize_persona_response(raw), cost_usd
             except LLMProviderError as exc:
                 return (
+                    persona,
                     PersonaFailure(
                         persona_name=persona.name,
                         error_code=exc.error_code,
@@ -281,6 +284,7 @@ async def execute_persona_engine(
                 )
             except ValueError as exc:
                 return (
+                    persona,
                     PersonaFailure(
                         persona_name=persona.name,
                         error_code="MALFORMED_PROVIDER_OUTPUT",
@@ -289,20 +293,30 @@ async def execute_persona_engine(
                     0.0,
                 )
 
-    gathered = await asyncio.gather(
-        *[_run_persona(persona) for persona in personas], return_exceptions=True
-    )
+    tasks = [asyncio.create_task(_run_persona(persona)) for persona in personas]
 
     responses: list[PersonaResponse] = []
     failures: list[PersonaFailure] = []
     total_cost_usd = 0.0
-    for persona, item in zip(personas, gathered):
-        if isinstance(item, tuple) and len(item) == 2:
-            result_item, cost_usd = item
+
+    processed_count = 0
+    for task in asyncio.as_completed(tasks):
+        persona_name = "unknown"
+        try:
+            item = await task
+        except Exception as exc:  # pragma: no cover - defensive fallback
+            item = exc
+
+        if isinstance(item, tuple) and len(item) == 3:
+            _, result_item, cost_usd = item
+            if isinstance(result_item, PersonaResponse):
+                persona_name = result_item.name
+            elif isinstance(result_item, PersonaFailure):
+                persona_name = result_item.persona_name
         else:
             result_item, cost_usd = (
                 PersonaFailure(
-                    persona_name=persona.name,
+                    persona_name=persona_name,
                     error_code="UNEXPECTED_ENGINE_ERROR",
                     error_message=str(item),
                 ),
@@ -318,11 +332,15 @@ async def execute_persona_engine(
         else:
             failures.append(
                 PersonaFailure(
-                    persona_name=persona.name,
+                    persona_name=persona_name,
                     error_code="UNEXPECTED_ENGINE_ERROR",
                     error_message=str(result_item),
                 )
             )
+
+        processed_count += 1
+        if on_persona_completed is not None:
+            on_persona_completed(processed_count, len(personas))
 
     handoff_payload = [response.model_dump() for response in responses]
 

@@ -183,17 +183,19 @@ export const messages = {
   },
   waiting: {
     states: {
-      queued: "Sorban áll",
-      generating: "Personák generálása",
+      queued: "Sorban...",
+      generating: "Personák generálása...",
       /** Interpolate {current} and {total} before rendering. */
       running: "Futtatás: {current}/{total} persona",
-      composing: "Eredmény összeállítása",
+      composing: "Eredmény összeállítása...",
       completed: "Eredmény elkészült",
+      failed: "Hiba történt a feldolgozás közben.",
     },
     /** Interpolate {email} before rendering. */
     emailDeliveryNotice: "Az eredményed erre az emailre érkezik: {email}",
     delayedNotice:
       "A feldolgozás a szokásosnál tovább tart, még dolgozunk rajta.",
+    retrySuggestion: "Próbáld újra egy új elemzés indításával.",
   },
   blockingScreen: {
     heading: "Ez az email-cím már igénybe vette az ingyenes próbát",

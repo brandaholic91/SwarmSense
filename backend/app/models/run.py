@@ -45,3 +45,11 @@ class RunCreateResponse(BaseModel):
     run_id: str
     status: Literal["queued", "running", "composing", "completed", "partial", "failed"]
     created_at: AwareDatetime
+
+
+class RunStatusResponse(BaseModel):
+    run_id: str
+    status: Literal["queued", "running", "composing", "completed", "partial", "failed"]
+    persona_count: int
+    total_personas: int
+    updated_at: AwareDatetime | None = None

@@ -60,6 +60,14 @@ export async function submitRunAction({
   }
 
   const cookieStore = await cookies();
+  cookieStore.set("swarmsense_result_email", normalizedEmail, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60,
+  });
+
   cookieStore.set(
     "swarmsense_run_context",
     JSON.stringify({

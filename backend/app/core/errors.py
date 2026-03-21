@@ -12,6 +12,7 @@ class ErrorCode(str, Enum):
     TOKEN_INVALID = "TOKEN_INVALID"
     WAITLIST_SIGNUP_FAILED = "WAITLIST_SIGNUP_FAILED"
     UNAUTHORIZED = "UNAUTHORIZED"
+    RUN_NOT_FOUND = "RUN_NOT_FOUND"
 
 
 def error_response(status_code: int, detail: str, code: ErrorCode) -> JSONResponse:

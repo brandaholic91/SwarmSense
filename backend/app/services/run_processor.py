@@ -190,14 +190,15 @@ def _build_result_payload(
 ) -> dict[str, Any]:
     stance_counts: dict[str, int] = {"support": 0, "reject": 0, "conditional": 0}
     arguments_frequency: dict[str, int] = {}
-    personas_for_email: list[dict[str, str]] = []
 
     for response in result.responses:
         stance_counts[response.stance] += 1
         argument = response.primary_argument.strip()
         if argument:
             arguments_frequency[argument] = arguments_frequency.get(argument, 0) + 1
-        personas_for_email.append(response.model_dump())
+
+    # handoff_payload already contains blueprint attributes (risk_appetite, etc.)
+    personas_for_email: list[dict[str, Any]] = result.handoff_payload
 
     top_arguments = [
         argument

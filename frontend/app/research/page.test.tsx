@@ -137,4 +137,5 @@ describe("Research page", () => {
     expect(termsLink).toHaveAttribute("target", "_blank");
     expect(termsLink).toHaveAttribute("rel", "noopener");
   });
+
 });

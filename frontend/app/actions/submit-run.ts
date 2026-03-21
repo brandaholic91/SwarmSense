@@ -104,4 +104,6 @@ export async function submitRunAction({
   if (magicLinkData.status !== "sent") {
     throw new Error("Magic link generation failed");
   }
+
+  redirect(`/research/sent?email=${encodeURIComponent(normalizedEmail)}`);
 }

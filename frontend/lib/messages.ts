@@ -127,6 +127,11 @@ export const messages = {
       email: {
         heading: "Hova küldjük az eredményt?",
         subheadline: "Az eredményed erre az emailre érkezik",
+        successHeading: "Kiküldtük a kutatásindító linket",
+        successBodyPrefix:
+          "A kutatás indításához szükséges linket elküldtük erre az email-címre:",
+        successHint:
+          "Nyisd meg az emailed, kattints a linkre, és indulhat az elemzés.",
         label: "Email cím",
         placeholder: "pelda@email.hu",
         cta: "Eredmény küldése",

@@ -230,7 +230,7 @@ So that the $50/month hard limit is enforced at the application layer and cannot
 **Then** `cost_enforcement.py` queries `cost_tracking` for the current month's `total_usd` before allowing the request to proceed
 **And** if `total_usd >= 50.00`, the endpoint returns HTTP 402 with `{"detail": "A havi ingyenes kapacitás elérte a határát.", "code": "COST_LIMIT_REACHED"}`
 **And** non-run endpoints (auth, waitlist, operator, status polling) are unaffected when the monthly limit is reached (NFR14)
-**And** all environment variables are parsed via Pydantic Settings from `SWARMSENSE_`-prefixed env vars: `SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_SUPABASE_SERVICE_KEY`, `SWARMSENSE_KIMI_API_KEY`, `SWARMSENSE_OPERATOR_API_KEY`
+**And** all environment variables are parsed via Pydantic Settings from `SWARMSENSE_`-prefixed env vars: `SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_SUPABASE_SERVICE_KEY`, `SWARMSENSE_OPENROUTER_API_KEY`, `SWARMSENSE_OPERATOR_API_KEY`
 **And** CORS middleware is configured to allow requests only from the Vercel frontend domain
 **And** FastAPI OpenAPI docs (`/docs`) are disabled in production via env config
 
@@ -501,12 +501,12 @@ So that the analysis reflects genuine diversity of market perspectives rather th
 **When** `persona_engine.py` executes
 **Then** 15–20 distinct personas are generated based on five attitudinal dimensions: risk appetite, decision-making style, organizational role, price sensitivity, and technology adoption curve (FR10)
 **And** all persona LLM calls are dispatched in parallel using `asyncio.gather` with an `asyncio.Semaphore` to cap concurrent requests (NFR19)
-**And** each persona call targets Kimi K2 (Moonshot AI) as primary LLM via `llm_client.py`
+**And** each persona call is routed through OpenRouter via `llm_client.py`, using Kimi K2 (Moonshot AI) as the primary model
 **And** each completed persona response includes: persona name, role, stance (support/reject/conditional), primary argument, and condition for changing mind
 **And** all prompts and persona generation instructions are in Hungarian with explicit Hungarian cultural context embedded (FR13)
 **And** the run status is updated to `"running"` when the first persona call is dispatched
 
-**Given** a persona API call returns a 429 rate-limit response
+**Given** an OpenRouter persona call returns a 429 rate-limit response
 **When** `llm_client.py` handles the response
 **Then** the call is retried with exponential backoff up to 3 attempts before marking that persona as failed
 

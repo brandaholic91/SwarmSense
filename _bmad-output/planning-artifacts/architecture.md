@@ -51,13 +51,13 @@ Critical NFRs driving architectural decisions:
 
 ### Technical Constraints & Dependencies
 
-- Kimi K2 (Moonshot AI) as primary LLM; Claude API as fallback/premium
+- OpenRouter as LLM gateway; Kimi K2 (Moonshot AI) as primary routed model, Claude as optional fallback/premium route
 - Supabase EU region (eu-central-1) — non-negotiable for GDPR compliance
 - Next.js on Vercel (frontend); FastAPI on Railway (backend)
 - Resend for transactional email (magic link + result + follow-up sequences)
 - API cost hard cap: $50/month — enforced at FastAPI application layer
 - Magic link tokens: 24h expiry, single-use
-- Kimi K2 T&C review required pre-launch (prompt training policy disclosure)
+- OpenRouter and routed model T&C review required pre-launch (prompt training policy disclosure)
 
 ### Cross-Cutting Concerns Identified
 
@@ -306,7 +306,7 @@ docker-compose.yml
 - Functions and variables: `snake_case` (PEP8)
 - Pydantic models: `PascalCase` (`RunCreate`, `PersonaResponse`, `MagicLinkToken`)
 - Constants: `UPPER_SNAKE_CASE` (`MAX_PERSONAS`, `MONTHLY_COST_LIMIT_USD`)
-- Environment variables: `SWARMSENSE_` prefix (`SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_KIMI_API_KEY`)
+- Environment variables: `SWARMSENSE_` prefix (`SWARMSENSE_SUPABASE_URL`, `SWARMSENSE_OPENROUTER_API_KEY`)
 
 **JSON Field Naming (API boundary):**
 `snake_case` throughout — backend and frontend both use `snake_case` in JSON. No camelCase transformation at the boundary. Rationale: eliminates serialization middleware and reduces conflict surface.
@@ -517,7 +517,7 @@ swarmsense/
 │   │       ├── run_processor.py       # BackgroundTask orchestrator: engine → aggregate → email
 │   │       ├── email_service.py       # Resend integration: all outbound email (FR14-24)
 │   │       ├── cost_tracker.py        # Real-time spend tracking, 80% alert, cap enforcement
-│   │       └── llm_client.py          # Kimi K2 primary + Claude API fallback abstraction
+│   │       └── llm_client.py          # OpenRouter gateway abstraction; Kimi K2 primary routed model
 │   │
 │   └── tests/
 │       ├── conftest.py                # pytest fixtures, test Supabase setup
@@ -542,7 +542,7 @@ swarmsense/
 | Browser → FastAPI (public) | Client → Server | None | Status polling only (`GET /runs/{run_id}/status`) |
 | Browser → Server Action → FastAPI | Client → Next.js server → FastAPI | Server-side API key | Email check, token verify, run submit, waitlist |
 | FastAPI → Supabase | Server → Managed DB | Service role key | Never exposed to browser |
-| FastAPI → Kimi K2 / Claude | Server → External API | API key | Via `llm_client.py`, wrapped by cost_tracker |
+| FastAPI → OpenRouter | Server → External API | API key | Via `llm_client.py`, routed model selection handled server-side |
 | FastAPI → Resend | Server → External API | API key | All outbound email via `email_service.py` |
 | Caddy → FastAPI | VPS internal | None (loopback) | TLS termination at Caddy, HTTP internally |
 
@@ -565,7 +565,7 @@ Qualifier submit
     → redirect /waiting/{run_id}
 
 BackgroundTask (server-side, async)
-  → persona_engine.py               → 15–20 parallel Kimi K2 calls
+  → persona_engine.py               → 15–20 parallel OpenRouter-routed calls
   → run_processor.py                → aggregate results, update run status
   → email_service.py                → Resend (result email)
   → cost_tracker.py                 → update monthly spend counter
@@ -595,8 +595,8 @@ Browser polling (/waiting/{run_id})
 | Service | Integration Point | Purpose |
 |---|---|---|
 | Supabase | `backend/app/core/database.py` | All DB reads/writes |
-| Kimi K2 API | `backend/app/services/llm_client.py` | Primary LLM for persona generation |
-| Claude API | `backend/app/services/llm_client.py` | Fallback/premium LLM |
+| OpenRouter API | `backend/app/services/llm_client.py` | LLM gateway for persona generation requests |
+| Routed models (Kimi/Claude) | `backend/app/services/llm_client.py` | Primary and fallback model selection behind OpenRouter |
 | Resend | `backend/app/services/email_service.py` | All transactional email |
 | Sentry | `backend/app/main.py` (init) + frontend `layout.tsx` | Error tracking both sides |
 | Plausible | `frontend/app/layout.tsx` (script tag) | Analytics — no backend involvement |
@@ -653,7 +653,7 @@ All 36 FRs are architecturally supported and mapped to specific files in the pro
 - NFR20 (WCAG 2.1 AA): shadcn/ui Radix primitives + axe-core CI ✅
 - NFR21 (Hungarian content): `lib/messages.ts` single source ✅
 
-**NFR19 Risk Note:** 30 concurrent runs × 20 personas = up to 600 parallel Kimi K2 requests. `persona_engine.py` must implement `asyncio.Semaphore` to cap concurrent calls per run and include retry logic for 429 (rate limit) responses. At MVP volumes (10–30 runs/day) this is not a live risk, but must be implemented from the start.
+**NFR19 Risk Note:** 30 concurrent runs × 20 personas = up to 600 parallel OpenRouter requests. `persona_engine.py` must implement `asyncio.Semaphore` to cap concurrent calls per run and include retry logic for 429 (rate limit) responses. At MVP volumes (10–30 runs/day) this is not a live risk, but must be implemented from the start.
 
 ### Gaps Identified and Resolved
 

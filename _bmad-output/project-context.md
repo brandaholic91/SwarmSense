@@ -168,7 +168,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 **Persona Engine:**
 - `asyncio.Semaphore` required in `persona_engine.py` to cap concurrent LLM calls per run
 - `≥12 personas` → `status: partial`; `<12` → `status: failed` + Sentry alert
-- Cost enforcement checked before every LLM call dispatch
+- All LLM calls route through OpenRouter in `llm_client.py`; cost enforcement checked before every LLM call dispatch
 
 **React Email:**
 - Email templates in `frontend/emails/` use inline CSS only — no Tailwind, no CSS modules

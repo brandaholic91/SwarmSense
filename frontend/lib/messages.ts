@@ -272,7 +272,47 @@ export const messages = {
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",
     termsTitle: "Felhasználási feltételek",
-    placeholder: "A részletes tartalom hamarosan érkezik.",
+    privacyIntro:
+      "A SwarmSense szolgaltatas hasznalata soran a szemelyes adatokat az ervenyes adatvedelmi jogszabalyoknak megfeleloen kezeljuk.",
+    controllerTitle: "1. Adatkezelo",
+    controllerBody:
+      "Adatkezelo: SwarmSense uzemeltetoje. Kapcsolat: support@swarmsense.ai",
+    processedDataTitle: "2. Kezelt adatok kore",
+    processedDataItems: [
+      "email cim",
+      "kutatasi tema es celkozonseg leiras",
+      "qualifier valaszok",
+      "futasi metadata (statusz, idopontok)",
+    ],
+    legalBasisTitle: "3. Jogalap es adatkezeles celja",
+    legalBasisBody:
+      "Az adatkezeles jogalapja a felhasznalo hozzajarulasa es a szolgaltatas nyujtasahoz fuzodo jogos erdek. A cel az eredmeny kuldese, a szolgaltatas minosegenek fenntartasa es a biztonsagos uzemeltetes.",
+    retentionTitle: "4. Megorzesi idok",
+    retentionBody:
+      "Az adatokat addig kezeljuk, ameddig az a szolgaltatas teljesitesehez, jogi kotelezettseg teljesitesehez vagy jogos igenyek ervenyesitesehez szukseges.",
+    deletionTitle: "5. Törlési kérelem (GDPR 17. cikk)",
+    deletionContactLabel: "Torlesi kapcsolattarto email",
+    deletionContactEmail: "privacy@swarmsense.ai",
+    deletionAckSlaLabel: "Automatikus visszaigazolas",
+    deletionAckSlaValue: "15 percen belul",
+    deletionCompletionSlaLabel: "Torles teljesitese",
+    deletionCompletionSlaValue: "7 naptari napon belul",
+    deletionMvpScope:
+      "MVP-ben a torlesi kerelem kizarolag emailben nyujthato be, onkiszolgalo portal nem all rendelkezesre.",
+    userRightsTitle: "6. Erintetti jogok",
+    userRightsBody:
+      "Jogod van tajekoztatast kerni, helyesbitest kerni, torlest kerni, az adatkezeles korlatozasat kerni, valamint panaszt tenni a felugyeleti hatosagnal.",
+    updatesTitle: "7. Tajekoztato modositasa",
+    updatesBody:
+      "A tajekoztatot idorol idore frissithetjuk. A valtozasokat ezen az oldalon tesszuk kozze.",
+    deletionEmailTemplates: {
+      acknowledgementSubject: "SwarmSense adatorlesi kerelem - visszaigazolas",
+      acknowledgementBody:
+        "Koszonjuk, hogy jelezted adatorlesi igenyedet. A kerelmet rogzitettuk, es legkesobb 15 percen belul visszaigazoljuk. A torlest legkesobb 7 naptari napon belul elvegezzuk, majd kulon megerosito emailt kuldunk.",
+      completionSubject: "SwarmSense adatorlesi kerelem - teljesitve",
+      completionBody:
+        "Ezuton megerositjuk, hogy a kapcsolodo szemelyes adataid torleset elvegeztuk a kerelem beadasatol szamitott 7 naptari napon belul.",
+    },
   },
   piiWarning: "Ne adj meg személyes adatot vagy bizalmas információt.",
   genericError: "Váratlan hiba történt. Kérjük, próbáld újra.",

@@ -1,6 +1,6 @@
 # Story 5.5: Data Deletion Request Handling
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,35 +20,35 @@ so that I can exercise my GDPR right to erasure.
 
 ## Tasks / Subtasks
 
-- [ ] Implement deletion request operations runbook and SLA guardrails (AC: 1, 2, 3, 4)
-  - [ ] Add a dedicated operations document in `docs/` describing: intake mailbox, validation checklist, 15-minute acknowledgement SLA, 7-day completion SLA, and operator accountability.
-  - [ ] Define the exact acknowledgement and completion message templates (Hungarian user-facing copy in `frontend/lib/messages.ts` if reused by app/email render paths; otherwise documented as operator mailbox templates).
-  - [ ] Document escalation path for weekends/holidays and logging expectations (timestamped receipt, acknowledgement sent timestamp, completion timestamp).
+- [x] Implement deletion request operations runbook and SLA guardrails (AC: 1, 2, 3, 4)
+  - [x] Add a dedicated operations document in `docs/` describing: intake mailbox, validation checklist, 15-minute acknowledgement SLA, 7-day completion SLA, and operator accountability.
+  - [x] Define the exact acknowledgement and completion message templates (Hungarian user-facing copy in `frontend/lib/messages.ts` if reused by app/email render paths; otherwise documented as operator mailbox templates).
+  - [x] Document escalation path for weekends/holidays and logging expectations (timestamped receipt, acknowledgement sent timestamp, completion timestamp).
 
-- [ ] Add Privacy Policy content required by FR33 (AC: 1)
-  - [ ] Replace placeholder content in `frontend/app/privacy/page.tsx` with production Privacy Policy sections that include the deletion contact channel and SLA commitments.
-  - [ ] Ensure legal page copy references only email-based deletion for MVP (no self-service portal claims).
-  - [ ] Add/align legal strings in `frontend/lib/messages.ts` and keep user-facing text Hungarian per project rules.
+- [x] Add Privacy Policy content required by FR33 (AC: 1)
+  - [x] Replace placeholder content in `frontend/app/privacy/page.tsx` with production Privacy Policy sections that include the deletion contact channel and SLA commitments.
+  - [x] Ensure legal page copy references only email-based deletion for MVP (no self-service portal claims).
+  - [x] Add/align legal strings in `frontend/lib/messages.ts` and keep user-facing text Hungarian per project rules.
 
-- [ ] Implement safe backend deletion workflow (no public deletion endpoint) (AC: 3, 5)
-  - [ ] Create a backend-only deletion workflow module (service/helper) that deletes by normalized email and removes dependent records in deterministic order.
-  - [ ] Ensure deletion flow removes associated `runs` and `qualifier_responses` linked to the user and leaves no orphaned records.
-  - [ ] Add dry-run mode and explicit confirmation guard (`--confirm`) for operator execution safety.
-  - [ ] Keep this workflow inaccessible from public/browser routes; trigger only via controlled operator process.
+- [x] Implement safe backend deletion workflow (no public deletion endpoint) (AC: 3, 5)
+  - [x] Create a backend-only deletion workflow module (service/helper) that deletes by normalized email and removes dependent records in deterministic order.
+  - [x] Ensure deletion flow removes associated `runs` and `qualifier_responses` linked to the user and leaves no orphaned records.
+  - [x] Add dry-run mode and explicit confirmation guard (`--confirm`) for operator execution safety.
+  - [x] Keep this workflow inaccessible from public/browser routes; trigger only via controlled operator process.
 
-- [ ] Add operator execution interface for deletion workflow (AC: 3, 5)
-  - [ ] Provide a script/CLI entry point under `backend/` to execute deletion by email with structured output.
-  - [ ] Enforce input normalization at backend boundary (`.lower().strip()`) and validate email format before deletion.
-  - [ ] Return/report counts of deleted rows per table to support completion audit trail.
+- [x] Add operator execution interface for deletion workflow (AC: 3, 5)
+  - [x] Provide a script/CLI entry point under `backend/` to execute deletion by email with structured output.
+  - [x] Enforce input normalization at backend boundary (`.lower().strip()`) and validate email format before deletion.
+  - [x] Return/report counts of deleted rows per table to support completion audit trail.
 
-- [ ] Validate first-time-user behavior post-deletion (AC: 5)
-  - [ ] Add regression tests proving `POST /api/v1/auth/check-email` returns the new-user path after deletion.
-  - [ ] Add tests proving waitlist and unsubscribe artifacts tied to deleted user do not recreate blocked-user behavior.
+- [x] Validate first-time-user behavior post-deletion (AC: 5)
+  - [x] Add regression tests proving `POST /api/v1/auth/check-email` returns the new-user path after deletion.
+  - [x] Add tests proving waitlist and unsubscribe artifacts tied to deleted user do not recreate blocked-user behavior.
 
-- [ ] Add comprehensive automated coverage and verification steps (AC: 1-5)
-  - [ ] Backend tests for deletion workflow success, idempotency, missing-user handling, and dependent-row cleanup.
-  - [ ] Backend tests for the operator execution wrapper (input validation, dry-run output, confirm guard behavior).
-  - [ ] Manual verification checklist in docs for SLA timestamps and email templates.
+- [x] Add comprehensive automated coverage and verification steps (AC: 1-5)
+  - [x] Backend tests for deletion workflow success, idempotency, missing-user handling, and dependent-row cleanup.
+  - [x] Backend tests for the operator execution wrapper (input validation, dry-run output, confirm guard behavior).
+  - [x] Manual verification checklist in docs for SLA timestamps and email templates.
 
 ## Dev Notes
 
@@ -142,8 +142,26 @@ openai/gpt-5.3-codex
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story context prepared for FR33-compliant, operations-first deletion request handling with explicit SLA and audit requirements.
 - Sprint status transitioned from `backlog` to `ready-for-dev` for story `5-5-data-deletion-request-handling`.
+- Implemented backend-only deletion workflow in `backend/app/services/data_deletion_service.py` with normalized email handling, deterministic deletion order, dry-run support, and explicit confirmation guard.
+- Implemented operator CLI `backend/delete_user_data.py` with JSON structured output, validation errors, and table-level deletion counts.
+- Added deletion regression and coverage tests for workflow service, CLI wrapper, and post-deletion auth behavior in `backend/tests/services/` and `backend/tests/routers/`.
+- Replaced privacy placeholder with complete MVP policy sections and FR33 deletion SLA details in `frontend/app/privacy/page.tsx` + `frontend/lib/messages.ts`.
+- Added operations runbook `docs/data-deletion-operations.md` with SLA guardrails, escalation policy, timestamp logging requirements, and exact Hungarian templates.
+- Validation completed: `cd backend && pytest` (88 passed), `cd frontend && pnpm lint` (pass).
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-5-data-deletion-request-handling.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/services/data_deletion_service.py
+- backend/delete_user_data.py
+- backend/tests/services/test_data_deletion_service.py
+- backend/tests/services/test_delete_user_data_cli.py
+- backend/tests/routers/test_auth_post_deletion.py
+- frontend/app/privacy/page.tsx
+- frontend/lib/messages.ts
+- docs/data-deletion-operations.md
+
+### Change Log
+
+- 2026-03-21: Implemented FR33 deletion workflow, operator CLI execution path, policy/runbook updates, and full automated regression coverage for post-deletion first-time-user behavior.

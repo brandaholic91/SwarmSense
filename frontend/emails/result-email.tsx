@@ -29,6 +29,7 @@ export type ResultEmailProps = {
   aggregate_score: string;
   consensus_flag?: string;
   user_email: string;
+  unsubscribe_url?: string;
 };
 
 function groupPersonas(personas: ResultEmailPersona[]): ResultEmailPersona[][] {
@@ -47,6 +48,7 @@ export function ResultEmail({
   aggregate_score,
   consensus_flag,
   user_email,
+  unsubscribe_url,
 }: ResultEmailProps) {
   const copy = messages.email.result;
   const personaRows = groupPersonas(personas);
@@ -386,6 +388,24 @@ export function ResultEmail({
                         </p>
                       </td>
                     </tr>
+
+                    {unsubscribe_url ? (
+                      <tr>
+                        <td style={{ padding: "8px 24px 0 24px" }}>
+                          <a
+                            href={unsubscribe_url}
+                            style={{
+                              color: accent,
+                              fontSize: "12px",
+                              lineHeight: "18px",
+                              textDecoration: "underline",
+                            }}
+                          >
+                            {copy.unsubscribeLabel}
+                          </a>
+                        </td>
+                      </tr>
+                    ) : null}
 
                     <tr>
                       <td style={{ padding: "8px 24px 24px 24px" }}>

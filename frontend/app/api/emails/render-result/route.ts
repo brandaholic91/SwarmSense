@@ -12,6 +12,7 @@ export interface ResultEmailRenderRequest {
   aggregate_score: string;
   consensus_flag?: string;
   user_email: string;
+  unsubscribe_url?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
         aggregate_score: body.aggregate_score,
         consensus_flag: body.consensus_flag,
         user_email: body.user_email,
+        unsubscribe_url: body.unsubscribe_url,
       })
     );
 

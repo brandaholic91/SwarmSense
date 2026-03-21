@@ -136,11 +136,24 @@ describe("ResultEmail", () => {
   it("renders reflection block with a single actionable CTA", async () => {
     const html = await render(<ResultEmail {...sampleProps} consensus_flag="15 persona támogatja" />);
 
-    expect(html).toContain("Mit tennel maskepp ennek alapjan?");
-    expect(html).toContain("Feliratkozas a Pro varolistara");
+    expect(html).toContain("Mit tennél másképp ennek alapján?");
+    expect(html).toContain("Feliratkozás a Pro várólistára");
 
     const linkMatches = html.match(/<a\s+[^>]*href=/g) ?? [];
     expect(linkMatches).toHaveLength(1);
     expect(html).toContain('href="/blocked"');
+  });
+
+  it("renders unsubscribe link when unsubscribe_url is provided", async () => {
+    const html = await render(
+      <ResultEmail
+        {...sampleProps}
+        consensus_flag="15 persona támogatja"
+        unsubscribe_url="https://example.com/api/v1/unsubscribe?user_id=abc"
+      />
+    );
+
+    expect(html).toContain("Leiratkozás");
+    expect(html).toContain("https://example.com/api/v1/unsubscribe?user_id=abc");
   });
 });

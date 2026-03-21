@@ -16,11 +16,11 @@ from app.core.database import get_supabase_client
 
 logger = logging.getLogger(__name__)
 
-RESULT_EMAIL_SUBJECT = "A SwarmSense elemzesed elkeszult"
+RESULT_EMAIL_SUBJECT = "A SwarmSense elemzésed elkészült"
 FOLLOW_UP_SUBJECTS = {
-    "day1": "Mit tanultunk 24 ora utan?",
-    "day3": "Uj nezopontok a SwarmSense eredmenyedhez",
-    "day7": "Egy het utan: mit tesztelnel kovetkezonek?",
+    "day1": "Mit tanultunk 24 óra után?",
+    "day3": "Új nézőpontok a SwarmSense eredményedhez",
+    "day7": "Egy hét után: mit tesztelnél következőnek?",
 }
 _VALID_DAYS = frozenset(FOLLOW_UP_SUBJECTS)
 
@@ -46,7 +46,11 @@ def _resolve_reply_to(*, email_reply_to: str, email_from: str) -> str:
 
 
 def _build_result_email_props(
-    *, recipient_email: str, result_payload: dict[str, Any], frontend_origin: str
+    *,
+    recipient_email: str,
+    result_payload: dict[str, Any],
+    frontend_origin: str,
+    unsubscribe_url: str | None,
 ) -> dict[str, Any]:
     personas_payload = result_payload.get("personas")
     personas: list[dict[str, str]] = []
@@ -81,15 +85,16 @@ def _build_result_email_props(
         "aggregate_score": str(result_payload.get("aggregate_score_display", "")),
         "consensus_flag": str(result_payload.get("consensus_flag_display", "")) or None,
         "user_email": recipient_email,
+        "unsubscribe_url": unsubscribe_url,
     }
 
 
 def _stance_label_from_value(*, stance: str) -> str:
     if stance == "support":
-        return "Tamogatja"
+        return "Támogatja"
     if stance == "reject":
-        return "Elutasitja"
-    return "Felteteles"
+        return "Elutasítja"
+    return "Feltételes"
 
 
 def _render_result_email_via_frontend_api(
@@ -120,7 +125,27 @@ def _render_followup_email_via_frontend_api(
         data = response.json()
         html_content = data.get("html")
         if not isinstance(html_content, str):
-            raise ValueError(f"render-followup API returned unexpected payload: {data!r}")
+            raise ValueError(
+                f"render-followup API returned unexpected payload: {data!r}"
+            )
+        return html_content
+
+
+def _render_magic_link_email_via_frontend_api(
+    *, props: dict[str, Any], frontend_origin: str
+) -> str:
+    import httpx
+
+    url = f"{frontend_origin.rstrip('/')}/api/emails/render-magic-link"
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(url, json=props)
+        response.raise_for_status()
+        data = response.json()
+        html_content = data.get("html")
+        if not isinstance(html_content, str):
+            raise ValueError(
+                f"render-magic-link API returned unexpected payload: {data!r}"
+            )
         return html_content
 
 
@@ -199,6 +224,10 @@ def send_magic_link_email(recipient_email: str, verify_url: str) -> None:
         email_reply_to=settings.email_reply_to,
         email_from=settings.email_from,
     )
+    rendered_html = _render_magic_link_email_via_frontend_api(
+        props={"verify_url": verify_url},
+        frontend_origin=str(settings.frontend_origin),
+    )
 
     resend.Emails.send(
         {
@@ -206,20 +235,13 @@ def send_magic_link_email(recipient_email: str, verify_url: str) -> None:
             "to": [recipient_email],
             "reply_to": reply_to,
             "subject": "SwarmSense – Bejelentkezési link",
-            "html": (
-                "<div style='font-family:Arial,sans-serif;line-height:1.6;'>"
-                "<h2>Folytasd a SwarmSense elemzést</h2>"
-                "<p>Kattints a lenti gombra az azonosításhoz.</p>"
-                f"<p><a href='{verify_url}'>Bejelentkezés magic linkkel</a></p>"
-                "<p>Ez a link 24 órán belül lejár.</p>"
-                "</div>"
-            ),
+            "html": rendered_html,
         }
     )
 
 
 def send_run_result_email(
-    *, recipient_email: str, result_payload: dict[str, Any]
+    *, recipient_email: str, result_payload: dict[str, Any], user_id: str | None = None
 ) -> None:
     settings = get_settings()
     resend.api_key = settings.resend_api_key
@@ -228,10 +250,19 @@ def send_run_result_email(
         email_reply_to=settings.email_reply_to,
         email_from=settings.email_from,
     )
+    unsubscribe_url: str | None = None
+    if user_id:
+        unsubscribe_url = _resolve_unsubscribe_url(
+            backend_origin=str(settings.backend_origin),
+            user_id=user_id,
+            secret=settings.internal_secret,
+        )
+
     template_props = _build_result_email_props(
         recipient_email=recipient_email,
         result_payload=result_payload,
         frontend_origin=str(settings.frontend_origin),
+        unsubscribe_url=unsubscribe_url,
     )
     rendered_html = _render_result_email_via_frontend_api(
         props=template_props,
@@ -388,7 +419,9 @@ def dispatch_followup_sequence() -> int:
             if user_row.get("unsubscribed_at") is not None:
                 logger.info(
                     "Follow-up skipped (unsubscribed): run_id=%s user_id=%s day=%s",
-                    run_id, user_id, day,
+                    run_id,
+                    user_id,
+                    day,
                 )
                 continue
 
@@ -409,7 +442,9 @@ def dispatch_followup_sequence() -> int:
                 sent += 1
                 logger.info(
                     "Follow-up sent: run_id=%s user_id=%s day=%s",
-                    run_id, user_id, day,
+                    run_id,
+                    user_id,
+                    day,
                 )
             except Exception as exc:
                 _reset_followup_flag(run_id=run_id, day_field=day_field)

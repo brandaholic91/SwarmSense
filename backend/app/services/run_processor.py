@@ -383,6 +383,7 @@ def _dispatch_result_email(
         send_run_result_email(
             recipient_email=recipient_email,
             result_payload=payload,
+            user_id=user_id,
         )
     except Exception as exc:
         failure_timestamp = datetime.now(UTC).isoformat()

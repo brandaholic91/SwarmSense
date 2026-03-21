@@ -8,7 +8,7 @@ describe("FollowUpDay1Email", () => {
       <FollowUpDay1Email unsubscribe_url="https://example.com/api/v1/unsubscribe?user_id=abc" />
     );
 
-    expect(html).toContain("Leiratkozas");
+    expect(html).toContain("Leiratkozás");
     expect(html).toContain("https://example.com/api/v1/unsubscribe?user_id=abc");
   });
 });

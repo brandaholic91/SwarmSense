@@ -221,7 +221,7 @@ export const messages = {
       expiry: "Ez a link 24 órán belül lejár.",
     },
     result: {
-      subject: "A SwarmSense elemzesed elkeszult",
+      subject: "A SwarmSense elemzésed elkészült",
       preview: "A SwarmSense eredményed megérkezett",
       title: "Itt van a SwarmSense eredményed",
       intro:
@@ -238,10 +238,11 @@ export const messages = {
       primaryArgumentLabel: "Elsődleges érv",
       changeConditionLabel: "Mi változtatná meg a véleményét",
       sentToPrefix: "Erre a címre küldtük:",
-      reflectionQuestion: "Mit tennel maskepp ennek alapjan?",
-      reflectionCtaLabel: "Feliratkozas a Pro varolistara",
+      unsubscribeLabel: "Leiratkozás",
+      reflectionQuestion: "Mit tennél másképp ennek alapján?",
+      reflectionCtaLabel: "Feliratkozás a Pro várólistára",
       reflectionHelper:
-        "Jelentkezz a varolistara, hogy elso korben kapj ertesitest a Pro tier nyitasarol.",
+        "Jelentkezz a várólistára, hogy első körben kapj értesítést a Pro tier nyitásáról.",
       reflectionCtaHref: "/blocked",
       footerNote: "Ez egy automatikus értesítő levél, válasz helyett indíts új elemzést.",
       interpretiveDisclaimer:
@@ -249,24 +250,24 @@ export const messages = {
     },
     followup: {
       day1: {
-        preview: "1 nap telt el az eredmenyed ota",
-        title: "Mit viszel tovabb az elso nap utan?",
-        body: "Nezd at ujra a legerosebb ellenervet, es hasznald hipotézis-kent a kovetkezo iteraciodban.",
+        preview: "1 nap telt el az eredményed óta",
+        title: "Mit viszel tovább az első nap után?",
+        body: "Nézd át újra a legerősebb ellenérvet, és használd hipotézisként a következő iterációdban.",
       },
       day3: {
-        preview: "3 napos emlekezteto a SwarmSense eredmenyedrol",
-        title: "Harom nap utan uj perspektiva",
-        body: "Valassz ki egy support es egy reject allaspontot, majd formalj beloluk tesztelheto uzenetparokat.",
+        preview: "3 napos emlékeztető a SwarmSense eredményedről",
+        title: "Három nap után új perspektíva",
+        body: "Válassz ki egy support és egy reject álláspontot, majd formálj belőlük tesztelhető üzenetpárokat.",
       },
       day7: {
-        preview: "7 napos follow-up: mi a kovetkezo lepés?",
-        title: "Eltelt egy het - ideje dontest hozni",
-        body: "Ha meg nem leptel, most priorizald a kovetkezo kiserletet az eredmeny alapjan.",
+        preview: "7 napos follow-up: mi a következő lépés?",
+        title: "Eltelt egy hét - ideje döntést hozni",
+        body: "Ha még nem léptél, most priorizáld a következő kísérletet az eredmény alapján.",
       },
-      ctaLabel: "Feliratkozas a Pro varolistara",
+      ctaLabel: "Feliratkozás a Pro várólistára",
       ctaHref: "/blocked",
-      unsubscribeLabel: "Leiratkozas",
-      footerNote: "Ez egy automatikus marketing level. Barmikor leiratkozhatsz.",
+      unsubscribeLabel: "Leiratkozás",
+      footerNote: "Ez egy automatikus marketing levél. Bármikor leiratkozhatsz.",
     },
   },
   legal: {

@@ -96,7 +96,7 @@ def test_send_run_result_email_uses_required_subject_and_reply_to(
         )
 
     assert len(sent) == 1
-    assert sent[0]["subject"] == "A SwarmSense elemzesed elkeszult"
+    assert sent[0]["subject"] == "A SwarmSense elemzésed elkészült"
     assert sent[0]["reply_to"] == "support@swarmsense.ai"
 
 
@@ -158,6 +158,33 @@ def test_send_run_result_email_html_escapes_user_content(
     assert "&lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt;" in body
 
 
+def test_send_magic_link_email_uses_frontend_rendered_template(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    from app.services.email_service import send_magic_link_email
+
+    sent: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "app.services.email_service._render_magic_link_email_via_frontend_api",
+        lambda *, props, frontend_origin: (
+            f"<html><body>magic:{props['verify_url']}:{frontend_origin}</body></html>"
+        ),
+    )
+
+    with patch("resend.Emails.send", side_effect=lambda payload: sent.append(payload)):
+        send_magic_link_email(
+            recipient_email="user@example.com",
+            verify_url="https://swarmsense.vercel.app/verify?token=test-token",
+        )
+
+    assert len(sent) == 1
+    assert sent[0]["subject"] == "SwarmSense – Bejelentkezési link"
+    assert sent[0]["reply_to"] == "support@swarmsense.ai"
+    assert (
+        "magic:https://swarmsense.vercel.app/verify?token=test-token" in sent[0]["html"]
+    )
+
+
 def test_send_followup_email_uses_day_template_and_unsubscribe_link(
     monkeypatch,
 ) -> None:
@@ -181,9 +208,12 @@ def test_send_followup_email_uses_day_template_and_unsubscribe_link(
         )
 
     assert len(sent) == 1
-    assert sent[0]["subject"] == "Uj nezopontok a SwarmSense eredmenyedhez"
+    assert sent[0]["subject"] == "Új nézőpontok a SwarmSense eredményedhez"
     assert "day3:" in sent[0]["html"]
-    assert "https://api.swarmsense.ai/api/v1/unsubscribe?user_id=11111111-1111-4111-8111-111111111111" in sent[0]["html"]
+    assert (
+        "https://api.swarmsense.ai/api/v1/unsubscribe?user_id=11111111-1111-4111-8111-111111111111"
+        in sent[0]["html"]
+    )
     assert "List-Unsubscribe" in sent[0]["headers"]
     assert "List-Unsubscribe-Post" in sent[0]["headers"]
     assert sent[0]["headers"]["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"

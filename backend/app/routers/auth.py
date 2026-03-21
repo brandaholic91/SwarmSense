@@ -31,6 +31,8 @@ async def check_email(payload: EmailCheckRequest) -> EmailCheckResponse:
             detail="Consent is required",
         )
 
+    settings = get_settings()
+
     try:
         supabase = get_supabase_client()
         user_result = (
@@ -48,6 +50,9 @@ async def check_email(payload: EmailCheckRequest) -> EmailCheckResponse:
         return EmailCheckResponse(status="new")
 
     user_id = users[0]["id"]
+
+    if settings.disable_single_run_limit:
+        return EmailCheckResponse(status="new")
 
     try:
         completed_run_result = (
@@ -131,9 +136,9 @@ async def create_magic_link(payload: MagicLinkCreateRequest) -> MagicLinkCreateR
 
     try:
         # P-3: Invalidate existing unused tokens for this user before issuing a new one
-        supabase.table("magic_link_tokens").update(
-            {"used_at": now.isoformat()}
-        ).eq("user_id", user_id).is_("used_at", "null").execute()
+        supabase.table("magic_link_tokens").update({"used_at": now.isoformat()}).eq(
+            "user_id", user_id
+        ).is_("used_at", "null").execute()
 
         supabase.table("magic_link_tokens").insert(
             {
@@ -195,13 +200,15 @@ async def verify_magic_link(payload: VerifyTokenRequest):
         raise HTTPException(status_code=500, detail="Failed to verify token")
 
     # P-14: Handle all Postgres timestamptz formats (space separator, Z suffix, offset)
-    expires_at = datetime.fromisoformat(expires_at_raw.replace(" ", "T").replace("Z", "+00:00"))
+    expires_at = datetime.fromisoformat(
+        expires_at_raw.replace(" ", "T").replace("Z", "+00:00")
+    )
     if expires_at <= now:
         # P-10: Mark expired token as used to prevent indefinite replay probing
         try:
-            supabase.table("magic_link_tokens").update(
-                {"used_at": now.isoformat()}
-            ).eq("token", token).is_("used_at", "null").execute()
+            supabase.table("magic_link_tokens").update({"used_at": now.isoformat()}).eq(
+                "token", token
+            ).is_("used_at", "null").execute()
         except Exception:  # pragma: no cover
             pass  # best-effort; don't block the error response
         return error_response(

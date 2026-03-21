@@ -265,6 +265,27 @@ def test_check_email_returns_returning_for_user_with_completed_run(monkeypatch):
     assert response.json() == {"status": "returning", "redirect_to": "/blocked"}
 
 
+def test_check_email_allows_repeat_runs_when_limit_disabled(monkeypatch):
+    monkeypatch.setenv("SWARMSENSE_DISABLE_SINGLE_RUN_LIMIT", "true")
+    fake_supabase = FakeSupabase(
+        users_by_email={"user@example.com": "user-1"},
+        users_with_completed_runs={"user-1"},
+    )
+    client = build_client(monkeypatch, fake_supabase)
+
+    response = client.post(
+        "/api/v1/auth/check-email",
+        json={
+            "email": "user@example.com",
+            "has_consent": True,
+            "consent_timestamp": "2026-03-20T18:00:00Z",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "new"}
+
+
 def test_check_email_rejects_invalid_email(monkeypatch):
     fake_supabase = FakeSupabase(users_by_email={}, users_with_completed_runs=set())
     client = build_client(monkeypatch, fake_supabase)

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     resend_api_key: str = Field(...)
     email_from: str = Field(default="SwarmSense <noreply@swarmsense.ai>")
     email_reply_to: str = Field(default="support@swarmsense.ai")
+    disable_single_run_limit: bool = Field(default=False)
 
     @property
     def is_production(self) -> bool:

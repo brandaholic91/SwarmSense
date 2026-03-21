@@ -29,6 +29,7 @@ class FakeQuery:
         self._payload: dict[str, Any] | None = None
         self._operation = "select"
         self._eq_value: str | None = None
+        self._on_conflict: str | None = None
 
     def select(self, _fields: str):
         self._operation = "select"
@@ -50,6 +51,12 @@ class FakeQuery:
     def update(self, payload: dict[str, Any]):
         self._operation = "update"
         self._payload = payload
+        return self
+
+    def upsert(self, payload: dict[str, Any], **kwargs):
+        self._operation = "upsert"
+        self._payload = payload
+        self._on_conflict = kwargs.get("on_conflict")
         return self
 
     def execute(self):
@@ -74,6 +81,16 @@ class FakeQuery:
                 if row.get("month") == self._eq_value:
                     row.update(self._payload)
             return FakeResponse(self._supabase.cost_rows)
+
+        if self._table_name == "cost_tracking" and self._operation == "upsert":
+            assert self._payload is not None
+            month = self._payload.get("month")
+            existing = [r for r in self._supabase.cost_rows if r.get("month") == month]
+            if existing:
+                existing[0].update(self._payload)
+            else:
+                self._supabase.cost_rows.append(dict(self._payload))
+            return FakeResponse([dict(self._payload)])
 
         if self._table_name == "users" and self._operation == "select":
             if self._eq_value is None:
@@ -140,7 +157,7 @@ class FakeQuery:
 
 class FakeSupabase:
     def __init__(self, total_usd: str | None = "1.00"):
-        current_month = date.today().strftime("%Y-%m")
+        current_month = datetime.now(UTC).strftime("%Y-%m")  # P7: match UTC month key
         self.cost_rows = (
             []
             if total_usd is None
@@ -376,7 +393,7 @@ def test_monthly_cost_tracking_creates_missing_month_row(monkeypatch) -> None:
     )
 
     assert len(fake_supabase.cost_rows) == 1
-    assert fake_supabase.cost_rows[0]["month"] == date.today().strftime("%Y-%m")
+    assert fake_supabase.cost_rows[0]["month"] == datetime.now(UTC).strftime("%Y-%m")
     assert fake_supabase.cost_rows[0]["total_usd"] == "0.42"
 
 

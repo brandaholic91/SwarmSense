@@ -22,7 +22,6 @@ async def process_run(
     topic: str,
     audience: str,
 ) -> PersonaRunResult:
-    should_increment_monthly_cost = _should_increment_monthly_cost(run_id=run_id)
     _update_run_row(run_id=run_id, payload={"status": "running"})
 
     try:
@@ -30,6 +29,7 @@ async def process_run(
     except Exception as exc:
         failure_timestamp = datetime.now(UTC).isoformat()
         final_cost = Decimal("0")
+        should_increment = _should_increment_monthly_cost(run_id=run_id)  # P1: check right before write
         _update_run_row(
             run_id=run_id,
             payload={
@@ -41,7 +41,7 @@ async def process_run(
         _increment_monthly_cost(
             run_id=run_id,
             run_cost=final_cost,
-            should_increment=should_increment_monthly_cost,
+            should_increment=should_increment,
         )
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("run_id", run_id)
@@ -54,6 +54,7 @@ async def process_run(
     completed_timestamp = datetime.now(UTC).isoformat()
 
     if result.successful_count < MIN_SUCCESSFUL_PERSONAS:
+        should_increment = _should_increment_monthly_cost(run_id=run_id)  # P1
         _update_run_row(
             run_id=run_id,
             payload={
@@ -66,7 +67,7 @@ async def process_run(
         _increment_monthly_cost(
             run_id=run_id,
             run_cost=final_cost,
-            should_increment=should_increment_monthly_cost,
+            should_increment=should_increment,
         )
         _capture_failed_run(
             run_id=run_id,
@@ -85,43 +86,66 @@ async def process_run(
         },
     )
 
-    aggregation_payload = _build_result_payload(run_id=run_id, result=result)
-    final_status = _resolve_final_status(result=result)
-
-    _update_run_row(
-        run_id=run_id,
-        payload={
-            "status": final_status,
-            "persona_count": result.successful_count,
-            "completed_at": completed_timestamp,
-            "cost_usd": str(final_cost),
-        },
-    )
-    _increment_monthly_cost(
-        run_id=run_id,
-        run_cost=final_cost,
-        should_increment=should_increment_monthly_cost,
-    )
-
-    if final_status in {"partial", "completed"}:
-        _dispatch_result_email(
-            run_id=run_id,
-            user_id=user_id,
-            payload=aggregation_payload,
+    try:  # P9: catch aggregation/finalization errors to avoid stuck composing state
+        final_status = _resolve_final_status(result=result)
+        aggregation_payload = _build_result_payload(
+            run_id=run_id, result=result, final_status=final_status
         )
+        should_increment = _should_increment_monthly_cost(run_id=run_id)  # P1
+        _update_run_row(
+            run_id=run_id,
+            payload={
+                "status": final_status,
+                "persona_count": result.successful_count,
+                "completed_at": completed_timestamp,
+                "cost_usd": str(final_cost),
+            },
+        )
+        _increment_monthly_cost(
+            run_id=run_id,
+            run_cost=final_cost,
+            should_increment=should_increment,
+        )
+        if final_status in {"partial", "completed"}:
+            _dispatch_result_email(
+                run_id=run_id,
+                user_id=user_id,
+                payload=aggregation_payload,
+            )
+    except Exception as exc:
+        should_increment = _should_increment_monthly_cost(run_id=run_id)
+        _update_run_row(
+            run_id=run_id,
+            payload={
+                "status": "failed",
+                "completed_at": completed_timestamp,
+                "cost_usd": str(final_cost),
+            },
+        )
+        _increment_monthly_cost(
+            run_id=run_id,
+            run_cost=final_cost,
+            should_increment=should_increment,
+        )
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "RUN_FINALIZATION_UNHANDLED")
+            scope.set_extra("completed_timestamp", completed_timestamp)
+            sentry_sdk.capture_exception(exc)
+        raise
 
     return result
 
 
-def _resolve_final_status(*, result: PersonaRunResult) -> str:
-    if result.successful_count < MIN_SUCCESSFUL_PERSONAS:
-        return "failed"
+def _resolve_final_status(*, result: PersonaRunResult) -> str:  # P3: dead "failed" branch removed
     if result.successful_count < result.total_personas:
         return "partial"
     return "completed"
 
 
-def _build_result_payload(*, run_id: str, result: PersonaRunResult) -> dict[str, Any]:
+def _build_result_payload(
+    *, run_id: str, result: PersonaRunResult, final_status: str  # P12: status passed in, not recomputed
+) -> dict[str, Any]:
     stance_counts: dict[str, int] = {"support": 0, "reject": 0, "conditional": 0}
     arguments_frequency: dict[str, int] = {}
     personas_for_email: list[dict[str, str]] = []
@@ -142,7 +166,7 @@ def _build_result_payload(*, run_id: str, result: PersonaRunResult) -> dict[str,
 
     return {
         "run_id": run_id,
-        "status": _resolve_final_status(result=result),
+        "status": final_status,
         "completed_persona_count": result.successful_count,
         "total_persona_count": result.total_personas,
         "persona_count_label": _format_persona_count_label(
@@ -160,8 +184,16 @@ def _format_persona_count_label(*, completed: int, total: int) -> str:
 
 
 def _should_increment_monthly_cost(*, run_id: str) -> bool:
-    existing_row = _load_run_row(run_id=run_id)
-    if not existing_row:
+    try:
+        existing_row = _load_run_row(run_id=run_id)
+    except Exception as exc:
+        # P11: DB unreachable — conservative default: skip increment to avoid double-counting
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "COST_GUARD_READ_FAILED")
+            sentry_sdk.capture_exception(exc)
+        return False
+    if existing_row is None:
         return True
     status = existing_row.get("status")
     cost_value = existing_row.get("cost_usd")
@@ -169,18 +201,15 @@ def _should_increment_monthly_cost(*, run_id: str) -> bool:
 
 
 def _load_run_row(*, run_id: str) -> dict[str, Any] | None:
-    try:
-        supabase = get_supabase_client()
-        result = (
-            supabase.table("runs")
-            .select("status,cost_usd")
-            .eq("id", run_id)
-            .limit(1)
-            .execute()
-        )
-    except Exception:
-        return None
-
+    # P11: exceptions propagate to caller; caller decides the safe default
+    supabase = get_supabase_client()
+    result = (
+        supabase.table("runs")
+        .select("status,cost_usd")
+        .eq("id", run_id)
+        .limit(1)
+        .execute()
+    )
     rows = result.data or []
     if not rows:
         return None
@@ -193,7 +222,7 @@ def _normalize_cost(value: object) -> Decimal:
         normalized = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
         return Decimal("0")
-    if normalized < 0:
+    if not normalized.is_finite() or normalized < 0:  # P6: guard infinity
         return Decimal("0")
     return normalized
 
@@ -204,30 +233,22 @@ def _increment_monthly_cost(
     if not should_increment:
         return
 
-    month = date.today().strftime("%Y-%m")
+    month = datetime.now(UTC).strftime("%Y-%m")  # P7: UTC instead of date.today() local time
     try:
         supabase = get_supabase_client()
-        lookup = (
+        existing = (
             supabase.table("cost_tracking")
             .select("total_usd")
             .eq("month", month)
             .limit(1)
+            .execute()
+            .data or []
         )
-        existing = lookup.execute().data or []
-
-        if existing:
-            existing_total = _normalize_cost(existing[0].get("total_usd"))
-            updated_total = existing_total + run_cost
-            (
-                supabase.table("cost_tracking")
-                .update({"total_usd": str(updated_total)})
-                .eq("month", month)
-                .execute()
-            )
-            return
-
-        supabase.table("cost_tracking").insert(
-            {"month": month, "total_usd": str(run_cost)}
+        existing_total = _normalize_cost(existing[0].get("total_usd")) if existing else Decimal("0")
+        updated_total = existing_total + run_cost
+        supabase.table("cost_tracking").upsert(  # P2: upsert prevents duplicate-insert race
+            {"month": month, "total_usd": str(updated_total)},
+            on_conflict="month",
         ).execute()
     except Exception as exc:
         with sentry_sdk.push_scope() as scope:

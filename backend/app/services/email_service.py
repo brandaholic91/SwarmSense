@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 from typing import Any
 
@@ -37,7 +38,7 @@ def send_run_result_email(
     resend.api_key = settings.resend_api_key
 
     persona_count = str(result_payload.get("persona_count_label", ""))
-    compact_payload = json.dumps(result_payload, ensure_ascii=False)
+    compact_payload = html.escape(json.dumps(result_payload, ensure_ascii=False))
     resend.Emails.send(
         {
             "from": settings.email_from,

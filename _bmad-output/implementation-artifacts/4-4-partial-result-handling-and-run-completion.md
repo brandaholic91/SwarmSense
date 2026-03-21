@@ -1,6 +1,6 @@
 # Story 4.4: Partial Result Handling & Run Completion
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -156,8 +156,11 @@ openai/gpt-5.3-codex
 - backend/app/services/llm_client.py
 - backend/app/services/persona_engine.py
 - backend/app/services/run_processor.py
+- backend/tests/services/test_email_service.py
+- backend/tests/services/test_persona_engine.py
 - backend/tests/services/test_run_processor.py
 
 ### Change Log
 
 - 2026-03-21: Implemented Story 4.4 run completion pipeline (partial/completed state machine, deterministic aggregation payload, result-email dispatch seam, run/monthly cost finalization, and comprehensive service tests); status moved to review.
+- 2026-03-21: Applied code review patches (12 findings); status moved to done. Full suite: 56 passed.

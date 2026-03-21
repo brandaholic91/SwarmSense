@@ -266,8 +266,8 @@ def _extract_cost_usd(payload: dict[str, Any]) -> float:
             normalized = Decimal(str(value))
         except (InvalidOperation, TypeError, ValueError):
             continue
-        if normalized < 0:
-            return 0.0
+        if not normalized.is_finite() or normalized < 0:  # P5: continue on negative; P6: reject infinity
+            continue
         return float(normalized)
 
     return 0.0

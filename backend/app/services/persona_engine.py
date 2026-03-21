@@ -265,17 +265,10 @@ async def execute_persona_engine(
                 persona=persona, topic=topic, audience=audience
             )
             try:
-                if hasattr(client, "generate_persona_response_with_meta"):
-                    raw, cost_usd = await client.generate_persona_response_with_meta(
-                        system_prompt=HUNGARIAN_SYSTEM_PROMPT,
-                        user_prompt=prompt,
-                    )
-                else:
-                    raw = await client.generate_persona_response(
-                        system_prompt=HUNGARIAN_SYSTEM_PROMPT,
-                        user_prompt=prompt,
-                    )
-                    cost_usd = 0.0
+                raw, cost_usd = await client.generate_persona_response_with_meta(
+                    system_prompt=HUNGARIAN_SYSTEM_PROMPT,
+                    user_prompt=prompt,
+                )
                 return normalize_persona_response(raw), cost_usd
             except LLMProviderError as exc:
                 return (

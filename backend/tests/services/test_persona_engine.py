@@ -74,7 +74,7 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
     current_inflight = 0
 
     class FakeClient:
-        async def generate_persona_response(
+        async def generate_persona_response_with_meta(
             self, *, system_prompt: str, user_prompt: str
         ):
             nonlocal max_inflight
@@ -87,13 +87,16 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
             max_inflight = max(max_inflight, current_inflight)
             await asyncio.sleep(0.01)
             current_inflight -= 1
-            return {
-                "name": "Persona",
-                "role": "Role",
-                "stance": "conditional",
-                "primary_argument": "Erv",
-                "change_condition": "Feltetel",
-            }
+            return (
+                {
+                    "name": "Persona",
+                    "role": "Role",
+                    "stance": "conditional",
+                    "primary_argument": "Erv",
+                    "change_condition": "Feltetel",
+                },
+                0.0,
+            )
 
     result = asyncio.run(
         execute_persona_engine(
@@ -112,7 +115,7 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
 
 def test_execute_persona_engine_collects_provider_failures() -> None:
     class FailingClient:
-        async def generate_persona_response(
+        async def generate_persona_response_with_meta(
             self, *, system_prompt: str, user_prompt: str
         ):
             raise LLMProviderError(

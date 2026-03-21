@@ -12,6 +12,7 @@ from app.services.email_service import send_run_result_email
 from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 
 MIN_SUCCESSFUL_PERSONAS = 12
+CONSENSUS_THRESHOLD = 15
 FINAL_STATUSES = {"completed", "partial", "failed"}
 
 
@@ -182,6 +183,11 @@ def _build_result_payload(
         )[:3]
     ]
 
+    aggregate_score_payload = _build_aggregate_score_payload(
+        stance_counts=stance_counts
+    )
+    consensus_payload = _build_consensus_payload(stance_counts=stance_counts)
+
     return {
         "run_id": run_id,
         "status": final_status,
@@ -192,8 +198,67 @@ def _build_result_payload(
             total=result.total_personas,
         ),
         "stance_counts": stance_counts,
+        "aggregate_score": aggregate_score_payload,
+        "aggregate_score_display": aggregate_score_payload["display"],
+        "consensus_flag": consensus_payload,
+        "consensus_flag_display": consensus_payload["display"],
         "top_arguments": top_arguments,
         "personas": personas_for_email,
+    }
+
+
+def _build_aggregate_score_payload(*, stance_counts: dict[str, int]) -> dict[str, Any]:
+    support_count = stance_counts["support"]
+    reject_count = stance_counts["reject"]
+    conditional_count = stance_counts["conditional"]
+    total_count = support_count + reject_count + conditional_count
+
+    return {
+        "support_count": support_count,
+        "reject_count": reject_count,
+        "conditional_count": conditional_count,
+        "total_count": total_count,
+        "display": (
+            f"Támogatja: {support_count} | "
+            f"Elutasítja: {reject_count} | "
+            f"Feltételes: {conditional_count}"
+        ),
+    }
+
+
+def _build_consensus_payload(*, stance_counts: dict[str, int]) -> dict[str, Any]:
+    support_count = stance_counts["support"]
+    reject_count = stance_counts["reject"]
+
+    direction: str | None = None
+    count = 0
+
+    if support_count >= CONSENSUS_THRESHOLD and support_count > reject_count:
+        direction = "support"
+        count = support_count
+    elif reject_count >= CONSENSUS_THRESHOLD and reject_count > support_count:
+        direction = "reject"
+        count = reject_count
+    elif support_count >= CONSENSUS_THRESHOLD and reject_count < CONSENSUS_THRESHOLD:
+        direction = "support"
+        count = support_count
+    elif reject_count >= CONSENSUS_THRESHOLD and support_count < CONSENSUS_THRESHOLD:
+        direction = "reject"
+        count = reject_count
+
+    if direction == "support":
+        display = f"{count} persona támogatja"
+    elif direction == "reject":
+        display = f"{count} persona elutasítja"
+    else:
+        display = None
+
+    return {
+        "is_triggered": direction is not None,
+        "direction": direction,
+        "count": count if direction is not None else None,
+        "threshold": CONSENSUS_THRESHOLD,
+        "display": display,
     }
 
 
@@ -265,9 +330,9 @@ def _increment_monthly_cost(
             .data
             or []
         )
-        existing_total = (
-            _normalize_cost(existing[0].get("total_usd")) if existing else Decimal("0")
-        )
+        existing_total = Decimal("0")
+        if existing and isinstance(existing[0], dict):
+            existing_total = _normalize_cost(existing[0].get("total_usd"))
         updated_total = existing_total + run_cost
         supabase.table(
             "cost_tracking"

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
@@ -221,6 +221,29 @@ def _build_result(
         successful_count=successful_count,
         responses=responses,
         failures=failures,
+        handoff_payload=[item.model_dump() for item in responses],
+        cost_usd=cost_usd,
+    )
+
+
+def _build_result_with_stances(
+    *, stances: list[str], cost_usd: float
+) -> PersonaRunResult:
+    responses = [
+        PersonaResponse(
+            name=f"Persona-{idx}",
+            role="Role",
+            stance=cast("Any", stance),
+            primary_argument=f"Erv-{idx % 3}",
+            change_condition="Feltetel",
+        )
+        for idx, stance in enumerate(stances)
+    ]
+    return PersonaRunResult(
+        total_personas=len(stances),
+        successful_count=len(stances),
+        responses=responses,
+        failures=[],
         handoff_payload=[item.model_dump() for item in responses],
         cost_usd=cost_usd,
     )
@@ -462,3 +485,177 @@ def test_runs_endpoint_dispatches_into_real_run_processor(monkeypatch) -> None:
             "audience": "SMB CFO",
         }
     ]
+
+
+def test_result_payload_sets_consensus_for_15_of_15_support(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    fake_supabase = FakeSupabase("1.00")
+
+    import app.services.run_processor as run_processor
+
+    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result_with_stances(stances=["support"] * 15, cost_usd=0.10),
+    )
+
+    email_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        run_processor,
+        "send_run_result_email",
+        lambda *, recipient_email, result_payload: email_calls.append(
+            {"recipient_email": recipient_email, "result_payload": result_payload}
+        ),
+    )
+
+    asyncio.run(
+        process_run(
+            run_id="run-1",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    payload = email_calls[0]["result_payload"]
+    assert payload["aggregate_score"]["support_count"] == 15
+    assert payload["aggregate_score"]["reject_count"] == 0
+    assert payload["aggregate_score"]["conditional_count"] == 0
+    assert (
+        payload["aggregate_score_display"]
+        == "Támogatja: 15 | Elutasítja: 0 | Feltételes: 0"
+    )
+    assert payload["consensus_flag"]["is_triggered"] is True
+    assert payload["consensus_flag"]["direction"] == "support"
+    assert payload["consensus_flag"]["count"] == 15
+    assert payload["consensus_flag_display"] == "15 persona támogatja"
+
+
+def test_result_payload_sets_consensus_for_15_of_18_reject(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    fake_supabase = FakeSupabase("1.00")
+
+    import app.services.run_processor as run_processor
+
+    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result_with_stances(
+            stances=["reject"] * 15 + ["support", "support", "support"],
+            cost_usd=0.10,
+        ),
+    )
+
+    email_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        run_processor,
+        "send_run_result_email",
+        lambda *, recipient_email, result_payload: email_calls.append(
+            {"recipient_email": recipient_email, "result_payload": result_payload}
+        ),
+    )
+
+    asyncio.run(
+        process_run(
+            run_id="run-1",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    payload = email_calls[0]["result_payload"]
+    assert payload["aggregate_score"]["support_count"] == 3
+    assert payload["aggregate_score"]["reject_count"] == 15
+    assert payload["aggregate_score"]["conditional_count"] == 0
+    assert payload["consensus_flag"]["is_triggered"] is True
+    assert payload["consensus_flag"]["direction"] == "reject"
+    assert payload["consensus_flag"]["count"] == 15
+    assert payload["consensus_flag_display"] == "15 persona elutasítja"
+
+
+def test_result_payload_no_consensus_for_14_of_18_support(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    fake_supabase = FakeSupabase("1.00")
+
+    import app.services.run_processor as run_processor
+
+    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result_with_stances(
+            stances=["support"] * 14 + ["reject"] * 4,
+            cost_usd=0.10,
+        ),
+    )
+
+    email_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        run_processor,
+        "send_run_result_email",
+        lambda *, recipient_email, result_payload: email_calls.append(
+            {"recipient_email": recipient_email, "result_payload": result_payload}
+        ),
+    )
+
+    asyncio.run(
+        process_run(
+            run_id="run-1",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    payload = email_calls[0]["result_payload"]
+    assert payload["aggregate_score"]["support_count"] == 14
+    assert payload["aggregate_score"]["reject_count"] == 4
+    assert payload["aggregate_score"]["conditional_count"] == 0
+    assert payload["consensus_flag"]["is_triggered"] is False
+    assert payload["consensus_flag"]["direction"] is None
+    assert payload["consensus_flag"]["count"] is None
+    assert payload["consensus_flag_display"] is None
+
+
+def test_result_payload_no_consensus_when_all_conditional(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    fake_supabase = FakeSupabase("1.00")
+
+    import app.services.run_processor as run_processor
+
+    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result_with_stances(stances=["conditional"] * 18, cost_usd=0.10),
+    )
+
+    email_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        run_processor,
+        "send_run_result_email",
+        lambda *, recipient_email, result_payload: email_calls.append(
+            {"recipient_email": recipient_email, "result_payload": result_payload}
+        ),
+    )
+
+    asyncio.run(
+        process_run(
+            run_id="run-1",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    payload = email_calls[0]["result_payload"]
+    assert payload["aggregate_score"]["support_count"] == 0
+    assert payload["aggregate_score"]["reject_count"] == 0
+    assert payload["aggregate_score"]["conditional_count"] == 18
+    assert payload["consensus_flag"]["is_triggered"] is False
+    assert payload["consensus_flag"]["direction"] is None
+    assert payload["consensus_flag"]["count"] is None
+    assert payload["consensus_flag_display"] is None

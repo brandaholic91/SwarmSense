@@ -1,6 +1,6 @@
 # Story 5.2: Result Email - Content Structure & Persona Cards
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,34 +20,34 @@ so that I experience the "aha moment" at the moment of email open, not after cli
 
 ## Tasks / Subtasks
 
-- [ ] Extend run result aggregation payload for email-first insights (AC: 1)
-  - [ ] In `backend/app/services/run_processor.py`, compute deterministic stance counts from `PersonaResponse.stance` and expose a stable `aggregate_score` display payload (Hungarian, user-facing safe).
-  - [ ] Add consensus derivation helper: trigger only for `support` or `reject` with threshold `>=15`; never trigger for `conditional` or mixed-majority below threshold.
-  - [ ] Include explicit consensus metadata in payload (recommended split: machine fields + localized display string) so template rendering is deterministic and testable.
+- [x] Extend run result aggregation payload for email-first insights (AC: 1)
+  - [x] In `backend/app/services/run_processor.py`, compute deterministic stance counts from `PersonaResponse.stance` and expose a stable `aggregate_score` display payload (Hungarian, user-facing safe).
+  - [x] Add consensus derivation helper: trigger only for `support` or `reject` with threshold `>=15`; never trigger for `conditional` or mixed-majority below threshold.
+  - [x] Include explicit consensus metadata in payload (recommended split: machine fields + localized display string) so template rendering is deterministic and testable.
 
-- [ ] Implement dedicated email-safe consensus block and above-the-fold ordering (AC: 2)
-  - [ ] Add an email-safe consensus component (e.g. `frontend/emails/consensus-flag-email.tsx`) using inline styles and `role="alert"`.
-  - [ ] Update `frontend/emails/result-email.tsx` so rendered order is: consensus block (if present) -> aggregate score summary -> remaining context.
-  - [ ] Keep visual hierarchy high-contrast and compatible with Gmail web/mobile, Apple Mail, and Outlook 2019.
+- [x] Implement dedicated email-safe consensus block and above-the-fold ordering (AC: 2)
+  - [x] Add an email-safe consensus component (e.g. `frontend/emails/consensus-flag-email.tsx`) using inline styles and `role="alert"`.
+  - [x] Update `frontend/emails/result-email.tsx` so rendered order is: consensus block (if present) -> aggregate score summary -> remaining context.
+  - [x] Keep visual hierarchy high-contrast and compatible with Gmail web/mobile, Apple Mail, and Outlook 2019.
 
-- [ ] Upgrade persona card content from summary-only to full argument model (AC: 3)
-  - [ ] Extend `ResultEmailPersona` and `PersonaCardEmail` to include and render `primary_argument` and `change_condition` as separate fields.
-  - [ ] Preserve existing stance semantics and token usage from Story 5.1 (`stanceReject`, `stanceSupport`, `stanceConditional`, 4px left border).
-  - [ ] Ensure stance meaning is never color-only (keep visible stance label text).
+- [x] Upgrade persona card content from summary-only to full argument model (AC: 3)
+  - [x] Extend `ResultEmailPersona` and `PersonaCardEmail` to include and render `primary_argument` and `change_condition` as separate fields.
+  - [x] Preserve existing stance semantics and token usage from Story 5.1 (`stanceReject`, `stanceSupport`, `stanceConditional`, 4px left border).
+  - [x] Ensure stance meaning is never color-only (keep visible stance label text).
 
-- [ ] Implement robust responsive email layout for persona cards (AC: 4)
-  - [ ] Render persona cards using an email-compatible grid strategy that results in 3 columns on desktop and 1 column on mobile.
-  - [ ] Use table-safe markup with `role="presentation"`; keep styles inline to preserve cross-client behavior.
-  - [ ] Validate no clipping/overlap in above-the-fold block and first row of persona cards.
+- [x] Implement robust responsive email layout for persona cards (AC: 4)
+  - [x] Render persona cards using an email-compatible grid strategy that results in 3 columns on desktop and 1 column on mobile.
+  - [x] Use table-safe markup with `role="presentation"`; keep styles inline to preserve cross-client behavior.
+  - [x] Validate no clipping/overlap in above-the-fold block and first row of persona cards.
 
-- [ ] Add interpretive disclaimer block for AI simulation transparency (AC: 5)
-  - [ ] Add dedicated disclaimer copy under `messages.email.result` (or reuse shared legal copy if already defined) in Hungarian.
-  - [ ] Render disclaimer at bottom of email with secondary visual weight, without competing with the primary insight block.
+- [x] Add interpretive disclaimer block for AI simulation transparency (AC: 5)
+  - [x] Add dedicated disclaimer copy under `messages.email.result` (or reuse shared legal copy if already defined) in Hungarian.
+  - [x] Render disclaimer at bottom of email with secondary visual weight, without competing with the primary insight block.
 
-- [ ] Expand automated and manual verification coverage (AC: 1-5)
-  - [ ] Frontend email tests (`frontend/emails/result-email.test.tsx`) for ordering, consensus block visibility/absence, role attribute, aggregate score block, full persona fields, and disclaimer presence.
-  - [ ] Backend tests (`backend/tests/services/test_run_processor.py`) for aggregate-score counts, consensus threshold behavior, and edge cases (`15/15`, `15/18`, `14/18`, all-conditional).
-  - [ ] Keep/refresh compatibility evidence document for Gmail web/mobile, Apple Mail, and Outlook 2019.
+- [x] Expand automated and manual verification coverage (AC: 1-5)
+  - [x] Frontend email tests (`frontend/emails/result-email.test.tsx`) for ordering, consensus block visibility/absence, role attribute, aggregate score block, full persona fields, and disclaimer presence.
+  - [x] Backend tests (`backend/tests/services/test_run_processor.py`) for aggregate-score counts, consensus threshold behavior, and edge cases (`15/15`, `15/18`, `14/18`, all-conditional).
+  - [x] Keep/refresh compatibility evidence document for Gmail web/mobile, Apple Mail, and Outlook 2019.
 
 ## Dev Notes
 
@@ -130,12 +130,36 @@ openai/gpt-5.3-codex
 - `backend/app/services/run_processor.py`
 - `backend/app/services/email_service.py`
 - `frontend/lib/messages.ts`
+- `frontend/emails/consensus-flag-email.tsx`
+- `frontend/emails/result-email-compatibility-evidence.md`
+- `pnpm test -- --run` (frontend)
+- `pnpm lint` (frontend)
+- `pytest` (backend)
 
 ### Completion Notes List
 
 - Ultimate context analysis completed for Story 5.2 with implementation guardrails focused on consensus-first email hierarchy and full persona argument rendering.
 - Previous-story learnings and recent git patterns were incorporated to reduce regression risk during implementation.
+- Added deterministic backend aggregation payloads in `run_processor.py`: stance counts, localized aggregate score display, and machine+display consensus metadata with strict `>=15` threshold behavior.
+- Added backend regression coverage for consensus edge-cases (`15/15`, `15/18`, `14/18`, all-conditional) and validated no regressions with full backend suite.
+- Implemented dedicated consensus alert component and reordered email above-the-fold hierarchy to render consensus first (when present), then aggregate score.
+- Upgraded persona card rendering to full argument model with explicit labels for primary argument and change condition while preserving stance text semantics and 4px tokenized borders.
+- Implemented responsive persona-card email layout strategy (3-column desktop, 1-column mobile) with table-safe markup and mobile media fallback.
+- Added Hungarian interpretive disclaimer copy in `messages.email.result` and rendered it in the email footer with secondary visual weight.
+- Refreshed compatibility design-intent checklist for Story 5.2 and validated frontend test and lint suites pass.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-2-result-email-content-structure-and-persona-cards.md
+- backend/app/services/run_processor.py
+- backend/tests/services/test_run_processor.py
+- frontend/emails/consensus-flag-email.tsx
+- frontend/emails/persona-card-email.tsx
+- frontend/emails/result-email.tsx
+- frontend/emails/result-email.test.tsx
+- frontend/emails/result-email-compatibility-evidence.md
+- frontend/lib/messages.ts
+
+### Change Log
+
+- 2026-03-21: Implemented Story 5.2 consensus-first email composition, full persona card argument model, responsive card layout, Hungarian disclaimer transparency copy, and expanded backend/frontend verification coverage.

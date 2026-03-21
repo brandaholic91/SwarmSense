@@ -234,8 +234,12 @@ export const messages = {
       consensusPending: "Nincs megadott konszenzus jelzés",
       personasTitle: "Persona visszajelzések",
       stanceLabelPrefix: "Álláspont",
+      primaryArgumentLabel: "Elsődleges érv",
+      changeConditionLabel: "Mi változtatná meg a véleményét",
       sentToPrefix: "Erre a címre küldtük:",
       footerNote: "Ez egy automatikus értesítő levél, válasz helyett indíts új elemzést.",
+      interpretiveDisclaimer:
+        "Fontos: az itt látható eredmények AI-alapú szintetikus szimulációból származnak, nem valós emberi kutatásból.",
     },
   },
   legal: {

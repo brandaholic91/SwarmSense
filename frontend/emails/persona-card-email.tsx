@@ -22,7 +22,10 @@ export type PersonaCardEmailProps = {
   stance: PersonaStance;
   stance_label: string;
   stanceLabelPrefix: string;
-  summary: string;
+  primary_argument: string;
+  change_condition: string;
+  primaryArgumentLabel: string;
+  changeConditionLabel: string;
 };
 
 export function PersonaCardEmail({
@@ -31,7 +34,10 @@ export function PersonaCardEmail({
   stance,
   stance_label,
   stanceLabelPrefix,
-  summary,
+  primary_argument,
+  change_condition,
+  primaryArgumentLabel,
+  changeConditionLabel,
 }: PersonaCardEmailProps) {
   const stanceColor = stanceColors[stance] ?? emailBorder;
 
@@ -92,9 +98,41 @@ export function PersonaCardEmail({
                 color: emailTextSecondary,
                 fontSize: "14px",
                 lineHeight: "21px",
+                fontWeight: 700,
               }}
             >
-              {summary}
+              {primaryArgumentLabel}
+            </p>
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "14px",
+                lineHeight: "21px",
+              }}
+            >
+              {primary_argument}
+            </p>
+            <p
+              style={{
+                margin: "10px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "14px",
+                lineHeight: "21px",
+                fontWeight: 700,
+              }}
+            >
+              {changeConditionLabel}
+            </p>
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "14px",
+                lineHeight: "21px",
+              }}
+            >
+              {change_condition}
             </p>
           </td>
         </tr>

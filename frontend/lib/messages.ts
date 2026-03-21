@@ -220,6 +220,22 @@ export const messages = {
       buttonLabel: "Bejelentkezés magic linkkel",
       expiry: "Ez a link 24 órán belül lejár.",
     },
+    result: {
+      preview: "A SwarmSense eredmenyed megerkezett",
+      title: "Itt van a SwarmSense eredmenyed",
+      intro:
+        "A personak lefutottak, az osszefoglalo kesz. Alabb latod a fo jelzeseket es a reszleteket.",
+      topicLabel: "Kutatasi tema",
+      audienceLabel: "Celkozonseg",
+      personaCountLabel: "Lefutott personak",
+      aggregateScoreLabel: "Aggregalt tamogatasi arany",
+      consensusLabel: "Konszenzus jelzes",
+      consensusPending: "Nincs megadott konszenzus jelzes",
+      personasTitle: "Persona visszajelzesek",
+      stanceLabelPrefix: "Allaspont",
+      sentToPrefix: "Erre a cimre kuldtuk:",
+      footerNote: "Ez egy automatikus ertesito level, valasz helyett indits uj elemzest.",
+    },
   },
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",

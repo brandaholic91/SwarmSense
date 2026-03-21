@@ -26,6 +26,10 @@ export type PersonaCardEmailProps = {
   change_condition: string;
   core_concern: string;
   buying_trigger: string;
+  risk_appetite: string;
+  decision_style: string;
+  price_sensitivity: string;
+  technology_adoption_curve: string;
   primaryArgumentLabel: string;
   changeConditionLabel: string;
   coreConcernLabel: string;
@@ -42,6 +46,10 @@ export function PersonaCardEmail({
   change_condition,
   core_concern,
   buying_trigger,
+  risk_appetite,
+  decision_style,
+  price_sensitivity,
+  technology_adoption_curve,
   primaryArgumentLabel,
   changeConditionLabel,
   coreConcernLabel,
@@ -87,9 +95,48 @@ export function PersonaCardEmail({
             >
               {role}
             </p>
+            <table
+              role="presentation"
+              width="100%"
+              cellPadding={0}
+              cellSpacing={0}
+              style={{ marginTop: "10px" }}
+            >
+              <tbody>
+                <tr>
+                  {[risk_appetite, decision_style, price_sensitivity, technology_adoption_curve]
+                    .filter(Boolean)
+                    .map((attr, idx) => (
+                      <td
+                        key={idx}
+                        style={{
+                          paddingRight: "4px",
+                          paddingBottom: "4px",
+                          verticalAlign: "top",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "inline-block",
+                            backgroundColor: emailBorder,
+                            color: emailTextSecondary,
+                            fontSize: "10px",
+                            lineHeight: "15px",
+                            padding: "1px 5px",
+                            borderRadius: "3px",
+                          }}
+                        >
+                          {attr}
+                        </span>
+                      </td>
+                    ))}
+                </tr>
+              </tbody>
+            </table>
             <p
               style={{
-                margin: "12px 0 0 0",
+                margin: "8px 0 0 0",
                 color: stanceColor,
                 fontSize: "12px",
                 lineHeight: "18px",

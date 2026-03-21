@@ -32,7 +32,7 @@ HUNGARIAN_MARKET_CONTEXT = (
 
 PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
     {
-        "name": "Tibor, kockázatkerülő pénzügyi igazgató",
+        "name": "Varga Tibor",
         "role": "CFO",
         "risk_appetite": "alacsony",
         "decision_style": "adat- és bizonyíték alapú",
@@ -41,7 +41,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "Nóra, opportunista growth vezető",
+        "name": "Fekete Nóra",
         "role": "Growth Lead",
         "risk_appetite": "magas",
         "decision_style": "kísérletező és gyors",
@@ -50,7 +50,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai alkalmazó",
     },
     {
-        "name": "Miklós, skeptikus operations manager",
+        "name": "Tóth Miklós",
         "role": "Operations Manager",
         "risk_appetite": "alacsony",
         "decision_style": "folyamatfegyelmet követő",
@@ -59,7 +59,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "Eszter, innovátor termékvezető",
+        "name": "Horváth Eszter",
         "role": "Product Lead",
         "risk_appetite": "közepesen magas",
         "decision_style": "hipotézis-alapú",
@@ -68,7 +68,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "innovator",
     },
     {
-        "name": "Gergő, konzervatív IT-vezető",
+        "name": "Szabó Gergő",
         "role": "Head of IT",
         "risk_appetite": "alacsony",
         "decision_style": "biztonság-központú",
@@ -77,7 +77,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "késői alkalmazó",
     },
     {
-        "name": "Zsófia, ügyfélhangra érzékeny marketingvezető",
+        "name": "Nagy Zsófia",
         "role": "Marketing Director",
         "risk_appetite": "közepes",
         "decision_style": "kutatásra támaszkodó",
@@ -86,7 +86,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Bence, ROI-maximalizáló alapító",
+        "name": "Kiss Bence",
         "role": "Founder",
         "risk_appetite": "közepesen magas",
         "decision_style": "eredmény-központú",
@@ -95,7 +95,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai alkalmazó",
     },
     {
-        "name": "Judit, compliance-fókuszú jogi vezető",
+        "name": "Molnár Judit",
         "role": "Legal Lead",
         "risk_appetite": "nagyon alacsony",
         "decision_style": "szabályozás-követő",
@@ -104,7 +104,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "Áron, adatorientált revenue ops manager",
+        "name": "Simon Áron",
         "role": "RevOps Manager",
         "risk_appetite": "közepes",
         "decision_style": "metrika-központú",
@@ -113,7 +113,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Kata, munkaerőhiányra reagáló HR vezető",
+        "name": "Farkas Kata",
         "role": "HR Director",
         "risk_appetite": "közepes",
         "decision_style": "emberközpontú",
@@ -122,7 +122,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Levente, skálázható rendszert kereső CTO",
+        "name": "Kovács Levente",
         "role": "CTO",
         "risk_appetite": "közepesen magas",
         "decision_style": "technikai trade-off alapú",
@@ -131,7 +131,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "innovator",
     },
     {
-        "name": "Melinda, diszkontkereső beszerzési menedzser",
+        "name": "Takács Melinda",
         "role": "Procurement Manager",
         "risk_appetite": "alacsony",
         "decision_style": "alkuorientált",
@@ -140,7 +140,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "Dávid, adatvédelemre érzékeny IT-biztonsági vezető",
+        "name": "Balogh Dávid",
         "role": "Security Lead",
         "risk_appetite": "nagyon alacsony",
         "decision_style": "kockázatminimalizáló",
@@ -149,7 +149,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Réka, gyors piacra lépést szorgalmazó sales vezető",
+        "name": "Papp Réka",
         "role": "Sales Director",
         "risk_appetite": "magas",
         "decision_style": "ügyfélszerzési sebesség alapú",
@@ -158,7 +158,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai alkalmazó",
     },
     {
-        "name": "Tamás, cashflow-fókuszú KKV ügyvezető",
+        "name": "Németh Tamás",
         "role": "Managing Director",
         "risk_appetite": "alacsony",
         "decision_style": "likviditási fegyelem",
@@ -167,7 +167,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "késői alkalmazó",
     },
     {
-        "name": "Szilvia, adatminőségre koncentráló BI szakértő",
+        "name": "Halász Szilvia",
         "role": "BI Manager",
         "risk_appetite": "közepes",
         "decision_style": "elemzés-központú",
@@ -176,7 +176,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Gábor, partnerkapcsolatra építő channel manager",
+        "name": "Szűcs Gábor",
         "role": "Channel Manager",
         "risk_appetite": "közepes",
         "decision_style": "kapcsolat- és bizalom alapú",
@@ -185,7 +185,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Anita, ügyfélmegtartást priorizáló customer success vezető",
+        "name": "Erdős Anita",
         "role": "Customer Success Lead",
         "risk_appetite": "közepes",
         "decision_style": "lemorzsolódás-csökkentő",
@@ -303,6 +303,7 @@ async def execute_persona_engine(
 
     responses: list[PersonaResponse] = []
     failures: list[PersonaFailure] = []
+    handoff_pairs: list[tuple[PersonaResponse, dict[str, str]]] = []
     total_cost_usd = 0.0
 
     processed_count = 0
@@ -314,8 +315,9 @@ async def execute_persona_engine(
             except Exception as exc:  # pragma: no cover - defensive fallback
                 item = exc
 
+            persona_blueprint: PersonaBlueprint | None = None
             if isinstance(item, tuple) and len(item) == 3:
-                _, result_item, cost_usd = item
+                persona_blueprint, result_item, cost_usd = item
                 if isinstance(result_item, PersonaResponse):
                     persona_name = result_item.name
                 elif isinstance(result_item, PersonaFailure):
@@ -334,6 +336,15 @@ async def execute_persona_engine(
 
             if isinstance(result_item, PersonaResponse):
                 responses.append(result_item)
+                blueprint_attrs: dict[str, str] = {}
+                if persona_blueprint is not None:
+                    blueprint_attrs = {
+                        "risk_appetite": persona_blueprint.risk_appetite,
+                        "decision_style": persona_blueprint.decision_style,
+                        "price_sensitivity": persona_blueprint.price_sensitivity,
+                        "technology_adoption_curve": persona_blueprint.technology_adoption_curve,
+                    }
+                handoff_pairs.append((result_item, blueprint_attrs))
             elif isinstance(result_item, PersonaFailure):
                 failures.append(result_item)
             else:
@@ -355,7 +366,9 @@ async def execute_persona_engine(
         await asyncio.gather(*tasks, return_exceptions=True)
         raise
 
-    handoff_payload = [response.model_dump() for response in responses]
+    handoff_payload = [
+        {**resp.model_dump(), **attrs} for resp, attrs in handoff_pairs
+    ]
 
     return PersonaRunResult(
         total_personas=len(personas),

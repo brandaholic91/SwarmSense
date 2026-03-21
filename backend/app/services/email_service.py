@@ -69,6 +69,10 @@ def _build_result_email_props(
                     "change_condition": str(item.get("change_condition", "")),
                     "core_concern": str(item.get("core_concern", "")),
                     "buying_trigger": str(item.get("buying_trigger", "")),
+                    "risk_appetite": str(item.get("risk_appetite", "")),
+                    "decision_style": str(item.get("decision_style", "")),
+                    "price_sensitivity": str(item.get("price_sensitivity", "")),
+                    "technology_adoption_curve": str(item.get("technology_adoption_curve", "")),
                 }
             )
 

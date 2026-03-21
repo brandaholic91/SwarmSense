@@ -21,6 +21,10 @@ export type ResultEmailPersona = {
   change_condition: string;
   core_concern: string;
   buying_trigger: string;
+  risk_appetite: string;
+  decision_style: string;
+  price_sensitivity: string;
+  technology_adoption_curve: string;
 };
 
 export type ResultEmailSynthesis = {
@@ -428,6 +432,10 @@ export function ResultEmail({
                                       change_condition={persona.change_condition}
                                       core_concern={persona.core_concern}
                                       buying_trigger={persona.buying_trigger}
+                                      risk_appetite={persona.risk_appetite}
+                                      decision_style={persona.decision_style}
+                                      price_sensitivity={persona.price_sensitivity}
+                                      technology_adoption_curve={persona.technology_adoption_curve}
                                       primaryArgumentLabel={copy.primaryArgumentLabel}
                                       changeConditionLabel={copy.changeConditionLabel}
                                       coreConcernLabel={copy.coreConcernLabel}

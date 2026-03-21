@@ -235,11 +235,11 @@ def build_persona_user_prompt(
         "Válaszolj JSON objektummal pontosan ezekkel a kulcsokkal:\n"
         "name, role, stance, primary_argument, change_condition, core_concern, buying_trigger\n"
         "A stance értéke kizárólag: support | reject | conditional\n"
-        "Hosszúsági szabályok – minden szöveges mező PONTOSAN 1 mondat, maximum 15 szó:\n"
-        "- primary_argument: az elsődleges érv, max 15 szó\n"
-        "- change_condition: mi változtatná meg a véleményét, max 15 szó\n"
-        "- core_concern: a mélyebb, mögöttes aggodalom, max 15 szó\n"
-        "- buying_trigger: konkrét trigger ami elfogadáshoz vezetne, max 15 szó"
+        "Hosszúsági szabályok – minden szöveges mező PONTOSAN 1 teljes, lezárt mondat, maximum 25 szó:\n"
+        "- primary_argument: az elsődleges érv, max 25 szó\n"
+        "- change_condition: mi változtatná meg a véleményét, max 25 szó\n"
+        "- core_concern: a mélyebb, mögöttes aggodalom, max 25 szó\n"
+        "- buying_trigger: konkrét trigger ami elfogadáshoz vezetne, max 25 szó"
     )
 
 

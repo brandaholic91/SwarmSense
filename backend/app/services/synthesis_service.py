@@ -33,10 +33,10 @@ def build_synthesis_user_prompt(
         "summary, main_barriers, winning_conditions, best_target_segment, strategic_recommendation\n"
         "Szabályok:\n"
         "- summary: 2-3 mondatos összefoglalás a legfontosabb mintákról és jelzésekről\n"
-        "- main_barriers: pontosan 3 elemű lista, minden elem max 10 szó\n"
-        "- winning_conditions: 1 mondat max 20 szó, mi kellene a széles elfogadáshoz\n"
-        "- best_target_segment: 1 mondat max 20 szó, melyik persona típus a legreceptívebb\n"
-        "- strategic_recommendation: 1 mondat max 20 szó, konkrét következő lépés javaslat"
+        "- main_barriers: pontosan 3 elemű lista, minden elem max 15 szó, teljes mondat\n"
+        "- winning_conditions: 1 teljes mondat max 25 szó, mi kellene a széles elfogadáshoz\n"
+        "- best_target_segment: 1 teljes mondat max 25 szó, melyik persona típus a legreceptívebb\n"
+        "- strategic_recommendation: 1 teljes mondat max 25 szó, konkrét következő lépés javaslat"
     )
 
 

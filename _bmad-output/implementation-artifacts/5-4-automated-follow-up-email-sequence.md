@@ -1,6 +1,6 @@
 # Story 5.4: Automated Follow-up Email Sequence
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -18,7 +18,7 @@ so that verified users who have not joined the Pro waitlist are re-engaged with 
 4. Given the endpoint completes processing, when it returns, then response is HTTP 200 with payload `{"sent": N}` where `N` is the number of successfully dispatched emails.
 5. Given the Bearer token is missing or invalid, when the endpoint is called, then response is HTTP 403.
 6. Given pg_cron runs daily and calls `POST /api/v1/operator/send-followups` with valid auth, when a run crosses the day-1/day-3/day-7 threshold and the matching sent flag is still false, then the follow-up for that threshold is sent and tracked (FR22).
-7. Given any follow-up email is delivered, when the user reads the footer, then a functional unsubscribe link is present (FR23).
+7. Given any follow-up email is delivered, when the user reads the footer, then a functional unsubscribe link is present (FR23); and the outbound email payload includes `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers (RFC 8058) so that Gmail, Outlook, and Apple Mail display the one-click unsubscribe UI.
 8. Given a user activates unsubscribe, when `POST /api/v1/unsubscribe` processes the request, then `users.unsubscribed_at` is set and the user receives no further follow-up emails (FR24).
 
 ## Tasks / Subtasks
@@ -161,16 +161,24 @@ openai/gpt-5.3-codex
 
 - _bmad-output/implementation-artifacts/5-4-automated-follow-up-email-sequence.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/core/config.py
 - backend/app/main.py
 - backend/app/models/operator.py
 - backend/app/models/unsubscribe.py
 - backend/app/routers/operator.py
 - backend/app/routers/unsubscribe.py
 - backend/app/services/email_service.py
+- backend/tests/routers/test_auth.py
 - backend/tests/routers/test_operator.py
+- backend/tests/routers/test_run_sessions.py
+- backend/tests/routers/test_runs.py
 - backend/tests/routers/test_unsubscribe.py
+- backend/tests/routers/test_waitlist.py
 - backend/tests/services/test_email_service.py
 - backend/tests/services/test_followup_email_service.py
+- backend/tests/services/test_llm_client.py
+- backend/tests/services/test_run_processor.py
+- backend/tests/test_sentry.py
 - frontend/app/api/emails/render-followup/route.ts
 - frontend/emails/follow-up-day1.test.tsx
 - frontend/emails/follow-up-day1.tsx
@@ -184,3 +192,4 @@ openai/gpt-5.3-codex
 ## Change Log
 
 - 2026-03-21: Implemented Story 5.4 end-to-end (operator follow-up dispatcher, follow-up service orchestration, unsubscribe flow, follow-up email templates/render route, and automated tests); story moved to `review`.
+- 2026-03-21: Applied code review patches (12 patch + IG-1 resolution): HMAC token-based unsubscribe (P-1/P-2), claim-then-send dispatch order with reset on failure (P-3), day validation (P-4/P-5), backend_origin for unsubscribe URL (P-6), batch limit 100 (P-7), asyncio.to_thread for async handler (P-8), null guard fix (P-9), render API html key validation (P-10), logging over Sentry for info events (P-12), RFC 8058 List-Unsubscribe headers (IG-1); story moved to `done`.

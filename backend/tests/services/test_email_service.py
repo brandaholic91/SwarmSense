@@ -39,6 +39,7 @@ def _seed_env(monkeypatch) -> None:
     monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", "test-secret")
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
+    monkeypatch.setenv("SWARMSENSE_BACKEND_ORIGIN", "https://api.swarmsense.ai")
     monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
     monkeypatch.setenv("SWARMSENSE_OPENROUTER_API_KEY", "or_test")
     monkeypatch.setenv("SWARMSENSE_EMAIL_FROM", "SwarmSense <noreply@swarmsense.ai>")
@@ -182,7 +183,7 @@ def test_send_followup_email_uses_day_template_and_unsubscribe_link(
     assert len(sent) == 1
     assert sent[0]["subject"] == "Uj nezopontok a SwarmSense eredmenyedhez"
     assert "day3:" in sent[0]["html"]
-    assert (
-        "/api/v1/unsubscribe?user_id=11111111-1111-4111-8111-111111111111"
-        in sent[0]["html"]
-    )
+    assert "https://api.swarmsense.ai/api/v1/unsubscribe?user_id=11111111-1111-4111-8111-111111111111" in sent[0]["html"]
+    assert "List-Unsubscribe" in sent[0]["headers"]
+    assert "List-Unsubscribe-Post" in sent[0]["headers"]
+    assert sent[0]["headers"]["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"

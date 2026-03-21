@@ -15,6 +15,10 @@ export async function POST(request: NextRequest) {
   try {
     const body: FollowUpEmailRenderRequest = await request.json();
 
+    if (body.day !== "day1" && body.day !== "day3" && body.day !== "day7") {
+      return NextResponse.json({ error: "Invalid day value" }, { status: 400 });
+    }
+
     let html: string;
     if (body.day === "day1") {
       html = render(FollowUpDay1Email({ unsubscribe_url: body.unsubscribe_url }));

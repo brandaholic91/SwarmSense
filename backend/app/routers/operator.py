@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -23,5 +25,5 @@ async def send_followups(
             detail="Forbidden",
         )
 
-    sent = dispatch_followup_sequence()
+    sent = await asyncio.to_thread(dispatch_followup_sequence)
     return SendFollowupsResponse(sent=sent)

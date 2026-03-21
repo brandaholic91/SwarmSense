@@ -17,6 +17,7 @@ def build_client(monkeypatch) -> TestClient:
     monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", "test-internal-secret")
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
+    monkeypatch.setenv("SWARMSENSE_BACKEND_ORIGIN", "https://api.swarmsense.ai")
     monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_key")
     monkeypatch.setenv("SWARMSENSE_EMAIL_FROM", "SwarmSense <noreply@swarmsense.ai>")
     monkeypatch.setenv("SWARMSENSE_EMAIL_REPLY_TO", "support@swarmsense.ai")

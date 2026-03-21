@@ -151,8 +151,8 @@ def test_process_run_fails_when_successful_personas_below_threshold(
     monkeypatch.setattr(run_processor, "execute_persona_engine", fake_engine)
     monkeypatch.setattr(
         run_processor.sentry_sdk,
-        "capture_exception",
-        lambda exc: captured_sentry.append(str(exc)),
+        "capture_message",
+        lambda msg, level=None: captured_sentry.append(msg),
     )
 
     result = asyncio.run(

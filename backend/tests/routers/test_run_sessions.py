@@ -97,6 +97,7 @@ def build_client(monkeypatch, fake_supabase: FakeSupabase) -> TestClient:
     monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
     monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
+    monkeypatch.setenv("SWARMSENSE_OPENROUTER_API_KEY", "or_test")
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
     monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", TEST_INTERNAL_SECRET)
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")

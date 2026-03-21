@@ -22,7 +22,20 @@ async def process_run(
     _ = user_id
     _update_run_row(run_id=run_id, payload={"status": "running"})
 
-    result = await execute_persona_engine(topic=topic, audience=audience)
+    try:
+        result = await execute_persona_engine(topic=topic, audience=audience)
+    except Exception as exc:
+        failure_timestamp = datetime.now(UTC).isoformat()
+        _update_run_row(
+            run_id=run_id,
+            payload={"status": "failed", "completed_at": failure_timestamp},
+        )
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "PERSONA_ENGINE_UNHANDLED")
+            scope.set_extra("timestamp", failure_timestamp)
+            sentry_sdk.capture_exception(exc)
+        raise
     if result.successful_count < MIN_SUCCESSFUL_PERSONAS:
         failure_timestamp = datetime.now(UTC).isoformat()
         _update_run_row(
@@ -53,8 +66,15 @@ async def process_run(
 
 
 def _update_run_row(*, run_id: str, payload: dict[str, Any]) -> None:
-    supabase = get_supabase_client()
-    supabase.table("runs").update(payload).eq("id", run_id).execute()
+    try:
+        supabase = get_supabase_client()
+        supabase.table("runs").update(payload).eq("id", run_id).execute()
+    except Exception as exc:
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "DB_UPDATE_FAILED")
+            scope.set_extra("payload", payload)
+            sentry_sdk.capture_exception(exc)
 
 
 def _capture_failed_run(
@@ -71,10 +91,10 @@ def _capture_failed_run(
         scope.set_extra("timestamp", timestamp)
         scope.set_extra("successful_count", successful_count)
         scope.set_extra("required_count", required_count)
-        sentry_sdk.capture_exception(
-            RuntimeError(
-                "Persona processing failed: successful personas below required threshold."
-            )
+        sentry_sdk.capture_message(
+            f"Persona threshold not met: {successful_count}/{required_count} personas succeeded "
+            f"(run_id={run_id}, error_code={error_code})",
+            level="error",
         )
 
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from dataclasses import dataclass
 from typing import Any, Awaitable, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -16,10 +15,11 @@ class LLMProviderError(Exception):
         self.error_code = error_code
 
 
-@dataclass(frozen=True)
 class TransportError(Exception):
-    status_code: int | None
-    body: dict[str, Any] | None
+    def __init__(self, *, status_code: int | None, body: dict[str, Any] | None) -> None:
+        super().__init__(f"Transport error: status_code={status_code}")
+        self.status_code = status_code
+        self.body = body
 
 
 TransportFn = Callable[
@@ -37,6 +37,8 @@ class OpenRouterClient:
         max_attempts: int = 3,
         base_backoff_seconds: float = 0.5,
     ) -> None:
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be at least 1.")
         self._settings = get_settings()
         self._transport = transport or _post_json
         self._sleep = sleep
@@ -68,7 +70,7 @@ class OpenRouterClient:
             "Authorization": f"Bearer {self._settings.openrouter_api_key}",
             "Content-Type": "application/json",
         }
-        endpoint = f"{self._settings.openrouter_base_url.rstrip('/')}/chat/completions"
+        endpoint = f"{str(self._settings.openrouter_base_url).rstrip('/')}/chat/completions"
 
         raw = await self._request_with_retry(
             endpoint=endpoint, headers=headers, payload=payload
@@ -94,7 +96,11 @@ class OpenRouterClient:
                 backoff_seconds = self._base_backoff_seconds * (2 ** (attempt - 1))
                 await self._sleep(backoff_seconds)
 
-        assert last_error is not None
+        if last_error is None:
+            raise LLMProviderError(
+                error_code="OPENROUTER_REQUEST_FAILED",
+                message="No transport attempts were made.",
+            )
         raise LLMProviderError(
             error_code=_classify_error_code(last_error.status_code),
             message=_build_provider_error_message(last_error),

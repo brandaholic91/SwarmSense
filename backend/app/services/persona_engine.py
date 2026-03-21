@@ -201,6 +201,11 @@ def build_persona_blueprints(
         raise ValueError(
             f"A szemelyisegek szama csak {MIN_PERSONA_COUNT}-{MAX_PERSONA_COUNT} lehet."
         )
+    if total_personas > len(PERSONA_BLUEPRINT_DEFINITIONS):
+        raise ValueError(
+            f"Nincs eleg szemelyiseg-definicio: {total_personas} kert, "
+            f"{len(PERSONA_BLUEPRINT_DEFINITIONS)} elerheto."
+        )
 
     selected = PERSONA_BLUEPRINT_DEFINITIONS[:total_personas]
     return [PersonaBlueprint.model_validate(item) for item in selected]
@@ -278,15 +283,25 @@ async def execute_persona_engine(
                     error_message=str(exc),
                 )
 
-    gathered = await asyncio.gather(*[_run_persona(persona) for persona in personas])
+    gathered = await asyncio.gather(
+        *[_run_persona(persona) for persona in personas], return_exceptions=True
+    )
 
     responses: list[PersonaResponse] = []
     failures: list[PersonaFailure] = []
-    for item in gathered:
+    for persona, item in zip(personas, gathered):
         if isinstance(item, PersonaResponse):
             responses.append(item)
-        else:
+        elif isinstance(item, PersonaFailure):
             failures.append(item)
+        else:
+            failures.append(
+                PersonaFailure(
+                    persona_name=persona.name,
+                    error_code="UNEXPECTED_ENGINE_ERROR",
+                    error_message=str(item),
+                )
+            )
 
     handoff_payload = [response.model_dump() for response in responses]
 

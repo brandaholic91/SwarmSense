@@ -1,6 +1,6 @@
 # Story 4.3: Persona Engine - Parallel LLM Execution
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -165,8 +165,14 @@ openai/gpt-5.3-codex
 - backend/tests/services/test_llm_client.py
 - backend/tests/services/test_persona_engine.py
 - backend/tests/services/test_run_processor.py
+- backend/tests/routers/test_auth.py
+- backend/tests/routers/test_run_sessions.py
+- backend/tests/routers/test_runs.py
+- backend/tests/routers/test_waitlist.py
+- backend/tests/test_sentry.py
 
 ### Change Log
 
 - 2026-03-21: Created Story 4.3 ready-for-dev context with architecture-compliant implementation guidance, previous-story intelligence, and service-level testing scope.
 - 2026-03-21: Implemented Story 4.3 persona engine backend internals (modeling, OpenRouter client, parallel orchestration, failure threshold handling, and comprehensive service tests); moved status to review.
+- 2026-03-21: Applied code review patches (10 findings): asyncio.gather return_exceptions=True, TransportError MRO fix, _update_run_row DB error handling, openrouter_api_key required field, execute_persona_engine try/except, max_attempts guard, blueprint count validation, openrouter_base_url AnyHttpUrl, Sentry capture_message; moved status to done.

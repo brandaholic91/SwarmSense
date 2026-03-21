@@ -21,11 +21,17 @@ export async function POST(request: NextRequest) {
 
     let html: string;
     if (body.day === "day1") {
-      html = render(FollowUpDay1Email({ unsubscribe_url: body.unsubscribe_url }));
+      html = await render(
+        FollowUpDay1Email({ unsubscribe_url: body.unsubscribe_url })
+      );
     } else if (body.day === "day3") {
-      html = render(FollowUpDay3Email({ unsubscribe_url: body.unsubscribe_url }));
+      html = await render(
+        FollowUpDay3Email({ unsubscribe_url: body.unsubscribe_url })
+      );
     } else {
-      html = render(FollowUpDay7Email({ unsubscribe_url: body.unsubscribe_url }));
+      html = await render(
+        FollowUpDay7Email({ unsubscribe_url: body.unsubscribe_url })
+      );
     }
 
     return NextResponse.json({ html });

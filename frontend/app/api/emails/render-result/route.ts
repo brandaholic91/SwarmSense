@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   try {
     const body: ResultEmailRenderRequest = await request.json();
 
-    const html = render(
+    const html = await render(
       ResultEmail({
         topic: body.topic,
         audience: body.audience,

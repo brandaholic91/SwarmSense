@@ -103,7 +103,12 @@ export function PersonaCardEmail({
                 lineHeight: "16px",
               }}
             >
-              {[risk_appetite, decision_style, price_sensitivity, technology_adoption_curve]
+              {[
+                risk_appetite ? `Kockázatvállalás: ${risk_appetite}` : null,
+                decision_style ? `Döntési stílus: ${decision_style}` : null,
+                price_sensitivity ? `Árérzékenység: ${price_sensitivity}` : null,
+                technology_adoption_curve ? `Tech adoptáció: ${technology_adoption_curve}` : null,
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>

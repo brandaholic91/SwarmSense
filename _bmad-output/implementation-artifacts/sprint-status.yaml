@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-03-19"
-last_updated: "2026-03-21" # story 5-4 context created, status moved to ready-for-dev
+last_updated: "2026-03-21" # story 5-4 implemented, status moved to review
 project: SwarmSense
 project_key: NOKEY
 tracking_system: file-system
@@ -80,7 +80,7 @@ development_status:
   5-1-result-email-react-email-templates-and-design-tokens: done
   5-2-result-email-content-structure-and-persona-cards: done
   5-3-result-email-reflection-question-cta-and-delivery: done
-  5-4-automated-follow-up-email-sequence: ready-for-dev
+  5-4-automated-follow-up-email-sequence: review
   5-5-data-deletion-request-handling: backlog
   epic-5-retrospective: optional
 

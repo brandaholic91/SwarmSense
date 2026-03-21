@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import html
+from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
 from typing import Any
 
 import resend
+import sentry_sdk
 
 from app.core.config import get_settings
+from app.core.database import get_supabase_client
 
 RESULT_EMAIL_SUBJECT = "A SwarmSense elemzesed elkeszult"
+FOLLOW_UP_SUBJECTS = {
+    "day1": "Mit tanultunk 24 ora utan?",
+    "day3": "Uj nezopontok a SwarmSense eredmenyedhez",
+    "day7": "Egy het utan: mit tesztelnel kovetkezonek?",
+}
 
 
 def _resolve_reply_to(*, email_reply_to: str, email_from: str) -> str:
@@ -73,6 +81,18 @@ def _render_result_email_via_frontend_api(
     url = f"{frontend_origin.rstrip('/')}/api/emails/render-result"
     with httpx.Client(timeout=30.0) as client:
         response = client.post(url, json=props)
+        response.raise_for_status()
+        return response.json()["html"]
+
+
+def _render_followup_email_via_frontend_api(
+    *, day: str, props: dict[str, Any], frontend_origin: str
+) -> str:
+    import httpx
+
+    url = f"{frontend_origin.rstrip('/')}/api/emails/render-followup"
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(url, json={"day": day, **props})
         response.raise_for_status()
         return response.json()["html"]
 
@@ -200,3 +220,160 @@ def send_run_result_email(
             "html": rendered_html,
         }
     )
+
+
+def _resolve_unsubscribe_url(*, frontend_origin: str, user_id: str) -> str:
+    base = str(frontend_origin).rstrip("/")
+    return f"{base}/api/v1/unsubscribe?user_id={quote(user_id)}"
+
+
+def send_followup_email(*, recipient_email: str, day: str, user_id: str) -> None:
+    settings = get_settings()
+    resend.api_key = settings.resend_api_key
+
+    reply_to = _resolve_reply_to(
+        email_reply_to=settings.email_reply_to,
+        email_from=settings.email_from,
+    )
+    unsubscribe_url = _resolve_unsubscribe_url(
+        frontend_origin=str(settings.frontend_origin),
+        user_id=user_id,
+    )
+    rendered_html = _render_followup_email_via_frontend_api(
+        day=day,
+        props={"unsubscribe_url": unsubscribe_url},
+        frontend_origin=str(settings.frontend_origin),
+    )
+
+    resend.Emails.send(
+        {
+            "from": settings.email_from,
+            "to": [recipient_email],
+            "reply_to": reply_to,
+            "subject": FOLLOW_UP_SUBJECTS[day],
+            "html": rendered_html,
+        }
+    )
+
+
+def _fetch_followup_candidates(
+    *, threshold_days: int, day_field: str
+) -> list[dict[str, Any]]:
+    supabase = get_supabase_client()
+    cutoff = datetime.now(UTC) - timedelta(days=threshold_days)
+    result = (
+        supabase.table("runs")
+        .select("id,user_id,completed_at,day1_sent,day3_sent,day7_sent,status")
+        .lt("completed_at", cutoff.isoformat())
+        .eq(day_field, False)
+        .in_("status", ["completed", "partial"])
+        .execute()
+    )
+    rows = result.data or []
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def _load_user_for_followup(*, user_id: str) -> dict[str, Any] | None:
+    supabase = get_supabase_client()
+    result = (
+        supabase.table("users")
+        .select("id,email,unsubscribed_at")
+        .eq("id", user_id)
+        .limit(1)
+        .execute()
+    )
+    rows = result.data or []
+    if not rows:
+        return None
+    row = rows[0]
+    return row if isinstance(row, dict) else None
+
+
+def _mark_followup_sent(*, run_id: str, day_field: str) -> bool:
+    supabase = get_supabase_client()
+    updated = (
+        supabase.table("runs")
+        .update({day_field: True})
+        .eq("id", run_id)
+        .eq(day_field, False)
+        .execute()
+    )
+    rows = updated.data or []
+    return len(rows) > 0
+
+
+def dispatch_followup_sequence() -> int:
+    sent = 0
+    day_plan: tuple[tuple[str, int, str], ...] = (
+        ("day1", 1, "day1_sent"),
+        ("day3", 3, "day3_sent"),
+        ("day7", 7, "day7_sent"),
+    )
+
+    for day, threshold_days, day_field in day_plan:
+        candidates = _fetch_followup_candidates(
+            threshold_days=threshold_days,
+            day_field=day_field,
+        )
+
+        for candidate in candidates:
+            run_id = str(candidate.get("id", ""))
+            user_id = str(candidate.get("user_id", ""))
+            timestamp = datetime.now(UTC).isoformat()
+            if not run_id or not user_id:
+                continue
+
+            user_row = _load_user_for_followup(user_id=user_id)
+            if user_row is None:
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("error_code", "FOLLOWUP_RECIPIENT_NOT_FOUND")
+                    scope.set_extra("run_id", run_id)
+                    scope.set_extra("user_id", user_id)
+                    scope.set_extra("day", day)
+                    scope.set_extra("timestamp", timestamp)
+                    sentry_sdk.capture_message(
+                        "Follow-up recipient not found", level="warning"
+                    )
+                continue
+
+            if user_row.get("unsubscribed_at") is not None:
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("error_code", "FOLLOWUP_SKIPPED_UNSUBSCRIBED")
+                    scope.set_extra("run_id", run_id)
+                    scope.set_extra("user_id", user_id)
+                    scope.set_extra("day", day)
+                    scope.set_extra("timestamp", timestamp)
+                    sentry_sdk.capture_message(
+                        "Follow-up skipped due to unsubscribe", level="info"
+                    )
+                continue
+
+            recipient_email = user_row.get("email")
+            if not isinstance(recipient_email, str) or not recipient_email:
+                continue
+
+            try:
+                send_followup_email(
+                    recipient_email=recipient_email,
+                    day=day,
+                    user_id=user_id,
+                )
+                if _mark_followup_sent(run_id=run_id, day_field=day_field):
+                    sent += 1
+                    with sentry_sdk.push_scope() as scope:
+                        scope.set_tag("error_code", "FOLLOWUP_SENT")
+                        scope.set_extra("run_id", run_id)
+                        scope.set_extra("user_id", user_id)
+                        scope.set_extra("day", day)
+                        scope.set_extra("timestamp", timestamp)
+                        sentry_sdk.capture_message("Follow-up sent", level="info")
+            except Exception as exc:
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("error_code", "FOLLOWUP_SEND_FAILED")
+                    scope.set_extra("run_id", run_id)
+                    scope.set_extra("user_id", user_id)
+                    scope.set_extra("day", day)
+                    scope.set_extra("timestamp", timestamp)
+                    sentry_sdk.capture_exception(exc)
+
+    return sent

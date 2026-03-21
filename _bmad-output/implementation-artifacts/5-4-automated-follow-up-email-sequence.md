@@ -1,6 +1,6 @@
 # Story 5.4: Automated Follow-up Email Sequence
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,33 +23,33 @@ so that verified users who have not joined the Pro waitlist are re-engaged with 
 
 ## Tasks / Subtasks
 
-- [ ] Implement authenticated operator follow-up dispatcher endpoint (AC: 1, 4, 5, 6)
-  - [ ] Add/confirm `POST /api/v1/operator/send-followups` in `backend/app/routers/operator.py` with `Security(HTTPBearer())` and static key validation against `SWARMSENSE_OPERATOR_API_KEY`.
-  - [ ] Build deterministic threshold selection logic for day1/day3/day7 windows using canonical run fields: `completed_at`, `day1_sent`, `day3_sent`, `day7_sent`.
-  - [ ] Return contract payload `{"sent": N}` in `snake_case` style and preserve FastAPI error envelope for auth failures.
-  - [ ] Ensure idempotent behavior on repeated cron invocations (already-sent runs must not be resent).
+- [x] Implement authenticated operator follow-up dispatcher endpoint (AC: 1, 4, 5, 6)
+  - [x] Add/confirm `POST /api/v1/operator/send-followups` in `backend/app/routers/operator.py` with `Security(HTTPBearer())` and static key validation against `SWARMSENSE_OPERATOR_API_KEY`.
+  - [x] Build deterministic threshold selection logic for day1/day3/day7 windows using canonical run fields: `completed_at`, `day1_sent`, `day3_sent`, `day7_sent`.
+  - [x] Return contract payload `{"sent": N}` in `snake_case` style and preserve FastAPI error envelope for auth failures.
+  - [x] Ensure idempotent behavior on repeated cron invocations (already-sent runs must not be resent).
 
-- [ ] Implement follow-up candidate query + dispatch orchestration in service layer (AC: 1, 2, 3, 6)
-  - [ ] Add/extend service logic in `backend/app/services/email_service.py` (or dedicated helper) to fetch eligible runs per day threshold from Supabase.
-  - [ ] Resolve recipient user records and hard-gate sends with `unsubscribed_at IS NULL` before any Resend call.
-  - [ ] Map threshold to the proper template contract (`follow-up-day1.tsx`, `follow-up-day3.tsx`, `follow-up-day7.tsx`) via the existing frontend render path used in Story 5.3.
-  - [ ] Persist `dayN_sent = true` only after confirmed provider send success; keep failures unsent for next retry window.
+- [x] Implement follow-up candidate query + dispatch orchestration in service layer (AC: 1, 2, 3, 6)
+  - [x] Add/extend service logic in `backend/app/services/email_service.py` (or dedicated helper) to fetch eligible runs per day threshold from Supabase.
+  - [x] Resolve recipient user records and hard-gate sends with `unsubscribed_at IS NULL` before any Resend call.
+  - [x] Map threshold to the proper template contract (`follow-up-day1.tsx`, `follow-up-day3.tsx`, `follow-up-day7.tsx`) via the existing frontend render path used in Story 5.3.
+  - [x] Persist `dayN_sent = true` only after confirmed provider send success; keep failures unsent for next retry window.
 
-- [ ] Implement unsubscribe processing endpoint and footer wiring checks (AC: 7, 8)
-  - [ ] Add/confirm `POST /api/v1/unsubscribe` route (if missing) to set `users.unsubscribed_at = now()` by validated user identity payload.
-  - [ ] Ensure follow-up email templates include one functional unsubscribe link pointing to the unsubscribe action flow.
-  - [ ] Keep unsubscribe handling idempotent and safe for repeated clicks.
+- [x] Implement unsubscribe processing endpoint and footer wiring checks (AC: 7, 8)
+  - [x] Add/confirm `POST /api/v1/unsubscribe` route (if missing) to set `users.unsubscribed_at = now()` by validated user identity payload.
+  - [x] Ensure follow-up email templates include one functional unsubscribe link pointing to the unsubscribe action flow.
+  - [x] Keep unsubscribe handling idempotent and safe for repeated clicks.
 
-- [ ] Add cron integration guardrails and operational observability (AC: 6)
-  - [ ] Document/verify Supabase `pg_cron` schedule and secured HTTP call configuration for daily execution.
-  - [ ] Add structured logging/Sentry context for send attempts, successes, skips (unsubscribed), and provider failures with timestamps.
-  - [ ] Ensure operator endpoint remains non-public without valid Bearer token.
+- [x] Add cron integration guardrails and operational observability (AC: 6)
+  - [x] Document/verify Supabase `pg_cron` schedule and secured HTTP call configuration for daily execution.
+  - [x] Add structured logging/Sentry context for send attempts, successes, skips (unsubscribed), and provider failures with timestamps.
+  - [x] Ensure operator endpoint remains non-public without valid Bearer token.
 
-- [ ] Add comprehensive automated coverage (AC: 1-8)
-  - [ ] Backend router tests for `POST /api/v1/operator/send-followups`: valid token, invalid token (403), and response schema `{"sent": N}`.
-  - [ ] Backend service tests for day-threshold eligibility, idempotency, `unsubscribed_at` suppression, and `dayN_sent` update-on-success only.
-  - [ ] Backend tests for unsubscribe endpoint behavior and post-unsubscribe no-send guarantee.
-  - [ ] Frontend email template tests ensuring unsubscribe link presence in all three follow-up templates.
+- [x] Add comprehensive automated coverage (AC: 1-8)
+  - [x] Backend router tests for `POST /api/v1/operator/send-followups`: valid token, invalid token (403), and response schema `{"sent": N}`.
+  - [x] Backend service tests for day-threshold eligibility, idempotency, `unsubscribed_at` suppression, and `dayN_sent` update-on-success only.
+  - [x] Backend tests for unsubscribe endpoint behavior and post-unsubscribe no-send guarantee.
+  - [x] Frontend email template tests ensuring unsubscribe link presence in all three follow-up templates.
 
 ## Dev Notes
 
@@ -150,8 +150,37 @@ openai/gpt-5.3-codex
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Implemented operator follow-up endpoint with bearer auth, 403 on missing/invalid token, and deterministic `{"sent": N}` response contract.
+- Added follow-up orchestration in `email_service.py` for day1/day3/day7 eligibility windows, unsubscribe suppression, idempotent sent-flag writes, and Sentry telemetry for attempts/skips/failures/successes.
+- Added operations documentation for daily `pg_cron` scheduling and secure Bearer-auth invocation (`docs/followup-cron-operations.md`).
+- Added `POST /api/v1/unsubscribe` (plus functional link GET variant) with idempotent `users.unsubscribed_at` updates.
+- Added React Email follow-up templates (`follow-up-day1/day3/day7`) plus `/api/emails/render-followup` render route and unsubscribe footer link in each template.
+- Added comprehensive backend/frontend tests and ran quality gates: `cd backend && pytest`, `cd frontend && pnpm test -- --run`, `cd frontend && pnpm lint`.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-4-automated-follow-up-email-sequence.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/main.py
+- backend/app/models/operator.py
+- backend/app/models/unsubscribe.py
+- backend/app/routers/operator.py
+- backend/app/routers/unsubscribe.py
+- backend/app/services/email_service.py
+- backend/tests/routers/test_operator.py
+- backend/tests/routers/test_unsubscribe.py
+- backend/tests/services/test_email_service.py
+- backend/tests/services/test_followup_email_service.py
+- frontend/app/api/emails/render-followup/route.ts
+- frontend/emails/follow-up-day1.test.tsx
+- frontend/emails/follow-up-day1.tsx
+- frontend/emails/follow-up-day3.test.tsx
+- frontend/emails/follow-up-day3.tsx
+- frontend/emails/follow-up-day7.test.tsx
+- frontend/emails/follow-up-day7.tsx
+- frontend/lib/messages.ts
+- docs/followup-cron-operations.md
+
+## Change Log
+
+- 2026-03-21: Implemented Story 5.4 end-to-end (operator follow-up dispatcher, follow-up service orchestration, unsubscribe flow, follow-up email templates/render route, and automated tests); story moved to `review`.

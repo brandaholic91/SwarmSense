@@ -247,6 +247,27 @@ export const messages = {
       interpretiveDisclaimer:
         "Fontos: az itt látható eredmények AI-alapú szintetikus szimulációból származnak, nem valós emberi kutatásból.",
     },
+    followup: {
+      day1: {
+        preview: "1 nap telt el az eredmenyed ota",
+        title: "Mit viszel tovabb az elso nap utan?",
+        body: "Nezd at ujra a legerosebb ellenervet, es hasznald hipotézis-kent a kovetkezo iteraciodban.",
+      },
+      day3: {
+        preview: "3 napos emlekezteto a SwarmSense eredmenyedrol",
+        title: "Harom nap utan uj perspektiva",
+        body: "Valassz ki egy support es egy reject allaspontot, majd formalj beloluk tesztelheto uzenetparokat.",
+      },
+      day7: {
+        preview: "7 napos follow-up: mi a kovetkezo lepés?",
+        title: "Eltelt egy het - ideje dontest hozni",
+        body: "Ha meg nem leptel, most priorizald a kovetkezo kiserletet az eredmeny alapjan.",
+      },
+      ctaLabel: "Feliratkozas a Pro varolistara",
+      ctaHref: "/blocked",
+      unsubscribeLabel: "Leiratkozas",
+      footerNote: "Ez egy automatikus marketing level. Barmikor leiratkozhatsz.",
+    },
   },
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",

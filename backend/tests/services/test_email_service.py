@@ -155,3 +155,34 @@ def test_send_run_result_email_html_escapes_user_content(
     body = sent[0]["html"]
     assert "<script>" not in body
     assert "&lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt;" in body
+
+
+def test_send_followup_email_uses_day_template_and_unsubscribe_link(
+    monkeypatch,
+) -> None:
+    _seed_env(monkeypatch)
+    from app.services.email_service import send_followup_email
+
+    sent: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "app.services.email_service._render_followup_email_via_frontend_api",
+        lambda *, day, props, frontend_origin: (
+            f"<html><body>{day}:{props['unsubscribe_url']}:{frontend_origin}</body></html>"
+        ),
+    )
+
+    with patch("resend.Emails.send", side_effect=lambda payload: sent.append(payload)):
+        send_followup_email(
+            recipient_email="user@example.com",
+            day="day3",
+            user_id="11111111-1111-4111-8111-111111111111",
+        )
+
+    assert len(sent) == 1
+    assert sent[0]["subject"] == "Uj nezopontok a SwarmSense eredmenyedhez"
+    assert "day3:" in sent[0]["html"]
+    assert (
+        "/api/v1/unsubscribe?user_id=11111111-1111-4111-8111-111111111111"
+        in sent[0]["html"]
+    )

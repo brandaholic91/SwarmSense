@@ -8,7 +8,7 @@ import {
   stanceSupport,
 } from "@/lib/tokens";
 
-type PersonaStance = "reject" | "support" | "conditional";
+export type PersonaStance = "reject" | "support" | "conditional";
 
 const stanceColors: Record<PersonaStance, string> = {
   reject: stanceReject,
@@ -21,6 +21,7 @@ export type PersonaCardEmailProps = {
   role: string;
   stance: PersonaStance;
   stance_label: string;
+  stanceLabelPrefix: string;
   summary: string;
 };
 
@@ -29,6 +30,7 @@ export function PersonaCardEmail({
   role,
   stance,
   stance_label,
+  stanceLabelPrefix,
   summary,
 }: PersonaCardEmailProps) {
   const stanceColor = stanceColors[stance] ?? emailBorder;
@@ -42,7 +44,6 @@ export function PersonaCardEmail({
       style={{
         border: `1px solid ${emailBorder}`,
         borderLeft: `4px solid ${stanceColor}`,
-        borderRadius: "12px",
         backgroundColor: emailSurface,
       }}
     >
@@ -83,7 +84,7 @@ export function PersonaCardEmail({
                 letterSpacing: "0.08em",
               }}
             >
-              {stance_label}
+              {`${stanceLabelPrefix}: ${stance_label}`}
             </p>
             <p
               style={{

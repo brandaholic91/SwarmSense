@@ -11,33 +11,33 @@ import {
 } from "@/lib/tokens";
 
 const sampleProps = {
-  topic: "Erdemes-e 15%-os aremelest vegrehajtani?",
-  audience: "KKV marketing donteshozok",
+  topic: "Érdemes-e 15%-os áremelést végrehajtani?",
+  audience: "KKV marketing döntéshozók",
   personas: [
     {
-      name: "Kovacs Peter",
-      role: "CFO, 280 fos SaaS",
+      name: "Kovács Péter",
+      role: "CFO, 280 fős SaaS",
       stance: "reject" as const,
-      stance_label: "Elutasitja",
-      summary: "Az aremeles tul nagy kockazatot jelent a lemorzsolodas szempontjabol.",
+      stance_label: "Elutasítja",
+      summary: "Az áremelés túl nagy kockázatot jelent a lemorzsolódás szempontjából.",
     },
     {
       name: "Nagy Eszter",
-      role: "Marketing vezeto, B2B szolgaltato",
+      role: "Marketing vezető, B2B szolgáltató",
       stance: "conditional" as const,
-      stance_label: "Felteteles",
-      summary: "A minoseg es az ugyfelkiszolgalas fejlesztese mellett elfogadhato.",
+      stance_label: "Feltételes",
+      summary: "A minőség és az ügyfélkiszolgálás fejlesztése mellett elfogadható.",
     },
     {
-      name: "Horvath Gabor",
-      role: "Termekvezeto, premium szegmens",
+      name: "Horváth Gábor",
+      role: "Termékvezető, prémium szegmens",
       stance: "support" as const,
-      stance_label: "Tamogatja",
-      summary: "A premium pozicionalast erositi a magasabb arszint.",
+      stance_label: "Támogatja",
+      summary: "A prémium pozicionálást erősíti a magasabb árszint.",
     },
   ],
   persona_count: "17/18",
-  aggregate_score: "50% tamogatja",
+  aggregate_score: "50% támogatja",
   user_email: "teszt@example.com",
 };
 
@@ -46,7 +46,7 @@ describe("ResultEmail", () => {
     const html = await render(
       <ResultEmail
         {...sampleProps}
-        consensus_flag="9/18 elutasitja - megosztott eredmeny"
+        consensus_flag="9/18 elutasítja - megosztott eredmény"
       />
     );
 
@@ -54,11 +54,11 @@ describe("ResultEmail", () => {
     expect(html).toContain(sampleProps.audience);
     expect(html).toContain(sampleProps.persona_count);
     expect(html).toContain(sampleProps.aggregate_score);
-    expect(html).toContain("9/18 elutasitja - megosztott eredmeny");
+    expect(html).toContain("9/18 elutasítja - megosztott eredmény");
     expect(html).toContain(sampleProps.user_email);
-    expect(html).toContain("Allaspont: Elutasitja");
-    expect(html).toContain("Allaspont: Felteteles");
-    expect(html).toContain("Allaspont: Tamogatja");
+    expect(html).toContain("Álláspont: Elutasítja");
+    expect(html).toContain("Álláspont: Feltételes");
+    expect(html).toContain("Álláspont: Támogatja");
   });
 
   it("sets semantic root attributes and presentation table roles", async () => {
@@ -84,5 +84,24 @@ describe("ResultEmail", () => {
     const secondRender = await render(<ResultEmail {...sampleProps} />);
 
     expect(firstRender).toBe(secondRender);
+  });
+
+  it("renders consensus pending label when consensus_flag is absent", async () => {
+    const html = await render(<ResultEmail {...sampleProps} />);
+
+    expect(html).toContain("Nincs megadott konszenzus jelzés");
+  });
+
+  it("renders consensus pending label when consensus_flag is empty string", async () => {
+    const html = await render(<ResultEmail {...sampleProps} consensus_flag="" />);
+
+    expect(html).toContain("Nincs megadott konszenzus jelzés");
+  });
+
+  it("renders empty personas array without crashing", async () => {
+    const html = await render(<ResultEmail {...sampleProps} personas={[]} />);
+
+    expect(html).toContain("Persona visszajelzések");
+    expect(html).not.toContain("Álláspont:");
   });
 });

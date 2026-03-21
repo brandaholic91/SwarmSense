@@ -1,6 +1,6 @@
 # Story 5.1: Result Email - React Email Templates & Design Tokens
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -132,6 +132,7 @@ openai/gpt-5.3-codex
 - Added `frontend/emails/result-email.test.tsx` to validate prop rendering, semantic attributes, token-driven inline styling, and deterministic HTML render.
 - Added `frontend/emails/result-email-compatibility-evidence.md` compatibility checklist for Gmail web/mobile, Apple Mail, Outlook 2019 and above-the-fold clipping checks.
 - Validation executed successfully: focused email tests and full frontend suite + lint (`60/60` passing tests, ESLint passing).
+- Code review applied (2026-03-21): `PersonaStance` type exported and de-duplicated; `borderRadius` removed from table elements for Outlook 2019 compatibility; `consensus_flag` fallback changed from `??` to `||`; null guard added for `personas`; `stanceLabelPrefix` moved into `PersonaCardEmail` component; Hungarian copy diacritics corrected throughout `messages.ts`; `subject` key added to `messages.email.result`; JSX whitespace in `sentToPrefix` row fixed; empty personas and empty `consensus_flag` test cases added; compatibility evidence file clarified as design-intent checklist. Full test suite 63/63 passing.
 
 ### File List
 
@@ -148,3 +149,4 @@ openai/gpt-5.3-codex
 ## Change Log
 
 - 2026-03-21: Implemented Story 5.1 React Email template system, reusable persona email card, localization/token updates, compatibility validation notes, and automated render/semantic test coverage.
+- 2026-03-21: Applied code review patches — type deduplication, Outlook compatibility fix, diacritics correction, null guards, component API refactor, additional test cases. Story closed as done.

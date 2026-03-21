@@ -1,6 +1,6 @@
 import { Body, Head, Html, Preview } from "@react-email/components";
 
-import { PersonaCardEmail } from "@/emails/persona-card-email";
+import { PersonaCardEmail, type PersonaStance } from "@/emails/persona-card-email";
 import { messages } from "@/lib/messages";
 import {
   accent,
@@ -10,8 +10,6 @@ import {
   emailTextPrimary,
   emailTextSecondary,
 } from "@/lib/tokens";
-
-type PersonaStance = "reject" | "support" | "conditional";
 
 export type ResultEmailPersona = {
   name: string;
@@ -73,7 +71,6 @@ export function ResultEmail({
                   style={{
                     width: "100%",
                     maxWidth: "640px",
-                    borderRadius: "16px",
                     border: `1px solid ${emailBorder}`,
                     backgroundColor: emailSurface,
                   }}
@@ -248,7 +245,7 @@ export function ResultEmail({
                             fontWeight: 600,
                           }}
                         >
-                          {consensus_flag ?? copy.consensusPending}
+                          {consensus_flag || copy.consensusPending}
                         </p>
                       </td>
                     </tr>
@@ -269,14 +266,15 @@ export function ResultEmail({
                       </td>
                     </tr>
 
-                    {personas.map((persona, index) => (
+                    {(personas ?? []).map((persona, index) => (
                       <tr key={`${persona.name}-${index}`}>
                         <td style={{ padding: "0 24px 12px 24px" }}>
                           <PersonaCardEmail
                             name={persona.name}
                             role={persona.role}
                             stance={persona.stance}
-                            stance_label={`${copy.stanceLabelPrefix}: ${persona.stance_label}`}
+                            stance_label={persona.stance_label}
+                            stanceLabelPrefix={copy.stanceLabelPrefix}
                             summary={persona.summary}
                           />
                         </td>
@@ -293,7 +291,7 @@ export function ResultEmail({
                             lineHeight: "20px",
                           }}
                         >
-                          {copy.sentToPrefix} {user_email}
+                          {`${copy.sentToPrefix} ${user_email}`}
                         </p>
                       </td>
                     </tr>

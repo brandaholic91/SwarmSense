@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from decimal import Decimal, InvalidOperation
 from typing import Any, Awaitable, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -51,6 +52,18 @@ class OpenRouterClient:
         system_prompt: str,
         user_prompt: str,
     ) -> dict[str, Any]:
+        response, _ = await self.generate_persona_response_with_meta(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+        return response
+
+    async def generate_persona_response_with_meta(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+    ) -> tuple[dict[str, Any], float]:
         if not self._settings.openrouter_api_key:
             raise LLMProviderError(
                 error_code="OPENROUTER_MISSING_API_KEY",
@@ -70,12 +83,14 @@ class OpenRouterClient:
             "Authorization": f"Bearer {self._settings.openrouter_api_key}",
             "Content-Type": "application/json",
         }
-        endpoint = f"{str(self._settings.openrouter_base_url).rstrip('/')}/chat/completions"
+        endpoint = (
+            f"{str(self._settings.openrouter_base_url).rstrip('/')}/chat/completions"
+        )
 
         raw = await self._request_with_retry(
             endpoint=endpoint, headers=headers, payload=payload
         )
-        return _extract_json_content(raw)
+        return _extract_json_content(raw), _extract_cost_usd(raw)
 
     async def _request_with_retry(
         self,
@@ -236,3 +251,23 @@ def _build_provider_error_message(error: TransportError) -> str:
     if error.status_code is not None:
         return f"OpenRouter request failed with status {error.status_code}."
     return "OpenRouter request failed because of a network error."
+
+
+def _extract_cost_usd(payload: dict[str, Any]) -> float:
+    usage = payload.get("usage")
+    if not isinstance(usage, dict):
+        return 0.0
+
+    for key in ("cost", "total_cost", "cost_usd"):
+        value = usage.get(key)
+        if value is None:
+            continue
+        try:
+            normalized = Decimal(str(value))
+        except (InvalidOperation, TypeError, ValueError):
+            continue
+        if normalized < 0:
+            return 0.0
+        return float(normalized)
+
+    return 0.0

@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 import sentry_sdk
 
 from app.core.database import get_supabase_client
+from app.services.email_service import send_run_result_email
 from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 
 MIN_SUCCESSFUL_PERSONAS = 12
+FINAL_STATUSES = {"completed", "partial", "failed"}
 
 
 async def process_run(
@@ -19,16 +22,26 @@ async def process_run(
     topic: str,
     audience: str,
 ) -> PersonaRunResult:
-    _ = user_id
+    should_increment_monthly_cost = _should_increment_monthly_cost(run_id=run_id)
     _update_run_row(run_id=run_id, payload={"status": "running"})
 
     try:
         result = await execute_persona_engine(topic=topic, audience=audience)
     except Exception as exc:
         failure_timestamp = datetime.now(UTC).isoformat()
+        final_cost = Decimal("0")
         _update_run_row(
             run_id=run_id,
-            payload={"status": "failed", "completed_at": failure_timestamp},
+            payload={
+                "status": "failed",
+                "completed_at": failure_timestamp,
+                "cost_usd": str(final_cost),
+            },
+        )
+        _increment_monthly_cost(
+            run_id=run_id,
+            run_cost=final_cost,
+            should_increment=should_increment_monthly_cost,
         )
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("run_id", run_id)
@@ -36,20 +49,29 @@ async def process_run(
             scope.set_extra("timestamp", failure_timestamp)
             sentry_sdk.capture_exception(exc)
         raise
+
+    final_cost = _normalize_cost(result.cost_usd)
+    completed_timestamp = datetime.now(UTC).isoformat()
+
     if result.successful_count < MIN_SUCCESSFUL_PERSONAS:
-        failure_timestamp = datetime.now(UTC).isoformat()
         _update_run_row(
             run_id=run_id,
             payload={
                 "status": "failed",
                 "persona_count": result.successful_count,
-                "completed_at": failure_timestamp,
+                "completed_at": completed_timestamp,
+                "cost_usd": str(final_cost),
             },
+        )
+        _increment_monthly_cost(
+            run_id=run_id,
+            run_cost=final_cost,
+            should_increment=should_increment_monthly_cost,
         )
         _capture_failed_run(
             run_id=run_id,
             error_code="PERSONA_SUCCESS_THRESHOLD_NOT_MET",
-            timestamp=failure_timestamp,
+            timestamp=completed_timestamp,
             successful_count=result.successful_count,
             required_count=MIN_SUCCESSFUL_PERSONAS,
         )
@@ -62,7 +84,204 @@ async def process_run(
             "persona_count": result.successful_count,
         },
     )
+
+    aggregation_payload = _build_result_payload(run_id=run_id, result=result)
+    final_status = _resolve_final_status(result=result)
+
+    _update_run_row(
+        run_id=run_id,
+        payload={
+            "status": final_status,
+            "persona_count": result.successful_count,
+            "completed_at": completed_timestamp,
+            "cost_usd": str(final_cost),
+        },
+    )
+    _increment_monthly_cost(
+        run_id=run_id,
+        run_cost=final_cost,
+        should_increment=should_increment_monthly_cost,
+    )
+
+    if final_status in {"partial", "completed"}:
+        _dispatch_result_email(
+            run_id=run_id,
+            user_id=user_id,
+            payload=aggregation_payload,
+        )
+
     return result
+
+
+def _resolve_final_status(*, result: PersonaRunResult) -> str:
+    if result.successful_count < MIN_SUCCESSFUL_PERSONAS:
+        return "failed"
+    if result.successful_count < result.total_personas:
+        return "partial"
+    return "completed"
+
+
+def _build_result_payload(*, run_id: str, result: PersonaRunResult) -> dict[str, Any]:
+    stance_counts: dict[str, int] = {"support": 0, "reject": 0, "conditional": 0}
+    arguments_frequency: dict[str, int] = {}
+    personas_for_email: list[dict[str, str]] = []
+
+    for response in result.responses:
+        stance_counts[response.stance] += 1
+        argument = response.primary_argument.strip()
+        if argument:
+            arguments_frequency[argument] = arguments_frequency.get(argument, 0) + 1
+        personas_for_email.append(response.model_dump())
+
+    top_arguments = [
+        argument
+        for argument, _ in sorted(
+            arguments_frequency.items(), key=lambda item: (-item[1], item[0])
+        )[:3]
+    ]
+
+    return {
+        "run_id": run_id,
+        "status": _resolve_final_status(result=result),
+        "completed_persona_count": result.successful_count,
+        "total_persona_count": result.total_personas,
+        "persona_count_label": _format_persona_count_label(
+            completed=result.successful_count,
+            total=result.total_personas,
+        ),
+        "stance_counts": stance_counts,
+        "top_arguments": top_arguments,
+        "personas": personas_for_email,
+    }
+
+
+def _format_persona_count_label(*, completed: int, total: int) -> str:
+    return f"{completed}/{total} persona"
+
+
+def _should_increment_monthly_cost(*, run_id: str) -> bool:
+    existing_row = _load_run_row(run_id=run_id)
+    if not existing_row:
+        return True
+    status = existing_row.get("status")
+    cost_value = existing_row.get("cost_usd")
+    return not (status in FINAL_STATUSES and cost_value is not None)
+
+
+def _load_run_row(*, run_id: str) -> dict[str, Any] | None:
+    try:
+        supabase = get_supabase_client()
+        result = (
+            supabase.table("runs")
+            .select("status,cost_usd")
+            .eq("id", run_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception:
+        return None
+
+    rows = result.data or []
+    if not rows:
+        return None
+    row = rows[0]
+    return row if isinstance(row, dict) else None
+
+
+def _normalize_cost(value: object) -> Decimal:
+    try:
+        normalized = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal("0")
+    if normalized < 0:
+        return Decimal("0")
+    return normalized
+
+
+def _increment_monthly_cost(
+    *, run_id: str, run_cost: Decimal, should_increment: bool
+) -> None:
+    if not should_increment:
+        return
+
+    month = date.today().strftime("%Y-%m")
+    try:
+        supabase = get_supabase_client()
+        lookup = (
+            supabase.table("cost_tracking")
+            .select("total_usd")
+            .eq("month", month)
+            .limit(1)
+        )
+        existing = lookup.execute().data or []
+
+        if existing:
+            existing_total = _normalize_cost(existing[0].get("total_usd"))
+            updated_total = existing_total + run_cost
+            (
+                supabase.table("cost_tracking")
+                .update({"total_usd": str(updated_total)})
+                .eq("month", month)
+                .execute()
+            )
+            return
+
+        supabase.table("cost_tracking").insert(
+            {"month": month, "total_usd": str(run_cost)}
+        ).execute()
+    except Exception as exc:
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "COST_TRACKING_UPDATE_FAILED")
+            scope.set_extra("month", month)
+            scope.set_extra("run_cost", str(run_cost))
+            sentry_sdk.capture_exception(exc)
+
+
+def _dispatch_result_email(
+    *, run_id: str, user_id: str, payload: dict[str, Any]
+) -> None:
+    recipient_email = _load_user_email(user_id=user_id)
+    if recipient_email is None:
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "RESULT_EMAIL_RECIPIENT_NOT_FOUND")
+            scope.set_extra("user_id", user_id)
+            sentry_sdk.capture_message(
+                f"Result email recipient not found for run_id={run_id}, user_id={user_id}",
+                level="error",
+            )
+        return
+
+    try:
+        send_run_result_email(
+            recipient_email=recipient_email,
+            result_payload=payload,
+        )
+    except Exception as exc:
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "RESULT_EMAIL_DISPATCH_FAILED")
+            scope.set_extra("status", payload.get("status"))
+            scope.set_extra("persona_count", payload.get("persona_count_label"))
+            sentry_sdk.capture_exception(exc)
+
+
+def _load_user_email(*, user_id: str) -> str | None:
+    try:
+        supabase = get_supabase_client()
+        result = (
+            supabase.table("users").select("email").eq("id", user_id).limit(1).execute()
+        )
+    except Exception:
+        return None
+
+    rows = result.data or []
+    if not rows:
+        return None
+
+    email = rows[0].get("email") if isinstance(rows[0], dict) else None
+    return email if isinstance(email, str) and email else None
 
 
 def _update_run_row(*, run_id: str, payload: dict[str, Any]) -> None:

@@ -259,28 +259,41 @@ async def execute_persona_engine(
 
     async def _run_persona(
         persona: PersonaBlueprint,
-    ) -> PersonaResponse | PersonaFailure:
+    ) -> tuple[PersonaResponse | PersonaFailure, float]:
         async with semaphore:
             prompt = build_persona_user_prompt(
                 persona=persona, topic=topic, audience=audience
             )
             try:
-                raw = await client.generate_persona_response(
-                    system_prompt=HUNGARIAN_SYSTEM_PROMPT,
-                    user_prompt=prompt,
-                )
-                return normalize_persona_response(raw)
+                if hasattr(client, "generate_persona_response_with_meta"):
+                    raw, cost_usd = await client.generate_persona_response_with_meta(
+                        system_prompt=HUNGARIAN_SYSTEM_PROMPT,
+                        user_prompt=prompt,
+                    )
+                else:
+                    raw = await client.generate_persona_response(
+                        system_prompt=HUNGARIAN_SYSTEM_PROMPT,
+                        user_prompt=prompt,
+                    )
+                    cost_usd = 0.0
+                return normalize_persona_response(raw), cost_usd
             except LLMProviderError as exc:
-                return PersonaFailure(
-                    persona_name=persona.name,
-                    error_code=exc.error_code,
-                    error_message=str(exc),
+                return (
+                    PersonaFailure(
+                        persona_name=persona.name,
+                        error_code=exc.error_code,
+                        error_message=str(exc),
+                    ),
+                    0.0,
                 )
             except ValueError as exc:
-                return PersonaFailure(
-                    persona_name=persona.name,
-                    error_code="MALFORMED_PROVIDER_OUTPUT",
-                    error_message=str(exc),
+                return (
+                    PersonaFailure(
+                        persona_name=persona.name,
+                        error_code="MALFORMED_PROVIDER_OUTPUT",
+                        error_message=str(exc),
+                    ),
+                    0.0,
                 )
 
     gathered = await asyncio.gather(
@@ -289,17 +302,32 @@ async def execute_persona_engine(
 
     responses: list[PersonaResponse] = []
     failures: list[PersonaFailure] = []
+    total_cost_usd = 0.0
     for persona, item in zip(personas, gathered):
-        if isinstance(item, PersonaResponse):
-            responses.append(item)
-        elif isinstance(item, PersonaFailure):
-            failures.append(item)
+        if isinstance(item, tuple) and len(item) == 2:
+            result_item, cost_usd = item
+        else:
+            result_item, cost_usd = (
+                PersonaFailure(
+                    persona_name=persona.name,
+                    error_code="UNEXPECTED_ENGINE_ERROR",
+                    error_message=str(item),
+                ),
+                0.0,
+            )
+
+        total_cost_usd += max(cost_usd, 0.0)
+
+        if isinstance(result_item, PersonaResponse):
+            responses.append(result_item)
+        elif isinstance(result_item, PersonaFailure):
+            failures.append(result_item)
         else:
             failures.append(
                 PersonaFailure(
                     persona_name=persona.name,
                     error_code="UNEXPECTED_ENGINE_ERROR",
-                    error_message=str(item),
+                    error_message=str(result_item),
                 )
             )
 
@@ -311,4 +339,5 @@ async def execute_persona_engine(
         responses=responses,
         failures=failures,
         handoff_payload=handoff_payload,
+        cost_usd=total_cost_usd,
     )

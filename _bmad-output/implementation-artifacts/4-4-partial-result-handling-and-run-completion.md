@@ -1,6 +1,6 @@
 # Story 4.4: Partial Result Handling & Run Completion
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,34 +22,34 @@ so that users receive value even when the full 15-20 persona set is not availabl
 
 ## Tasks / Subtasks
 
-- [ ] Implement run finalization state machine in `run_processor.py` (AC: 1, 2, 4, 5)
-  - [ ] Extend the current `process_run` composing handoff to branch: `partial` for 12-19 successes, `completed` for full success, `failed` remains unchanged for `<12`.
-  - [ ] Persist `persona_count` on both `partial` and `completed` transitions using canonical run status values only.
-  - [ ] Set `completed_at` only when run reaches final status (`completed`, `partial`, or `failed`) and keep timestamp format ISO 8601.
-  - [ ] Keep current failure telemetry behavior (`PERSONA_SUCCESS_THRESHOLD_NOT_MET`, `RUN_PROCESSING_UNHANDLED`) intact; add only missing tags/metadata required for partial/completed observability.
+- [x] Implement run finalization state machine in `run_processor.py` (AC: 1, 2, 4, 5)
+  - [x] Extend the current `process_run` composing handoff to branch: `partial` for 12-19 successes, `completed` for full success, `failed` remains unchanged for `<12`.
+  - [x] Persist `persona_count` on both `partial` and `completed` transitions using canonical run status values only.
+  - [x] Set `completed_at` only when run reaches final status (`completed`, `partial`, or `failed`) and keep timestamp format ISO 8601.
+  - [x] Keep current failure telemetry behavior (`PERSONA_SUCCESS_THRESHOLD_NOT_MET`, `RUN_PROCESSING_UNHANDLED`) intact; add only missing tags/metadata required for partial/completed observability.
 
-- [ ] Add deterministic result aggregation and payload contract for downstream email composition (AC: 2, 3)
-  - [ ] Add/extend aggregation logic to produce a normalized result payload from persona outputs (`support`/`reject`/`conditional` counts, top arguments, persona list for email).
-  - [ ] Ensure persona count string formatting is centralized and reused as `"{completed}/{total} persona"`.
-  - [ ] Keep all user-facing Hungarian strings out of backend business logic; only structural payload values belong in backend aggregation.
+- [x] Add deterministic result aggregation and payload contract for downstream email composition (AC: 2, 3)
+  - [x] Add/extend aggregation logic to produce a normalized result payload from persona outputs (`support`/`reject`/`conditional` counts, top arguments, persona list for email).
+  - [x] Ensure persona count string formatting is centralized and reused as `"{completed}/{total} persona"`.
+  - [x] Keep all user-facing Hungarian strings out of backend business logic; only structural payload values belong in backend aggregation.
 
-- [ ] Wire run completion to email dispatch boundary without breaking Story 5 ownership (AC: 3, 5)
-  - [ ] Introduce a result-email dispatch seam in `email_service.py` (or dedicated helper) that accepts run-level payload from `run_processor.py`.
-  - [ ] Trigger dispatch for both `partial` and `completed`; do not dispatch for `failed`.
-  - [ ] Keep implementation compatible with current magic-link email path and existing Resend settings usage.
-  - [ ] If email dispatch fails at this stage, capture the error with Sentry and leave run final status unchanged (email retry sophistication belongs to Epic 5 stories).
+- [x] Wire run completion to email dispatch boundary without breaking Story 5 ownership (AC: 3, 5)
+  - [x] Introduce a result-email dispatch seam in `email_service.py` (or dedicated helper) that accepts run-level payload from `run_processor.py`.
+  - [x] Trigger dispatch for both `partial` and `completed`; do not dispatch for `failed`.
+  - [x] Keep implementation compatible with current magic-link email path and existing Resend settings usage.
+  - [x] If email dispatch fails at this stage, capture the error with Sentry and leave run final status unchanged (email retry sophistication belongs to Epic 5 stories).
 
-- [ ] Implement cost finalization and monthly counter update (AC: 6, 7)
-  - [ ] Add run-level cost computation output from persona execution path and persist into `runs.cost_usd` during finalization.
-  - [ ] Add monthly `cost_tracking` increment logic keyed by `YYYY-MM`, creating month row if absent before increment.
-  - [ ] Ensure cost update runs for all final states (`completed`, `partial`, `failed`) and is not skipped when partial results are delivered.
-  - [ ] Capture and surface bookkeeping failures in Sentry with machine-readable error codes; avoid silent failures.
+- [x] Implement cost finalization and monthly counter update (AC: 6, 7)
+  - [x] Add run-level cost computation output from persona execution path and persist into `runs.cost_usd` during finalization.
+  - [x] Add monthly `cost_tracking` increment logic keyed by `YYYY-MM`, creating month row if absent before increment.
+  - [x] Ensure cost update runs for all final states (`completed`, `partial`, `failed`) and is not skipped when partial results are delivered.
+  - [x] Capture and surface bookkeeping failures in Sentry with machine-readable error codes; avoid silent failures.
 
-- [ ] Add/extend automated tests for partial/completed and cost bookkeeping semantics (AC: 1-7)
-  - [ ] Extend `backend/tests/services/test_run_processor.py` with cases for 12-19 success (`partial`) and full success (`completed`) transitions.
-  - [ ] Assert `completed_at`, `persona_count`, and `cost_usd` persistence behavior for final statuses.
-  - [ ] Add tests for monthly `cost_tracking` increment semantics, including missing-month row creation.
-  - [ ] Add dispatch-boundary tests that verify result email dispatch attempts for `partial` and `completed`, and no dispatch for `failed`.
+- [x] Add/extend automated tests for partial/completed and cost bookkeeping semantics (AC: 1-7)
+  - [x] Extend `backend/tests/services/test_run_processor.py` with cases for 12-19 success (`partial`) and full success (`completed`) transitions.
+  - [x] Assert `completed_at`, `persona_count`, and `cost_usd` persistence behavior for final statuses.
+  - [x] Add tests for monthly `cost_tracking` increment semantics, including missing-month row creation.
+  - [x] Add dispatch-boundary tests that verify result email dispatch attempts for `partial` and `completed`, and no dispatch for `failed`.
 
 ## Dev Notes
 
@@ -134,12 +134,30 @@ openai/gpt-5.3-codex
 
 - `git log --oneline -5`
 - `git show --name-only --pretty=format:'%h %s' 2dcdd47 13d1a70`
+- `cd backend && pytest tests/services/test_run_processor.py tests/services/test_persona_engine.py tests/services/test_llm_client.py`
+- `cd backend && pytest`
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Implemented story-complete run finalization in `backend/app/services/run_processor.py` with canonical transitions: `<12` -> `failed`, `12..(total-1)` -> `partial`, `total` -> `completed`, and ISO 8601 `completed_at` persisted only on final states.
+- Added deterministic aggregation payload contract in `run_processor.py` (`stance_counts`, `top_arguments`, `personas`, `persona_count_label`) and centralized `"{completed}/{total} persona"` formatting.
+- Introduced result email dispatch seam in `backend/app/services/email_service.py` (`send_run_result_email`) and wired dispatch attempts for `partial`/`completed` only, with Sentry error capture that preserves final run status on dispatch failure.
+- Added cost finalization pipeline: propagated run-level `cost_usd` from persona execution (`backend/app/services/persona_engine.py`, `backend/app/services/llm_client.py`) into `runs.cost_usd`, plus monthly `cost_tracking` increment/create-by-month logic with Sentry failure telemetry.
+- Extended `backend/tests/services/test_run_processor.py` to cover partial/completed transitions, final-state persistence (`completed_at`, `persona_count`, `cost_usd`), monthly bookkeeping (including missing month row), and dispatch boundary behavior.
+- Full backend regression green: `52 passed`.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/4-4-partial-result-handling-and-run-completion.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/app/models/persona.py
+- backend/app/services/email_service.py
+- backend/app/services/llm_client.py
+- backend/app/services/persona_engine.py
+- backend/app/services/run_processor.py
+- backend/tests/services/test_run_processor.py
+
+### Change Log
+
+- 2026-03-21: Implemented Story 4.4 run completion pipeline (partial/completed state machine, deterministic aggregation payload, result-email dispatch seam, run/monthly cost finalization, and comprehensive service tests); status moved to review.

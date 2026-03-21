@@ -11,6 +11,7 @@ from app.models.persona import (
     PersonaFailure,
     PersonaResponse,
     PersonaRunResult,
+    SynthesisResult,
 )
 from app.services.llm_client import LLMProviderError, OpenRouterClient
 
@@ -19,178 +20,178 @@ MIN_PERSONA_COUNT = 15
 MAX_PERSONA_COUNT = 20
 
 HUNGARIAN_SYSTEM_PROMPT = (
-    "Te egy magyar piacismerettel rendelkezo strategiai szemelyiseg vagy. "
-    "Kizarlag magyar nyelven valaszolj. "
-    "A valasz legyen pontos JSON objektum a kert kulcsokkal, extra mezok nelkul."
+    "Te egy magyar piacismerettel rendelkező stratégiai személyiség vagy. "
+    "Kizárólag magyar nyelven válaszolj. "
+    "A válasz legyen pontos JSON objektum a kért kulcsokkal, extra mezők nélkül."
 )
 
 HUNGARIAN_MARKET_CONTEXT = (
-    "Fokuszalj magyarorszagi vallalati valosagra, helyi vasarloi viselkedesre, "
-    "magyar piaci sajatossagokra, es magyar uzleti nyelvezetre."
+    "Fókuszálj magyarországi vállalati valóságra, helyi vásárlói viselkedésre, "
+    "magyar piaci sajátosságokra, és magyar üzleti nyelvezetre."
 )
 
 PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
     {
-        "name": "Tibor, kockazatkerulo penzugyi igazgato",
+        "name": "Tibor, kockázatkerülő pénzügyi igazgató",
         "role": "CFO",
         "risk_appetite": "alacsony",
-        "decision_style": "adat- es bizonyitek alapu",
-        "organizational_role": "penzugyi donteshozo",
+        "decision_style": "adat- és bizonyíték alapú",
+        "organizational_role": "pénzügyi döntéshozó",
         "price_sensitivity": "magas",
-        "technology_adoption_curve": "kesoi tobbseg",
+        "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "Nora, opportunista growth vezeto",
+        "name": "Nóra, opportunista growth vezető",
         "role": "Growth Lead",
         "risk_appetite": "magas",
-        "decision_style": "kiserletezo es gyors",
-        "organizational_role": "novekedesi vezeto",
-        "price_sensitivity": "kozepes",
-        "technology_adoption_curve": "korai alkalmazo",
+        "decision_style": "kísérletező és gyors",
+        "organizational_role": "növekedési vezető",
+        "price_sensitivity": "közepes",
+        "technology_adoption_curve": "korai alkalmazó",
     },
     {
-        "name": "Miklos, skeptikus operations manager",
+        "name": "Miklós, skeptikus operations manager",
         "role": "Operations Manager",
         "risk_appetite": "alacsony",
-        "decision_style": "folyamatfegyelmet koveto",
-        "organizational_role": "mukodesi vezeto",
-        "price_sensitivity": "kozepes",
-        "technology_adoption_curve": "kesoi tobbseg",
+        "decision_style": "folyamatfegyelmet követő",
+        "organizational_role": "működési vezető",
+        "price_sensitivity": "közepes",
+        "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "Eszter, innovator termekvezeto",
+        "name": "Eszter, innovátor termékvezető",
         "role": "Product Lead",
-        "risk_appetite": "kozepesen magas",
-        "decision_style": "hipotezis-driven",
-        "organizational_role": "termekdonteshozo",
-        "price_sensitivity": "kozepes",
+        "risk_appetite": "közepesen magas",
+        "decision_style": "hipotézis-alapú",
+        "organizational_role": "termék döntéshozó",
+        "price_sensitivity": "közepes",
         "technology_adoption_curve": "innovator",
     },
     {
-        "name": "Gergo, konzervativ IT-vezeto",
+        "name": "Gergő, konzervatív IT-vezető",
         "role": "Head of IT",
         "risk_appetite": "alacsony",
-        "decision_style": "biztonsag-kozpontu",
-        "organizational_role": "technologiai kapuor",
+        "decision_style": "biztonság-központú",
+        "organizational_role": "technológiai kapuőr",
         "price_sensitivity": "alacsony",
-        "technology_adoption_curve": "kesoi alkalmazo",
+        "technology_adoption_curve": "késői alkalmazó",
     },
     {
-        "name": "Zsofia, ugyfelhangra erzekeny marketingvezeto",
+        "name": "Zsófia, ügyfélhangra érzékeny marketingvezető",
         "role": "Marketing Director",
-        "risk_appetite": "kozepes",
-        "decision_style": "kutatasra tamaszkodo",
-        "organizational_role": "marketing donteshozo",
-        "price_sensitivity": "kozepesen magas",
-        "technology_adoption_curve": "korai tobbseg",
+        "risk_appetite": "közepes",
+        "decision_style": "kutatásra támaszkodó",
+        "organizational_role": "marketing döntéshozó",
+        "price_sensitivity": "közepesen magas",
+        "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Bence, ROI-maximalo alapito",
+        "name": "Bence, ROI-maximalizáló alapító",
         "role": "Founder",
-        "risk_appetite": "kozepesen magas",
-        "decision_style": "eredmeny-kozpontu",
-        "organizational_role": "vegso donteshozo",
+        "risk_appetite": "közepesen magas",
+        "decision_style": "eredmény-központú",
+        "organizational_role": "végső döntéshozó",
         "price_sensitivity": "magas",
-        "technology_adoption_curve": "korai alkalmazo",
+        "technology_adoption_curve": "korai alkalmazó",
     },
     {
-        "name": "Judit, compliance-fokuszu jogi vezeto",
+        "name": "Judit, compliance-fókuszú jogi vezető",
         "role": "Legal Lead",
         "risk_appetite": "nagyon alacsony",
-        "decision_style": "szabalyozas-koveto",
+        "decision_style": "szabályozás-követő",
         "organizational_role": "jogi kontroll",
-        "price_sensitivity": "kozepes",
-        "technology_adoption_curve": "kesoi tobbseg",
+        "price_sensitivity": "közepes",
+        "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "Aron, adatorientalt revenue ops manager",
+        "name": "Áron, adatorientált revenue ops manager",
         "role": "RevOps Manager",
-        "risk_appetite": "kozepes",
-        "decision_style": "metrika-kozpontu",
-        "organizational_role": "beveteli folyamatfelelos",
-        "price_sensitivity": "kozepes",
-        "technology_adoption_curve": "korai tobbseg",
+        "risk_appetite": "közepes",
+        "decision_style": "metrika-központú",
+        "organizational_role": "bevételi folyamatfelelős",
+        "price_sensitivity": "közepes",
+        "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Kata, munkaerohianyra reagalo HR vezeto",
+        "name": "Kata, munkaerőhiányra reagáló HR vezető",
         "role": "HR Director",
-        "risk_appetite": "kozepes",
-        "decision_style": "emberkozpontu",
-        "organizational_role": "szervezeti tamogato",
+        "risk_appetite": "közepes",
+        "decision_style": "emberközpontú",
+        "organizational_role": "szervezeti támogató",
         "price_sensitivity": "magas",
-        "technology_adoption_curve": "korai tobbseg",
+        "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Levente, skalahato rendszert kereso CTO",
+        "name": "Levente, skálázható rendszert kereső CTO",
         "role": "CTO",
-        "risk_appetite": "kozepesen magas",
-        "decision_style": "technikai trade-off alapu",
-        "organizational_role": "technologiai vezeto",
+        "risk_appetite": "közepesen magas",
+        "decision_style": "technikai trade-off alapú",
+        "organizational_role": "technológiai vezető",
         "price_sensitivity": "alacsony",
         "technology_adoption_curve": "innovator",
     },
     {
-        "name": "Melinda, diszkontkereso beszerzesi menedzser",
+        "name": "Melinda, diszkontkereső beszerzési menedzser",
         "role": "Procurement Manager",
         "risk_appetite": "alacsony",
-        "decision_style": "alkuorientalt",
-        "organizational_role": "beszerzesi donteshozo",
+        "decision_style": "alkuorientált",
+        "organizational_role": "beszerzési döntéshozó",
         "price_sensitivity": "nagyon magas",
-        "technology_adoption_curve": "kesoi tobbseg",
+        "technology_adoption_curve": "késői többség",
     },
     {
-        "name": "David, adatvedelemre erzekeny IT-biztonsagi vezeto",
+        "name": "Dávid, adatvédelemre érzékeny IT-biztonsági vezető",
         "role": "Security Lead",
         "risk_appetite": "nagyon alacsony",
-        "decision_style": "kockazatminimalizalo",
-        "organizational_role": "biztonsagi kontroll",
+        "decision_style": "kockázatminimalizáló",
+        "organizational_role": "biztonsági kontroll",
         "price_sensitivity": "alacsony",
-        "technology_adoption_curve": "korai tobbseg",
+        "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Reka, gyors piacra lepest szorgalmazo sales vezeto",
+        "name": "Réka, gyors piacra lépést szorgalmazó sales vezető",
         "role": "Sales Director",
         "risk_appetite": "magas",
-        "decision_style": "ugyfelszerzesi sebesseg alapu",
-        "organizational_role": "beveteli hajtoero",
-        "price_sensitivity": "kozepes",
-        "technology_adoption_curve": "korai alkalmazo",
+        "decision_style": "ügyfélszerzési sebesség alapú",
+        "organizational_role": "bevételi hajtóerő",
+        "price_sensitivity": "közepes",
+        "technology_adoption_curve": "korai alkalmazó",
     },
     {
-        "name": "Tamas, cashflow-fokuszu KKV ugyvezeto",
+        "name": "Tamás, cashflow-fókuszú KKV ügyvezető",
         "role": "Managing Director",
         "risk_appetite": "alacsony",
-        "decision_style": "likviditasi fegyelem",
+        "decision_style": "likviditási fegyelem",
         "organizational_role": "kkv tulajdonos",
         "price_sensitivity": "nagyon magas",
-        "technology_adoption_curve": "kesoi alkalmazo",
+        "technology_adoption_curve": "késői alkalmazó",
     },
     {
-        "name": "Szilvia, adatminosegre koncentralo BI szakerto",
+        "name": "Szilvia, adatminőségre koncentráló BI szakértő",
         "role": "BI Manager",
-        "risk_appetite": "kozepes",
-        "decision_style": "elemzes-kozpontu",
+        "risk_appetite": "közepes",
+        "decision_style": "elemzés-központú",
         "organizational_role": "adatgazda",
-        "price_sensitivity": "kozepes",
-        "technology_adoption_curve": "korai tobbseg",
+        "price_sensitivity": "közepes",
+        "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Gabor, partnerkapcsolatra epito channel manager",
+        "name": "Gábor, partnerkapcsolatra építő channel manager",
         "role": "Channel Manager",
-        "risk_appetite": "kozepes",
-        "decision_style": "kapcsolat- es bizalom alapu",
-        "organizational_role": "partneri novekedes felelos",
-        "price_sensitivity": "kozepesen magas",
-        "technology_adoption_curve": "korai tobbseg",
+        "risk_appetite": "közepes",
+        "decision_style": "kapcsolat- és bizalom alapú",
+        "organizational_role": "partneri növekedés felelős",
+        "price_sensitivity": "közepesen magas",
+        "technology_adoption_curve": "korai többség",
     },
     {
-        "name": "Anita, ugyfelmegtartast priorizalo customer success vezeto",
+        "name": "Anita, ügyfélmegtartást priorizáló customer success vezető",
         "role": "Customer Success Lead",
-        "risk_appetite": "kozepes",
-        "decision_style": "lemorzsolodas-csokkento",
-        "organizational_role": "ugyfelkapcsolati vezeto",
-        "price_sensitivity": "kozepes",
-        "technology_adoption_curve": "korai tobbseg",
+        "risk_appetite": "közepes",
+        "decision_style": "lemorzsolódás-csökkentő",
+        "organizational_role": "ügyfélkapcsolati vezető",
+        "price_sensitivity": "közepes",
+        "technology_adoption_curve": "korai többség",
     },
 )
 
@@ -200,12 +201,12 @@ def build_persona_blueprints(
 ) -> list[PersonaBlueprint]:
     if total_personas < MIN_PERSONA_COUNT or total_personas > MAX_PERSONA_COUNT:
         raise ValueError(
-            f"A szemelyisegek szama csak {MIN_PERSONA_COUNT}-{MAX_PERSONA_COUNT} lehet."
+            f"A személyiségek száma csak {MIN_PERSONA_COUNT}-{MAX_PERSONA_COUNT} lehet."
         )
     if total_personas > len(PERSONA_BLUEPRINT_DEFINITIONS):
         raise ValueError(
-            f"Nincs eleg szemelyiseg-definicio: {total_personas} kert, "
-            f"{len(PERSONA_BLUEPRINT_DEFINITIONS)} elerheto."
+            f"Nincs elég személyiség-definíció: {total_personas} kért, "
+            f"{len(PERSONA_BLUEPRINT_DEFINITIONS)} elérhető."
         )
 
     selected = PERSONA_BLUEPRINT_DEFINITIONS[:total_personas]
@@ -219,21 +220,26 @@ def build_persona_user_prompt(
     audience: str,
 ) -> str:
     return (
-        "Keszits velemenyt a kovetkezo kutatasi kerdesrol, a megadott szemelyiseg nezetebol.\n"
-        f"Kutatasi tema: {topic}\n"
-        f"Celkozonseg: {audience}\n"
-        "Szemelyiseg parameterei:\n"
-        f"- Nev: {persona.name}\n"
+        "Készíts véleményt a következő kutatási kérdésről, a megadott személyiség nézetéből.\n"
+        f"Kutatási téma: {topic}\n"
+        f"Célközönség: {audience}\n"
+        "Személyiség paraméterei:\n"
+        f"- Név: {persona.name}\n"
         f"- Szervezeti szerep: {persona.organizational_role}\n"
-        f"- Donto szerep: {persona.role}\n"
-        f"- Kockazatvallalasi hajlandosag: {persona.risk_appetite}\n"
-        f"- Dontesi stilus: {persona.decision_style}\n"
-        f"- Arerzekenyseg: {persona.price_sensitivity}\n"
-        f"- Technologiai adoptacio: {persona.technology_adoption_curve}\n"
+        f"- Döntő szerep: {persona.role}\n"
+        f"- Kockázatvállalási hajlandóság: {persona.risk_appetite}\n"
+        f"- Döntési stílus: {persona.decision_style}\n"
+        f"- Árérzékenység: {persona.price_sensitivity}\n"
+        f"- Technológiai adoptáció: {persona.technology_adoption_curve}\n"
         f"Piaci keret: {HUNGARIAN_MARKET_CONTEXT}\n"
-        "Valaszolj JSON objektummal pontosan ezekkel a kulcsokkal:\n"
-        "name, role, stance, primary_argument, change_condition\n"
-        "A stance erteke kizarolag: support | reject | conditional"
+        "Válaszolj JSON objektummal pontosan ezekkel a kulcsokkal:\n"
+        "name, role, stance, primary_argument, change_condition, core_concern, buying_trigger\n"
+        "A stance értéke kizárólag: support | reject | conditional\n"
+        "Hosszúsági szabályok – minden szöveges mező PONTOSAN 1 mondat, maximum 15 szó:\n"
+        "- primary_argument: az elsődleges érv, max 15 szó\n"
+        "- change_condition: mi változtatná meg a véleményét, max 15 szó\n"
+        "- core_concern: a mélyebb, mögöttes aggodalom, max 15 szó\n"
+        "- buying_trigger: konkrét trigger ami elfogadáshoz vezetne, max 15 szó"
     )
 
 
@@ -242,7 +248,7 @@ def normalize_persona_response(payload: dict[str, Any]) -> PersonaResponse:
         return PersonaResponse.model_validate(payload)
     except ValidationError as exc:
         raise ValueError(
-            "A provider valasz nem felel meg az elvart schema-nak."
+            "A provider válasz nem felel meg az elvárt sémának."
         ) from exc
 
 

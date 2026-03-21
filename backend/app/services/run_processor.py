@@ -8,8 +8,10 @@ from typing import Any
 import sentry_sdk
 
 from app.core.database import get_supabase_client
+from app.models.persona import SynthesisResult
 from app.services.email_service import send_run_result_email
 from app.services.persona_engine import PersonaRunResult, execute_persona_engine
+from app.services.synthesis_service import execute_synthesis
 
 MIN_SUCCESSFUL_PERSONAS = 12
 CONSENSUS_THRESHOLD = 15
@@ -100,6 +102,19 @@ async def process_run(
         },
     )
 
+    synthesis: SynthesisResult | None = None
+    try:
+        synthesis = await execute_synthesis(
+            personas=result.responses,
+            topic=topic,
+            audience=audience,
+        )
+    except Exception as exc:
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("run_id", run_id)
+            scope.set_tag("error_code", "SYNTHESIS_FAILED")
+            sentry_sdk.capture_exception(exc)
+
     try:  # P9: catch aggregation/finalization errors to avoid stuck composing state
         final_status = _resolve_final_status(result=result)
         aggregation_payload = _build_result_payload(
@@ -108,6 +123,7 @@ async def process_run(
             final_status=final_status,
             topic=topic,
             audience=audience,
+            synthesis=synthesis,
         )
         should_increment = _should_increment_monthly_cost(run_id=run_id)  # P1
         _update_run_row(
@@ -170,6 +186,7 @@ def _build_result_payload(
     final_status: str,  # P12: status passed in, not recomputed
     topic: str,
     audience: str,
+    synthesis: SynthesisResult | None,
 ) -> dict[str, Any]:
     stance_counts: dict[str, int] = {"support": 0, "reject": 0, "conditional": 0}
     arguments_frequency: dict[str, int] = {}
@@ -217,6 +234,7 @@ def _build_result_payload(
         "consensus_flag_display": consensus_payload["display"],
         "top_arguments": top_arguments,
         "personas": personas_for_email,
+        "synthesis": synthesis.model_dump() if synthesis is not None else None,
     }
 
 

@@ -67,6 +67,8 @@ def _build_result_email_props(
                     "stance_label": _stance_label_from_value(stance=stance),
                     "primary_argument": str(item.get("primary_argument", "")),
                     "change_condition": str(item.get("change_condition", "")),
+                    "core_concern": str(item.get("core_concern", "")),
+                    "buying_trigger": str(item.get("buying_trigger", "")),
                 }
             )
 
@@ -77,6 +79,9 @@ def _build_result_email_props(
         )
     )
 
+    synthesis_raw = result_payload.get("synthesis")
+    synthesis = synthesis_raw if isinstance(synthesis_raw, dict) else None
+
     return {
         "topic": str(result_payload.get("topic", "")),
         "audience": str(result_payload.get("audience", "")),
@@ -84,6 +89,7 @@ def _build_result_email_props(
         "persona_count": persona_count_header,
         "aggregate_score": str(result_payload.get("aggregate_score_display", "")),
         "consensus_flag": str(result_payload.get("consensus_flag_display", "")) or None,
+        "synthesis": synthesis,
         "user_email": recipient_email,
         "unsubscribe_url": unsubscribe_url,
     }

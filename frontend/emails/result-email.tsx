@@ -19,6 +19,16 @@ export type ResultEmailPersona = {
   stance_label: string;
   primary_argument: string;
   change_condition: string;
+  core_concern: string;
+  buying_trigger: string;
+};
+
+export type ResultEmailSynthesis = {
+  summary: string;
+  main_barriers: string[];
+  winning_conditions: string;
+  best_target_segment: string;
+  strategic_recommendation: string;
 };
 
 export type ResultEmailProps = {
@@ -28,6 +38,7 @@ export type ResultEmailProps = {
   persona_count: string;
   aggregate_score: string;
   consensus_flag?: string;
+  synthesis?: ResultEmailSynthesis;
   user_email: string;
   unsubscribe_url?: string;
 };
@@ -47,6 +58,7 @@ export function ResultEmail({
   persona_count,
   aggregate_score,
   consensus_flag,
+  synthesis,
   user_email,
   unsubscribe_url,
 }: ResultEmailProps) {
@@ -257,6 +269,121 @@ export function ResultEmail({
                       </tr>
                     ) : null}
 
+                    {synthesis ? (
+                      <tr>
+                        <td style={{ padding: "20px 24px 0 24px" }}>
+                          <h2
+                            style={{
+                              margin: 0,
+                              color: emailTextPrimary,
+                              fontSize: "18px",
+                              lineHeight: "24px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {copy.synthesisTitle}
+                          </h2>
+                          <p
+                            style={{
+                              margin: "10px 0 0 0",
+                              color: emailTextSecondary,
+                              fontSize: "14px",
+                              lineHeight: "22px",
+                            }}
+                          >
+                            {synthesis.summary}
+                          </p>
+                          <p
+                            style={{
+                              margin: "14px 0 4px 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {copy.synthesisBarriersLabel}
+                          </p>
+                          {synthesis.main_barriers.map((barrier, idx) => (
+                            <p
+                              key={idx}
+                              style={{
+                                margin: "2px 0 0 0",
+                                color: emailTextSecondary,
+                                fontSize: "13px",
+                                lineHeight: "20px",
+                              }}
+                            >
+                              {`• ${barrier}`}
+                            </p>
+                          ))}
+                          <p
+                            style={{
+                              margin: "12px 0 4px 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {copy.synthesisWinningConditionsLabel}
+                          </p>
+                          <p
+                            style={{
+                              margin: "2px 0 0 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                            }}
+                          >
+                            {synthesis.winning_conditions}
+                          </p>
+                          <p
+                            style={{
+                              margin: "12px 0 4px 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {copy.synthesisBestTargetLabel}
+                          </p>
+                          <p
+                            style={{
+                              margin: "2px 0 0 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                            }}
+                          >
+                            {synthesis.best_target_segment}
+                          </p>
+                          <p
+                            style={{
+                              margin: "12px 0 4px 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {copy.synthesisRecommendationLabel}
+                          </p>
+                          <p
+                            style={{
+                              margin: "2px 0 0 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                            }}
+                          >
+                            {synthesis.strategic_recommendation}
+                          </p>
+                        </td>
+                      </tr>
+                    ) : null}
+
                     <tr>
                       <td style={{ padding: "18px 24px 10px 24px" }}>
                         <h2
@@ -299,8 +426,12 @@ export function ResultEmail({
                                       stanceLabelPrefix={copy.stanceLabelPrefix}
                                       primary_argument={persona.primary_argument}
                                       change_condition={persona.change_condition}
+                                      core_concern={persona.core_concern}
+                                      buying_trigger={persona.buying_trigger}
                                       primaryArgumentLabel={copy.primaryArgumentLabel}
                                       changeConditionLabel={copy.changeConditionLabel}
+                                      coreConcernLabel={copy.coreConcernLabel}
+                                      buyingTriggerLabel={copy.buyingTriggerLabel}
                                     />
                                   </td>
                                 ))}

@@ -32,16 +32,16 @@ def test_prompt_is_hungarian_and_market_contextual() -> None:
 
     prompt = build_persona_user_prompt(
         persona=persona,
-        topic="Arazasi strategia",
-        audience="Magyar KKV penzugyi vezetok",
+        topic="Árazási stratégia",
+        audience="Magyar KKV pénzügyi vezetők",
     )
 
-    assert "Kutatasi tema" in prompt
+    assert "Kutatási téma" in prompt
     assert "Piaci keret" in prompt
     assert HUNGARIAN_MARKET_CONTEXT in prompt
     assert "Magyar" in prompt or "magyar" in prompt
     assert "JSON objektummal" in prompt
-    assert "kizarlag" in HUNGARIAN_SYSTEM_PROMPT.lower()
+    assert "kizárólag" in HUNGARIAN_SYSTEM_PROMPT.lower()
 
 
 def test_normalize_persona_response_enforces_schema() -> None:
@@ -52,6 +52,8 @@ def test_normalize_persona_response_enforces_schema() -> None:
             "stance": "support",
             "primary_argument": "A modell jol illeszkedik a magyar piachoz.",
             "change_condition": "Akkor valtoztatnek, ha a CAC tartosan no.",
+            "core_concern": "Fel a vendor lock-intol.",
+            "buying_trigger": "Pozitiv referenciak esetén azonnal dontene.",
         }
     )
 
@@ -65,6 +67,8 @@ def test_normalize_persona_response_enforces_schema() -> None:
                 "stance": "unknown",
                 "primary_argument": "invalid",
                 "change_condition": "invalid",
+                "core_concern": "invalid",
+                "buying_trigger": "invalid",
             }
         )
 
@@ -94,6 +98,8 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
                     "stance": "conditional",
                     "primary_argument": "Erv",
                     "change_condition": "Feltetel",
+                    "core_concern": "Aggodalom",
+                    "buying_trigger": "Trigger",
                 },
                 0.0,
             )

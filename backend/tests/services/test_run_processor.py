@@ -229,6 +229,8 @@ def _build_result(
             stance="support" if idx % 2 == 0 else "conditional",
             primary_argument=f"Erv-{idx % 3}",
             change_condition="Feltetel",
+            core_concern="Aggodalom",
+            buying_trigger="Trigger",
         )
         for idx in range(successful_count)
     ]
@@ -260,6 +262,8 @@ def _build_result_with_stances(
             stance=cast("Any", stance),
             primary_argument=f"Erv-{idx % 3}",
             change_condition="Feltetel",
+            core_concern="Aggodalom",
+            buying_trigger="Trigger",
         )
         for idx, stance in enumerate(stances)
     ]
@@ -280,7 +284,11 @@ def _patch_fake_engine(monkeypatch, run_processor, result: PersonaRunResult) -> 
             on_persona_completed(result.total_personas, result.total_personas)
         return result
 
+    async def fake_synthesis(*, personas, topic, audience, llm_client=None):
+        return None
+
     monkeypatch.setattr(run_processor, "execute_persona_engine", fake_engine)
+    monkeypatch.setattr(run_processor, "execute_synthesis", fake_synthesis)
 
 
 def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
@@ -300,7 +308,7 @@ def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
     monkeypatch.setattr(
         run_processor,
         "send_run_result_email",
-        lambda *, recipient_email, result_payload: email_calls.append(
+        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
             {"recipient_email": recipient_email, "result_payload": result_payload}
         ),
     )
@@ -355,7 +363,7 @@ def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
     monkeypatch.setattr(
         run_processor,
         "send_run_result_email",
-        lambda *, recipient_email, result_payload: email_calls.append(
+        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
             {"recipient_email": recipient_email, "result_payload": result_payload}
         ),
     )
@@ -449,9 +457,9 @@ def test_process_run_logs_email_failure_and_preserves_partial_status(
         status_code = 503
 
     def _raise_send_error(
-        *, recipient_email: str, result_payload: dict[str, Any]
+        *, recipient_email: str, result_payload: dict[str, Any], user_id: str | None = None
     ) -> None:
-        _ = (recipient_email, result_payload)
+        _ = (recipient_email, result_payload, user_id)
         raise FakeResendError("provider unavailable")
 
     sentry_scope = _SentryScopeRecorder()
@@ -521,7 +529,7 @@ def test_process_run_fails_when_successful_personas_below_threshold(
     monkeypatch.setattr(
         run_processor,
         "send_run_result_email",
-        lambda *, recipient_email, result_payload: email_calls.append(
+        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
             {"recipient_email": recipient_email, "result_payload": result_payload}
         ),
     )
@@ -652,7 +660,7 @@ def test_result_payload_sets_consensus_for_15_of_15_support(monkeypatch) -> None
     monkeypatch.setattr(
         run_processor,
         "send_run_result_email",
-        lambda *, recipient_email, result_payload: email_calls.append(
+        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
             {"recipient_email": recipient_email, "result_payload": result_payload}
         ),
     )
@@ -700,7 +708,7 @@ def test_result_payload_sets_consensus_for_15_of_18_reject(monkeypatch) -> None:
     monkeypatch.setattr(
         run_processor,
         "send_run_result_email",
-        lambda *, recipient_email, result_payload: email_calls.append(
+        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
             {"recipient_email": recipient_email, "result_payload": result_payload}
         ),
     )
@@ -744,7 +752,7 @@ def test_result_payload_no_consensus_for_14_of_18_support(monkeypatch) -> None:
     monkeypatch.setattr(
         run_processor,
         "send_run_result_email",
-        lambda *, recipient_email, result_payload: email_calls.append(
+        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
             {"recipient_email": recipient_email, "result_payload": result_payload}
         ),
     )
@@ -785,7 +793,7 @@ def test_result_payload_no_consensus_when_all_conditional(monkeypatch) -> None:
     monkeypatch.setattr(
         run_processor,
         "send_run_result_email",
-        lambda *, recipient_email, result_payload: email_calls.append(
+        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
             {"recipient_email": recipient_email, "result_payload": result_payload}
         ),
     )

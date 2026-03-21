@@ -24,8 +24,12 @@ export type PersonaCardEmailProps = {
   stanceLabelPrefix: string;
   primary_argument: string;
   change_condition: string;
+  core_concern: string;
+  buying_trigger: string;
   primaryArgumentLabel: string;
   changeConditionLabel: string;
+  coreConcernLabel: string;
+  buyingTriggerLabel: string;
 };
 
 export function PersonaCardEmail({
@@ -36,8 +40,12 @@ export function PersonaCardEmail({
   stanceLabelPrefix,
   primary_argument,
   change_condition,
+  core_concern,
+  buying_trigger,
   primaryArgumentLabel,
   changeConditionLabel,
+  coreConcernLabel,
+  buyingTriggerLabel,
 }: PersonaCardEmailProps) {
   const stanceColor = stanceColors[stance] ?? emailBorder;
 
@@ -133,6 +141,48 @@ export function PersonaCardEmail({
               }}
             >
               {change_condition}
+            </p>
+            <p
+              style={{
+                margin: "10px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "14px",
+                lineHeight: "21px",
+                fontWeight: 700,
+              }}
+            >
+              {coreConcernLabel}
+            </p>
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "14px",
+                lineHeight: "21px",
+              }}
+            >
+              {core_concern}
+            </p>
+            <p
+              style={{
+                margin: "10px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "14px",
+                lineHeight: "21px",
+                fontWeight: 700,
+              }}
+            >
+              {buyingTriggerLabel}
+            </p>
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "14px",
+                lineHeight: "21px",
+              }}
+            >
+              {buying_trigger}
             </p>
           </td>
         </tr>

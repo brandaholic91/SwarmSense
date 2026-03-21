@@ -27,6 +27,18 @@ class PersonaResponse(BaseModel):
     stance: PersonaStance
     primary_argument: str
     change_condition: str
+    core_concern: str
+    buying_trigger: str
+
+
+class SynthesisResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    summary: str
+    main_barriers: list[str]
+    winning_conditions: str
+    best_target_segment: str
+    strategic_recommendation: str
 
 
 class PersonaFailure(BaseModel):

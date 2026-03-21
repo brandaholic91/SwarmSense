@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { render } from "@react-email/render";
 
-import { ResultEmail, type ResultEmailPersona } from "@/emails/result-email";
+import { ResultEmail, type ResultEmailPersona, type ResultEmailSynthesis } from "@/emails/result-email";
 
 export interface ResultEmailRenderRequest {
   topic: string;
@@ -11,6 +11,7 @@ export interface ResultEmailRenderRequest {
   persona_count: string;
   aggregate_score: string;
   consensus_flag?: string;
+  synthesis?: ResultEmailSynthesis;
   user_email: string;
   unsubscribe_url?: string;
 }
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
         persona_count: body.persona_count,
         aggregate_score: body.aggregate_score,
         consensus_flag: body.consensus_flag,
+        synthesis: body.synthesis,
         user_email: body.user_email,
         unsubscribe_url: body.unsubscribe_url,
       })

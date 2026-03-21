@@ -1,6 +1,6 @@
 # Story 4.3: Persona Engine - Parallel LLM Execution
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,38 +23,38 @@ so that the analysis reflects genuine diversity of market perspectives rather th
 
 ## Tasks / Subtasks
 
-- [ ] Build the persona domain model and deterministic persona generation strategy (AC: 1, 4, 5)
-  - [ ] Create `backend/app/models/persona.py` with strict Pydantic v2 models for persona input/output and a `Literal` stance enum (`support`, `reject`, `conditional`).
-  - [ ] Implement deterministic persona blueprint generation in `backend/app/services/persona_engine.py` covering all five attitudinal dimensions and producing 15-20 unique persona profiles.
-  - [ ] Enforce output contract fields (`name`, `role`, `stance`, `primary_argument`, `change_condition`) and reject malformed provider output.
-  - [ ] Keep all prompt templates and Hungarian copy centralized (module constants/helpers), with explicit Hungarian cultural grounding instructions.
+- [x] Build the persona domain model and deterministic persona generation strategy (AC: 1, 4, 5)
+  - [x] Create `backend/app/models/persona.py` with strict Pydantic v2 models for persona input/output and a `Literal` stance enum (`support`, `reject`, `conditional`).
+  - [x] Implement deterministic persona blueprint generation in `backend/app/services/persona_engine.py` covering all five attitudinal dimensions and producing 15-20 unique persona profiles.
+  - [x] Enforce output contract fields (`name`, `role`, `stance`, `primary_argument`, `change_condition`) and reject malformed provider output.
+  - [x] Keep all prompt templates and Hungarian copy centralized (module constants/helpers), with explicit Hungarian cultural grounding instructions.
 
-- [ ] Implement LLM client abstraction with OpenRouter gateway and retry policy (AC: 3, 7)
-  - [ ] Add `backend/app/services/llm_client.py` with async call API used by persona engine.
-  - [ ] Route persona inference through OpenRouter Chat Completions (or Responses) API and set Kimi K2 as the default routed model.
-  - [ ] Read provider credentials only from `SWARMSENSE_` settings in `backend/app/core/config.py`; no direct `os.environ` usage (including `SWARMSENSE_OPENROUTER_API_KEY`).
-  - [ ] Add/update backend `.env.example` entries for OpenRouter configuration (`SWARMSENSE_OPENROUTER_API_KEY`, routed model id, optional base URL override if needed).
-  - [ ] Add provider-level handling for `429` with exponential backoff (max 3 attempts), classify final failures with machine-readable error codes.
-  - [ ] Structure client to allow future fallback provider wiring without changing persona engine orchestration contract.
+- [x] Implement LLM client abstraction with OpenRouter gateway and retry policy (AC: 3, 7)
+  - [x] Add `backend/app/services/llm_client.py` with async call API used by persona engine.
+  - [x] Route persona inference through OpenRouter Chat Completions (or Responses) API and set Kimi K2 as the default routed model.
+  - [x] Read provider credentials only from `SWARMSENSE_` settings in `backend/app/core/config.py`; no direct `os.environ` usage (including `SWARMSENSE_OPENROUTER_API_KEY`).
+  - [x] Add/update backend `.env.example` entries for OpenRouter configuration (`SWARMSENSE_OPENROUTER_API_KEY`, routed model id, optional base URL override if needed).
+  - [x] Add provider-level handling for `429` with exponential backoff (max 3 attempts), classify final failures with machine-readable error codes.
+  - [x] Structure client to allow future fallback provider wiring without changing persona engine orchestration contract.
 
-- [ ] Implement parallel persona execution orchestration and run state handoff (AC: 2, 6, 8)
-  - [ ] Replace Story 4.2 placeholder in `backend/app/services/run_processor.py` with orchestration that invokes persona engine.
-  - [ ] Update run to `running` before first dispatched persona call, preserving canonical status enum only.
-  - [ ] Execute persona calls with `asyncio.gather` and per-run `asyncio.Semaphore` cap; collect successes and structured failures.
-  - [ ] If successful persona count is `< 12`, update run to `failed`, persist failure metadata, and capture exception context in Sentry; do not send email.
-  - [ ] If successful persona count is `>= 12`, hand off normalized outputs to the next step boundary for Story 4.4 (partial/completed aggregation logic intentionally deferred).
+- [x] Implement parallel persona execution orchestration and run state handoff (AC: 2, 6, 8)
+  - [x] Replace Story 4.2 placeholder in `backend/app/services/run_processor.py` with orchestration that invokes persona engine.
+  - [x] Update run to `running` before first dispatched persona call, preserving canonical status enum only.
+  - [x] Execute persona calls with `asyncio.gather` and per-run `asyncio.Semaphore` cap; collect successes and structured failures.
+  - [x] If successful persona count is `< 12`, update run to `failed`, persist failure metadata, and capture exception context in Sentry; do not send email.
+  - [x] If successful persona count is `>= 12`, hand off normalized outputs to the next step boundary for Story 4.4 (partial/completed aggregation logic intentionally deferred).
 
-- [ ] Preserve architecture boundaries and avoid regression on Story 4.2 seams (AC: 1-8)
-  - [ ] Keep `POST /api/v1/runs` and `POST /api/v1/run-sessions` contracts unchanged; this story is backend async processing internals.
-  - [ ] Do not introduce new run status values beyond `queued`, `running`, `composing`, `completed`, `partial`, `failed`.
-  - [ ] Keep `snake_case` API/data model fields and existing error envelope conventions.
-  - [ ] Ensure no direct frontend/Supabase coupling is introduced; all DB writes remain backend-only.
+- [x] Preserve architecture boundaries and avoid regression on Story 4.2 seams (AC: 1-8)
+  - [x] Keep `POST /api/v1/runs` and `POST /api/v1/run-sessions` contracts unchanged; this story is backend async processing internals.
+  - [x] Do not introduce new run status values beyond `queued`, `running`, `composing`, `completed`, `partial`, `failed`.
+  - [x] Keep `snake_case` API/data model fields and existing error envelope conventions.
+  - [x] Ensure no direct frontend/Supabase coupling is introduced; all DB writes remain backend-only.
 
-- [ ] Add comprehensive automated tests for concurrency, retry, and failure thresholds (AC: 1-8)
-  - [ ] Add `backend/tests/services/test_llm_client.py` for provider request shaping, 429 retry/backoff behavior, and terminal failure classification.
-  - [ ] Add `backend/tests/services/test_persona_engine.py` for persona generation uniqueness, Hungarian prompt requirements, and response schema normalization.
-  - [ ] Add `backend/tests/services/test_run_processor.py` for run lifecycle transitions (`queued` -> `running` -> failure boundary), `<12` failure behavior, and no-email guarantee on failure.
-  - [ ] Add focused integration-style test(s) for dispatch seam from `run_sessions.py`/`runs.py` into real run processor execution path using mocks/stubs.
+- [x] Add comprehensive automated tests for concurrency, retry, and failure thresholds (AC: 1-8)
+  - [x] Add `backend/tests/services/test_llm_client.py` for provider request shaping, 429 retry/backoff behavior, and terminal failure classification.
+  - [x] Add `backend/tests/services/test_persona_engine.py` for persona generation uniqueness, Hungarian prompt requirements, and response schema normalization.
+  - [x] Add `backend/tests/services/test_run_processor.py` for run lifecycle transitions (`queued` -> `running` -> failure boundary), `<12` failure behavior, and no-email guarantee on failure.
+  - [x] Add focused integration-style test(s) for dispatch seam from `run_sessions.py`/`runs.py` into real run processor execution path using mocks/stubs.
 
 ## Dev Notes
 
@@ -138,17 +138,35 @@ openai/gpt-5.3-codex
 ### Debug Log References
 
 - `git log --oneline -5`
+- `cd backend && pytest tests/services/test_llm_client.py tests/services/test_persona_engine.py tests/services/test_run_processor.py`
+- `cd backend && pytest`
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story status set to ready-for-dev with explicit implementation guardrails for persona concurrency, retry handling, and failure thresholds.
+- Implemented full persona execution pipeline: deterministic 18-persona generation across all five attitudinal dimensions, Hungarian prompt contracts, strict schema normalization, and per-persona structured failures.
+- Added OpenRouter client abstraction with Kimi K2 default routing, async transport, machine-readable provider failure codes, and 429/5xx/network retry handling with exponential backoff (3 attempts).
+- Replaced Story 4.2 placeholder dispatch processor with real async orchestration: `running` transition before persona dispatch, `failed` threshold handling for `<12`, Sentry failure capture with error metadata, and `composing` handoff boundary for `>=12`.
+- Added service-level test suite for llm client, persona engine, and run processor, including endpoint seam integration check through `/api/v1/runs` into real run processor dispatch path.
+- Full backend regression green: `50 passed`.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/4-3-persona-engine-parallel-llm-execution.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/.env.example
+- backend/app/core/config.py
+- backend/app/models/persona.py
+- backend/app/services/llm_client.py
+- backend/app/services/persona_engine.py
+- backend/app/services/run_processor.py
+- backend/tests/services/__init__.py
+- backend/tests/services/test_llm_client.py
+- backend/tests/services/test_persona_engine.py
+- backend/tests/services/test_run_processor.py
 
 ### Change Log
 
 - 2026-03-21: Created Story 4.3 ready-for-dev context with architecture-compliant implementation guidance, previous-story intelligence, and service-level testing scope.
+- 2026-03-21: Implemented Story 4.3 persona engine backend internals (modeling, OpenRouter client, parallel orchestration, failure threshold handling, and comprehensive service tests); moved status to review.

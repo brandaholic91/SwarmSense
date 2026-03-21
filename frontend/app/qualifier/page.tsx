@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   Select,
@@ -45,12 +46,19 @@ function createQualifierPayload(
 
 export default function QualifierPage() {
   const { qualifier } = messages;
+  const router = useRouter();
   const [roleAnswer, setRoleAnswer] = React.useState("");
   const [useCaseAnswer, setUseCaseAnswer] = React.useState("");
   const [errors, setErrors] = React.useState<Partial<Record<QualifierField, string>>>({});
 
   const roleContainerRef = React.useRef<HTMLDivElement>(null);
   const useCaseContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Refs ensure blur handler always reads current values, avoiding stale closure issues.
+  const roleAnswerRef = React.useRef(roleAnswer);
+  roleAnswerRef.current = roleAnswer;
+  const useCaseAnswerRef = React.useRef(useCaseAnswer);
+  useCaseAnswerRef.current = useCaseAnswer;
 
   const isComplete = roleAnswer.length > 0 && useCaseAnswer.length > 0;
 
@@ -71,29 +79,29 @@ export default function QualifierPage() {
 
   const handleContainerBlur = (
     field: QualifierField,
-    value: string,
     containerRef: React.RefObject<HTMLDivElement | null>,
-    event: React.FocusEvent<HTMLDivElement>
   ) => {
-    const nextTarget = event.relatedTarget;
-    if (nextTarget && containerRef.current?.contains(nextTarget)) {
-      return;
-    }
-
-    validateField(field, value);
+    // setTimeout lets focus settle before checking activeElement, fixing Firefox/Safari
+    // where relatedTarget is null for non-natively-focusable Radix elements.
+    setTimeout(() => {
+      if (containerRef.current?.contains(document.activeElement)) return;
+      const value = field === "role_answer" ? roleAnswerRef.current : useCaseAnswerRef.current;
+      validateField(field, value);
+    }, 0);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!isComplete) {
-      validateField("role_answer", roleAnswer);
-      validateField("use_case_answer", useCaseAnswer);
+      validateField("role_answer", roleAnswerRef.current);
+      validateField("use_case_answer", useCaseAnswerRef.current);
       return;
     }
 
     const payload = createQualifierPayload(roleAnswer, useCaseAnswer);
-    void payload;
+    void payload; // API call wired in Story 4.2
+    router.push("/waiting");
   };
 
   return (
@@ -130,9 +138,7 @@ export default function QualifierPage() {
               </label>
               <div
                 ref={roleContainerRef}
-                onBlur={(event) =>
-                  handleContainerBlur("role_answer", roleAnswer, roleContainerRef, event)
-                }
+                onBlur={() => handleContainerBlur("role_answer", roleContainerRef)}
               >
                 <Select
                   value={roleAnswer}
@@ -175,14 +181,7 @@ export default function QualifierPage() {
               </p>
               <div
                 ref={useCaseContainerRef}
-                onBlur={(event) =>
-                  handleContainerBlur(
-                    "use_case_answer",
-                    useCaseAnswer,
-                    useCaseContainerRef,
-                    event
-                  )
-                }
+                onBlur={() => handleContainerBlur("use_case_answer", useCaseContainerRef)}
               >
                 <RadioGroup
                   aria-labelledby="use-case-label"

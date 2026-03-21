@@ -1,6 +1,6 @@
 # Story 4.1: Qualifier Survey Screen
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -141,6 +141,21 @@ openai/gpt-5.3-codex
 - Added schema readiness migrations `supabase/migrations/20260319003_runs.sql` and `supabase/migrations/20260319004_qualifier_responses.sql` with canonical run status check constraints and service-role-only RLS policies.
 - Added co-located coverage in `frontend/app/qualifier/page.test.tsx` for intro copy, selector-only contract, option counts, disabled submit gating, blur validation, and mobile touch-target classes.
 - Updated `frontend/test/setup.ts` with `ResizeObserver` and `scrollIntoView` test-environment shims required by Radix primitives.
+
+### Code Review Patches (2026-03-21)
+
+- Removed stale duplicate top-level `qualifierIntro` key from `messages.ts` (canonical key is `messages.qualifier.intro`).
+- Fixed blur handler cross-browser compatibility: replaced `relatedTarget`-based guard with `setTimeout(0) + document.activeElement` pattern, fixing Firefox/Safari where `relatedTarget` is null for Radix elements.
+- Fixed stale closure in blur handler: introduced `roleAnswerRef` / `useCaseAnswerRef` refs so blur always reads current state values.
+- Added `router.push("/waiting")` on successful submit (IG-1 resolution; API wiring remains Story 4.2 scope).
+- Updated blur validation test to use `waitFor` for async `setTimeout` settlement.
+- Added new test: "navigates to /waiting after successful submit" with `useRouter` mock.
+- All 46 frontend tests pass post-patch.
+
+### Story 4.2 Handoff Notes
+
+- `qualifier_responses.run_id` is NOT NULL — Story 4.2 must create the `runs` row first, then insert the `qualifier_response`. Submission flow: create run → get run_id → insert qualifier_response → dispatch background task.
+- Submit handler currently holds payload in `void payload` scaffold; Story 4.2 replaces this with the actual Server Action call.
 
 ### File List
 

@@ -181,7 +181,6 @@ export const messages = {
       },
     },
   },
-  qualifierIntro: "Segíts kalibrálni a personákat",
   waiting: {
     states: {
       queued: "Sorban áll",

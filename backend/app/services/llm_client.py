@@ -63,6 +63,7 @@ class OpenRouterClient:
         *,
         system_prompt: str,
         user_prompt: str,
+        temperature: float = 0.3,
     ) -> tuple[dict[str, Any], float]:
         if not self._settings.openrouter_api_key:
             raise LLMProviderError(
@@ -76,7 +77,7 @@ class OpenRouterClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            "temperature": 0.3,
+            "temperature": temperature,
             "response_format": {"type": "json_object"},
         }
         headers = {

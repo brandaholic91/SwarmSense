@@ -13,6 +13,7 @@ from app.models.persona import (
     PersonaRunResult,
     SynthesisResult,
 )
+from app.services.blueprint_generator import generate_persona_blueprints
 from app.services.llm_client import LLMProviderError, OpenRouterClient
 
 DEFAULT_PERSONA_COUNT = 18
@@ -259,10 +260,19 @@ async def execute_persona_engine(
     llm_client: OpenRouterClient | None = None,
     concurrency_limit: int = 5,
     total_personas: int = DEFAULT_PERSONA_COUNT,
+    blueprints: list[PersonaBlueprint] | None = None,
     on_persona_completed: Callable[[int, int], None] | None = None,
 ) -> PersonaRunResult:
     client = llm_client or OpenRouterClient()
-    personas = build_persona_blueprints(total_personas)
+    if blueprints is not None:
+        personas = blueprints
+    else:
+        personas = await generate_persona_blueprints(
+            topic=topic,
+            audience=audience,
+            count=total_personas,
+            llm_client=client,
+        )
     semaphore = asyncio.Semaphore(concurrency_limit)
 
     async def _run_persona(

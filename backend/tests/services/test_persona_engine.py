@@ -79,7 +79,7 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
 
     class FakeClient:
         async def generate_persona_response_with_meta(
-            self, *, system_prompt: str, user_prompt: str
+            self, *, system_prompt: str, user_prompt: str, temperature: float = 0.3
         ):
             nonlocal max_inflight
             nonlocal current_inflight
@@ -110,7 +110,7 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
             audience="Kozonseg",
             llm_client=FakeClient(),
             concurrency_limit=3,
-            total_personas=15,
+            blueprints=build_persona_blueprints(total_personas=15),
         )
     )
 
@@ -122,7 +122,7 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
 def test_execute_persona_engine_collects_provider_failures() -> None:
     class FailingClient:
         async def generate_persona_response_with_meta(
-            self, *, system_prompt: str, user_prompt: str
+            self, *, system_prompt: str, user_prompt: str, temperature: float = 0.3
         ):
             raise LLMProviderError(
                 error_code="OPENROUTER_RATE_LIMIT",
@@ -134,7 +134,7 @@ def test_execute_persona_engine_collects_provider_failures() -> None:
             topic="Tema",
             audience="Kozonseg",
             llm_client=FailingClient(),
-            total_personas=15,
+            blueprints=build_persona_blueprints(total_personas=15),
         )
     )
 

@@ -1,6 +1,6 @@
 # Story 5.2: Result Email - Content Structure & Persona Cards
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -148,6 +148,21 @@ openai/gpt-5.3-codex
 - Added Hungarian interpretive disclaimer copy in `messages.email.result` and rendered it in the email footer with secondary visual weight.
 - Refreshed compatibility design-intent checklist for Story 5.2 and validated frontend test and lint suites pass.
 
+### Code Review Addendum (Intent Gaps)
+
+- IG-1: Tie-break behavior for consensus in threshold-equal support/reject cases is not yet explicitly specified in AC text; implementation currently needs a follow-up decision.
+- IG-2: `role="alert"` usage on table-based email markup conflicts with ARIA validity expectations; implementation should be adjusted while preserving email-client compatibility.
+
+### Code Review Patches Applied (2026-03-21)
+
+- P-1: Removed dead code branches 3 and 4 from `_build_consensus_payload` — both were unreachable given branches 1 and 2 already cover all cases where one side meets the threshold and exceeds the other. Tie case (both ≥ 15 and equal) correctly produces no consensus.
+- P-2: Replaced direct `stance_counts["key"]` indexing with `.get("key", 0)` in both `_build_aggregate_score_payload` and `_build_consensus_payload` for defense-in-depth.
+- P-3 (deferred to Story 5.3): Hungarian display strings in backend (`aggregate_score_display`, `consensus_flag_display`) cannot be cleanly moved to `messages.ts` without changing the email payload contract; addressed when full React Email wiring is completed in Story 5.3.
+- P-4: Added filler `<td>` cells for partial last rows in the persona card grid (1 or 2 personas in last row) to preserve 3-column table structure.
+- P-5: Fixed `paddingRight` logic to use `columnIndex < row.length - 1` instead of hardcoded `columnIndex < 2`, correctly handling partial rows.
+- P-6: Moved `⚠` icon from hard-coded template literal in `consensus-flag-email.tsx` to `messages.ts` (`consensusIcon` key); `result-email.tsx` now composes the label from `copy.consensusIcon` + `copy.consensusLabel`.
+- P-7: Removed `personas ?? []` defensive guard from `groupPersonas` call; `personas` is non-optional in `ResultEmailProps` and the guard was masking a potential upstream bug.
+
 ### File List
 
 - _bmad-output/implementation-artifacts/5-2-result-email-content-structure-and-persona-cards.md
@@ -163,3 +178,5 @@ openai/gpt-5.3-codex
 ### Change Log
 
 - 2026-03-21: Implemented Story 5.2 consensus-first email composition, full persona card argument model, responsive card layout, Hungarian disclaimer transparency copy, and expanded backend/frontend verification coverage.
+- 2026-03-21: Added code-review intent-gap addendum (IG-1 tie-break and IG-2 ARIA validity) without resetting implementation history.
+- 2026-03-21: Applied code review patches P-1 through P-7 (P-3 deferred to 5.3); all backend and frontend tests pass.

@@ -31,7 +31,7 @@ export function ConsensusFlagEmail({ label, value }: ConsensusFlagEmailProps) {
                 letterSpacing: "0.08em",
               }}
             >
-              {`⚠ ${label}`}
+              {label}
             </p>
             <p
               style={{

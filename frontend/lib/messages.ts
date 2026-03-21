@@ -230,6 +230,7 @@ export const messages = {
       audienceLabel: "Célközönség",
       personaCountLabel: "Lefutott személyek",
       aggregateScoreLabel: "Aggregált támogatási arány",
+      consensusIcon: "⚠",
       consensusLabel: "Konszenzus jelzés",
       consensusPending: "Nincs megadott konszenzus jelzés",
       personasTitle: "Persona visszajelzések",

@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-03-19"
-last_updated: "2026-03-21" # story 5-2 implemented and moved to review
+last_updated: "2026-03-21" # story 5-2 code review patches applied and closed
 project: SwarmSense
 project_key: NOKEY
 tracking_system: file-system
@@ -78,7 +78,7 @@ development_status:
   # Epic 5: Result Delivery & User Communication Lifecycle
   epic-5: in-progress
   5-1-result-email-react-email-templates-and-design-tokens: done
-  5-2-result-email-content-structure-and-persona-cards: review
+  5-2-result-email-content-structure-and-persona-cards: done
   5-3-result-email-reflection-question-cta-and-delivery: backlog
   5-4-automated-follow-up-email-sequence: backlog
   5-5-data-deletion-request-handling: backlog

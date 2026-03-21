@@ -208,9 +208,9 @@ def _build_result_payload(
 
 
 def _build_aggregate_score_payload(*, stance_counts: dict[str, int]) -> dict[str, Any]:
-    support_count = stance_counts["support"]
-    reject_count = stance_counts["reject"]
-    conditional_count = stance_counts["conditional"]
+    support_count = stance_counts.get("support", 0)
+    reject_count = stance_counts.get("reject", 0)
+    conditional_count = stance_counts.get("conditional", 0)
     total_count = support_count + reject_count + conditional_count
 
     return {
@@ -227,8 +227,8 @@ def _build_aggregate_score_payload(*, stance_counts: dict[str, int]) -> dict[str
 
 
 def _build_consensus_payload(*, stance_counts: dict[str, int]) -> dict[str, Any]:
-    support_count = stance_counts["support"]
-    reject_count = stance_counts["reject"]
+    support_count = stance_counts.get("support", 0)
+    reject_count = stance_counts.get("reject", 0)
 
     direction: str | None = None
     count = 0
@@ -237,12 +237,6 @@ def _build_consensus_payload(*, stance_counts: dict[str, int]) -> dict[str, Any]
         direction = "support"
         count = support_count
     elif reject_count >= CONSENSUS_THRESHOLD and reject_count > support_count:
-        direction = "reject"
-        count = reject_count
-    elif support_count >= CONSENSUS_THRESHOLD and reject_count < CONSENSUS_THRESHOLD:
-        direction = "support"
-        count = support_count
-    elif reject_count >= CONSENSUS_THRESHOLD and support_count < CONSENSUS_THRESHOLD:
         direction = "reject"
         count = reject_count
 

@@ -49,7 +49,7 @@ export function ResultEmail({
   user_email,
 }: ResultEmailProps) {
   const copy = messages.email.result;
-  const personaRows = groupPersonas(personas ?? []);
+  const personaRows = groupPersonas(personas);
 
   return (
     <Html lang="hu">
@@ -151,7 +151,7 @@ export function ResultEmail({
                       <tr>
                         <td style={{ padding: "20px 24px 0 24px" }}>
                           <ConsensusFlagEmail
-                            label={copy.consensusLabel}
+                            label={`${copy.consensusIcon} ${copy.consensusLabel}`}
                             value={consensus_flag}
                           />
                         </td>
@@ -285,7 +285,7 @@ export function ResultEmail({
                                       width: "33.333%",
                                       verticalAlign: "top",
                                       paddingBottom: "12px",
-                                      paddingRight: columnIndex < 2 ? "8px" : "0",
+                                      paddingRight: columnIndex < row.length - 1 ? "8px" : "0",
                                       paddingLeft: columnIndex > 0 ? "8px" : "0",
                                     }}
                                   >
@@ -301,6 +301,9 @@ export function ResultEmail({
                                       changeConditionLabel={copy.changeConditionLabel}
                                     />
                                   </td>
+                                ))}
+                                {Array.from({ length: 3 - row.length }, (_, fillerIndex) => (
+                                  <td key={`filler-${fillerIndex}`} style={{ width: "33.333%" }} />
                                 ))}
                               </tr>
                             </tbody>

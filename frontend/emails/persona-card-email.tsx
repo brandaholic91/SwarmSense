@@ -95,45 +95,18 @@ export function PersonaCardEmail({
             >
               {role}
             </p>
-            <table
-              role="presentation"
-              width="100%"
-              cellPadding={0}
-              cellSpacing={0}
-              style={{ marginTop: "10px" }}
+            <p
+              style={{
+                margin: "8px 0 0 0",
+                color: emailTextSecondary,
+                fontSize: "11px",
+                lineHeight: "16px",
+              }}
             >
-              <tbody>
-                <tr>
-                  {[risk_appetite, decision_style, price_sensitivity, technology_adoption_curve]
-                    .filter(Boolean)
-                    .map((attr, idx) => (
-                      <td
-                        key={idx}
-                        style={{
-                          paddingRight: "4px",
-                          paddingBottom: "4px",
-                          verticalAlign: "top",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: "inline-block",
-                            backgroundColor: emailBorder,
-                            color: emailTextSecondary,
-                            fontSize: "10px",
-                            lineHeight: "15px",
-                            padding: "1px 5px",
-                            borderRadius: "3px",
-                          }}
-                        >
-                          {attr}
-                        </span>
-                      </td>
-                    ))}
-                </tr>
-              </tbody>
-            </table>
+              {[risk_appetite, decision_style, price_sensitivity, technology_adoption_curve]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
             <p
               style={{
                 margin: "8px 0 0 0",

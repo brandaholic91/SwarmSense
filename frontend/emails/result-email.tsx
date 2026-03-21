@@ -47,14 +47,6 @@ export type ResultEmailProps = {
   unsubscribe_url?: string;
 };
 
-function groupPersonas(personas: ResultEmailPersona[]): ResultEmailPersona[][] {
-  const rows: ResultEmailPersona[][] = [];
-  for (let index = 0; index < personas.length; index += 3) {
-    rows.push(personas.slice(index, index + 3));
-  }
-  return rows;
-}
-
 export function ResultEmail({
   topic,
   audience,
@@ -67,23 +59,11 @@ export function ResultEmail({
   unsubscribe_url,
 }: ResultEmailProps) {
   const copy = messages.email.result;
-  const personaRows = groupPersonas(personas);
 
   return (
     <Html lang="hu">
-      <Head>
-        <style>{`
-          @media only screen and (max-width: 620px) {
-            .persona-column {
-              display: block !important;
-              width: 100% !important;
-              padding-right: 0 !important;
-              padding-left: 0 !important;
-              padding-bottom: 12px !important;
-            }
-          }
-        `}</style>
-      </Head>
+      <Head />
+
       <Preview>{copy.preview}</Preview>
       <Body
         style={{
@@ -404,51 +384,28 @@ export function ResultEmail({
                       </td>
                     </tr>
 
-                    {personaRows.map((row, rowIndex) => (
-                      <tr key={`row-${rowIndex}`}>
-                        <td style={{ padding: "0 24px 0 24px" }}>
-                          <table role="presentation" width="100%" cellPadding={0} cellSpacing={0}>
-                            <tbody>
-                              <tr>
-                                {row.map((persona, columnIndex) => (
-                                  <td
-                                    key={`${persona.name}-${columnIndex}`}
-                                    className="persona-column"
-                                    style={{
-                                      width: "33.333%",
-                                      verticalAlign: "top",
-                                      paddingBottom: "12px",
-                                      paddingRight: columnIndex < row.length - 1 ? "8px" : "0",
-                                      paddingLeft: columnIndex > 0 ? "8px" : "0",
-                                    }}
-                                  >
-                                    <PersonaCardEmail
-                                      name={persona.name}
-                                      role={persona.role}
-                                      stance={persona.stance}
-                                      stance_label={persona.stance_label}
-                                      stanceLabelPrefix={copy.stanceLabelPrefix}
-                                      primary_argument={persona.primary_argument}
-                                      change_condition={persona.change_condition}
-                                      core_concern={persona.core_concern}
-                                      buying_trigger={persona.buying_trigger}
-                                      risk_appetite={persona.risk_appetite}
-                                      decision_style={persona.decision_style}
-                                      price_sensitivity={persona.price_sensitivity}
-                                      technology_adoption_curve={persona.technology_adoption_curve}
-                                      primaryArgumentLabel={copy.primaryArgumentLabel}
-                                      changeConditionLabel={copy.changeConditionLabel}
-                                      coreConcernLabel={copy.coreConcernLabel}
-                                      buyingTriggerLabel={copy.buyingTriggerLabel}
-                                    />
-                                  </td>
-                                ))}
-                                {Array.from({ length: 3 - row.length }, (_, fillerIndex) => (
-                                  <td key={`filler-${fillerIndex}`} style={{ width: "33.333%" }} />
-                                ))}
-                              </tr>
-                            </tbody>
-                          </table>
+                    {personas.map((persona) => (
+                      <tr key={persona.name}>
+                        <td style={{ padding: "0 24px 8px 24px" }}>
+                          <PersonaCardEmail
+                            name={persona.name}
+                            role={persona.role}
+                            stance={persona.stance}
+                            stance_label={persona.stance_label}
+                            stanceLabelPrefix={copy.stanceLabelPrefix}
+                            primary_argument={persona.primary_argument}
+                            change_condition={persona.change_condition}
+                            core_concern={persona.core_concern}
+                            buying_trigger={persona.buying_trigger}
+                            risk_appetite={persona.risk_appetite}
+                            decision_style={persona.decision_style}
+                            price_sensitivity={persona.price_sensitivity}
+                            technology_adoption_curve={persona.technology_adoption_curve}
+                            primaryArgumentLabel={copy.primaryArgumentLabel}
+                            changeConditionLabel={copy.changeConditionLabel}
+                            coreConcernLabel={copy.coreConcernLabel}
+                            buyingTriggerLabel={copy.buyingTriggerLabel}
+                          />
                         </td>
                       </tr>
                     ))}

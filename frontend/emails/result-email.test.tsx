@@ -132,4 +132,15 @@ describe("ResultEmail", () => {
 
     expect(firstRender).toBe(secondRender);
   });
+
+  it("renders reflection block with a single actionable CTA", async () => {
+    const html = await render(<ResultEmail {...sampleProps} consensus_flag="15 persona támogatja" />);
+
+    expect(html).toContain("Mit tennel maskepp ennek alapjan?");
+    expect(html).toContain("Feliratkozas a Pro varolistara");
+
+    const linkMatches = html.match(/<a\s+[^>]*href=/g) ?? [];
+    expect(linkMatches).toHaveLength(1);
+    expect(html).toContain('href="/blocked"');
+  });
 });

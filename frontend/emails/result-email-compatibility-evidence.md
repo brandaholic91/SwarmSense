@@ -1,4 +1,4 @@
-# Result Email Compatibility Design-Intent Checklist (Story 5.2)
+# Result Email Compatibility Design-Intent Checklist (Story 5.3)
 
 > **Scope:** This is a design-intent checklist based on rendered HTML inspection (`@react-email/render` output reviewed manually). It is NOT a live client rendering test — no external tooling (Litmus, Email on Acid) was used. Live client verification is deferred to a future Epic 5 story.
 
@@ -12,6 +12,7 @@
 - [x] Gmail (mobile): media-query fallback (`max-width: 620px`) stacks `.persona-column` cells to one column; no fixed card widths.
 - [x] Apple Mail: spacing and left-border stance markers remain visible on persona cards — all styles inline, no external stylesheet dependency.
 - [x] Outlook 2019: table structure keeps primary layout intact; no `border-radius` on table elements; no critical clipping expected in consensus block or first persona row.
+- [x] Gmail/Apple Mail/Outlook 2019 (footer region): reflection question block renders near the bottom, followed by exactly one CTA link to Pro waitlist path (`/blocked`) and optional helper copy.
 
 ## Notes
 
@@ -21,3 +22,4 @@
 - `border-radius` was removed from `<table>` elements during code review (2026-03-21) to ensure Outlook 2019 compatibility.
 - Persona cards now render full argument model (`primary_argument`, `change_condition`) with stance label text retained for non-color-only semantics.
 - Footer now includes an explicit AI simulation interpretive disclaimer for FR18 transparency.
+- Story 5.3 adds bottom-of-email reflection prompt + single CTA structure (FR19) without introducing secondary action links.

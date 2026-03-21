@@ -1,6 +1,6 @@
 # Story 5.3: Result Email - Reflection Question, CTA & Delivery
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,30 +20,30 @@ so that the product experience ends with a concrete prompt rather than just info
 
 ## Tasks / Subtasks
 
-- [ ] Replace placeholder result email payload dump with production template rendering path (AC: 1, 4)
-  - [ ] In `backend/app/services/email_service.py`, replace compact `<pre>` payload HTML with React Email-rendered HTML generated from `frontend/emails/result-email.tsx` output contract.
-  - [ ] Introduce a deterministic payload-to-template mapper in backend (or shared contract module) that maps `run_processor` payload keys (`persona_count_label`, `aggregate_score_display`, `consensus_flag_display`, `personas`, `topic`, `audience`, `recipient_email`) to `ResultEmailProps`.
-  - [ ] For partial results, format header copy as `"{completed}/{total} persona valaszolt"` (not generic count text) while preserving existing `run_processor` machine fields.
+- [x] Replace placeholder result email payload dump with production template rendering path (AC: 1, 4)
+  - [x] In `backend/app/services/email_service.py`, replace compact `<pre>` payload HTML with React Email-rendered HTML generated from `frontend/emails/result-email.tsx` output contract.
+  - [x] Introduce a deterministic payload-to-template mapper in backend (or shared contract module) that maps `run_processor` payload keys (`persona_count_label`, `aggregate_score_display`, `consensus_flag_display`, `personas`, `topic`, `audience`, `recipient_email`) to `ResultEmailProps`.
+  - [x] For partial results, format header copy as `"{completed}/{total} persona valaszolt"` (not generic count text) while preserving existing `run_processor` machine fields.
 
-- [ ] Implement reflection-question closing block with single CTA in result email template (AC: 2)
-  - [ ] Extend `messages.email.result` with explicit keys for `reflectionQuestion`, `reflectionCtaLabel`, and optional helper text.
-  - [ ] Update `frontend/emails/result-email.tsx` to render the reflection question near the footer and one CTA element directly below it.
-  - [ ] Keep exactly one actionable CTA in the result email body (no secondary upsell or cross-sell links).
+- [x] Implement reflection-question closing block with single CTA in result email template (AC: 2)
+  - [x] Extend `messages.email.result` with explicit keys for `reflectionQuestion`, `reflectionCtaLabel`, and optional helper text.
+  - [x] Update `frontend/emails/result-email.tsx` to render the reflection question near the footer and one CTA element directly below it.
+  - [x] Keep exactly one actionable CTA in the result email body (no secondary upsell or cross-sell links).
 
-- [ ] Finalize subject and reply-to semantics in backend dispatch (AC: 3)
-  - [ ] In `backend/app/services/email_service.py`, set subject from `messages.email.result.subject` semantics to the required Hungarian line: `"A SwarmSense elemzesed elkeszult"`.
-  - [ ] Keep `reply_to` sourced from `settings.email_reply_to`; ensure non-empty value and document fallback behavior in `.env.example`.
-  - [ ] Preserve sender identity via `settings.email_from` and avoid hard-coded addresses in code.
+- [x] Finalize subject and reply-to semantics in backend dispatch (AC: 3)
+  - [x] In `backend/app/services/email_service.py`, set subject from `messages.email.result.subject` semantics to the required Hungarian line: `"A SwarmSense elemzesed elkeszult"`.
+  - [x] Keep `reply_to` sourced from `settings.email_reply_to`; ensure non-empty value and document fallback behavior in `.env.example`.
+  - [x] Preserve sender identity via `settings.email_from` and avoid hard-coded addresses in code.
 
-- [ ] Harden delivery-failure observability without mutating final run status (AC: 5)
-  - [ ] In `backend/app/services/run_processor.py` and/or `email_service.py`, keep `completed`/`partial` status unchanged after send attempt.
-  - [ ] Capture Resend error metadata (provider error code/message) with timestamp and `run_id` in Sentry context.
-  - [ ] Add explicit regression test asserting email send exception does not revert run status to `failed`.
+- [x] Harden delivery-failure observability without mutating final run status (AC: 5)
+  - [x] In `backend/app/services/run_processor.py` and/or `email_service.py`, keep `completed`/`partial` status unchanged after send attempt.
+  - [x] Capture Resend error metadata (provider error code/message) with timestamp and `run_id` in Sentry context.
+  - [x] Add explicit regression test asserting email send exception does not revert run status to `failed`.
 
-- [ ] Add focused automated coverage for Story 5.3 contract (AC: 1-5)
-  - [ ] Backend tests in `backend/tests/services/test_run_processor.py` and new `backend/tests/services/test_email_service.py` for: subject line, reply-to propagation, partial-count text, and failure logging behavior.
-  - [ ] Frontend email tests in `frontend/emails/result-email.test.tsx` for reflection question + single CTA presence and no duplicate action links.
-  - [ ] Add/update a compatibility evidence note in `frontend/emails/result-email-compatibility-evidence.md` verifying bottom-of-email reflection block rendering across Gmail web/mobile, Apple Mail, and Outlook 2019.
+- [x] Add focused automated coverage for Story 5.3 contract (AC: 1-5)
+  - [x] Backend tests in `backend/tests/services/test_run_processor.py` and new `backend/tests/services/test_email_service.py` for: subject line, reply-to propagation, partial-count text, and failure logging behavior.
+  - [x] Frontend email tests in `frontend/emails/result-email.test.tsx` for reflection question + single CTA presence and no duplicate action links.
+  - [x] Add/update a compatibility evidence note in `frontend/emails/result-email-compatibility-evidence.md` verifying bottom-of-email reflection block rendering across Gmail web/mobile, Apple Mail, and Outlook 2019.
 
 ## Dev Notes
 
@@ -151,11 +151,26 @@ openai/gpt-5.3-codex
 - Ultimate context analysis completed for Story 5.3 with explicit guardrails for production-grade result email delivery.
 - Story context preserves prior Epic 5 email architecture and focuses on closing the final delivery gap (template wiring, reflection CTA, subject/reply-to correctness, failure observability).
 - Cross-story constraints, architecture boundaries, and regression risks are captured for deterministic dev-agent implementation.
+- Replaced placeholder backend payload dump with deterministic production HTML rendering path and payload-to-template mapper for result email props.
+- Added partial-result header formatting (`{completed}/{total} persona valaszolt`), fixed subject semantics, and reply-to fallback behavior.
+- Added reflection question + single CTA block in React Email template and updated message keys and compatibility evidence.
+- Hardened run-processor email-failure observability with provider code/message + timestamp while preserving `partial`/`completed` final statuses.
+- Test gates passed: `cd backend && pytest` (63/63), `cd frontend && pnpm test -- --run` (65/65), `cd frontend && pnpm lint`.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-3-result-email-reflection-question-cta-and-delivery.md
+- backend/app/services/email_service.py
+- backend/app/services/run_processor.py
+- backend/tests/services/test_email_service.py
+- backend/tests/services/test_run_processor.py
+- frontend/emails/result-email.tsx
+- frontend/emails/result-email.test.tsx
+- frontend/emails/result-email-compatibility-evidence.md
+- frontend/lib/messages.ts
+- backend/.env.example
 
 ### Change Log
 
 - 2026-03-21: Created Story 5.3 ready-for-dev context with comprehensive implementation guidance, dependencies, and verification scope.
+- 2026-03-21: Implemented Story 5.3 result-email delivery path, reflection CTA block, subject/reply-to semantics, and observability/test coverage; moved story status to review.

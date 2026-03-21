@@ -181,6 +181,29 @@ class FakeSupabase:
         return FakeQuery(self, name)
 
 
+class _SentryScopeRecorder:
+    def __init__(self) -> None:
+        self.tags: dict[str, str] = {}
+        self.extras: dict[str, Any] = {}
+
+    def set_tag(self, key: str, value: str) -> None:
+        self.tags[key] = value
+
+    def set_extra(self, key: str, value: Any) -> None:
+        self.extras[key] = value
+
+
+class _SentryScopeContext:
+    def __init__(self, recorder: _SentryScopeRecorder) -> None:
+        self._recorder = recorder
+
+    def __enter__(self) -> _SentryScopeRecorder:
+        return self._recorder
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+
+
 def _seed_env(monkeypatch) -> None:
     monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
@@ -305,6 +328,12 @@ def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
     assert isinstance(fake_supabase.updates[-1]["payload"]["completed_at"], str)
     assert email_calls[0]["recipient_email"] == "test@example.com"
     assert email_calls[0]["result_payload"]["persona_count_label"] == "12/15 persona"
+    assert (
+        email_calls[0]["result_payload"]["persona_count_header_display"]
+        == "12/15 persona valaszolt"
+    )
+    assert email_calls[0]["result_payload"]["topic"] == "Tema"
+    assert email_calls[0]["result_payload"]["audience"] == "Kozonseg"
     assert fake_supabase.cost_rows[0]["total_usd"] == "1.25"
 
 
@@ -344,7 +373,76 @@ def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
     assert fake_supabase.updates[-1]["payload"]["persona_count"] == 15
     assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0.3"
     assert email_calls[0]["result_payload"]["persona_count_label"] == "15/15 persona"
+    assert (
+        email_calls[0]["result_payload"]["persona_count_header_display"]
+        == "15/15 persona"
+    )
     assert fake_supabase.cost_rows[0]["total_usd"] == "2.30"
+
+
+def test_process_run_logs_email_failure_and_preserves_partial_status(
+    monkeypatch,
+) -> None:
+    _seed_env(monkeypatch)
+    fake_supabase = FakeSupabase("1.00")
+
+    import app.services.run_processor as run_processor
+
+    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result(successful_count=12, total_personas=15, cost_usd=0.25),
+    )
+
+    class FakeResendError(Exception):
+        status_code = 503
+
+    def _raise_send_error(
+        *, recipient_email: str, result_payload: dict[str, Any]
+    ) -> None:
+        _ = (recipient_email, result_payload)
+        raise FakeResendError("provider unavailable")
+
+    sentry_scope = _SentryScopeRecorder()
+    sentry_exceptions: list[str] = []
+    monkeypatch.setattr(
+        run_processor,
+        "send_run_result_email",
+        _raise_send_error,
+    )
+    monkeypatch.setattr(
+        run_processor.sentry_sdk,
+        "push_scope",
+        lambda: _SentryScopeContext(sentry_scope),
+    )
+    monkeypatch.setattr(
+        run_processor.sentry_sdk,
+        "capture_exception",
+        lambda exc: sentry_exceptions.append(str(exc)),
+    )
+
+    asyncio.run(
+        process_run(
+            run_id="run-1",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    final_status_updates = [
+        item["payload"]["status"]
+        for item in fake_supabase.updates
+        if item["payload"].get("status") in {"partial", "completed", "failed"}
+    ]
+    assert final_status_updates[-1] == "partial"
+    assert "failed" not in final_status_updates
+    assert sentry_scope.tags["error_code"] == "RESULT_EMAIL_DISPATCH_FAILED"
+    assert sentry_scope.extras["provider_error_code"] == "503"
+    assert sentry_scope.extras["provider_error_message"] == "provider unavailable"
+    assert isinstance(sentry_scope.extras["timestamp"], str)
+    assert sentry_exceptions == ["provider unavailable"]
 
 
 def test_process_run_fails_when_successful_personas_below_threshold(

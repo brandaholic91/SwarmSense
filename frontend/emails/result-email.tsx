@@ -313,7 +313,52 @@ export function ResultEmail({
                     ))}
 
                     <tr>
-                      <td style={{ padding: "8px 24px 0 24px" }}>
+                      <td style={{ padding: "20px 24px 0 24px" }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            color: emailTextPrimary,
+                            fontSize: "16px",
+                            lineHeight: "24px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {copy.reflectionQuestion}
+                        </p>
+                        {copy.reflectionHelper ? (
+                          <p
+                            style={{
+                              margin: "8px 0 0 0",
+                              color: emailTextSecondary,
+                              fontSize: "13px",
+                              lineHeight: "20px",
+                            }}
+                          >
+                            {copy.reflectionHelper}
+                          </p>
+                        ) : null}
+                        <p style={{ margin: "12px 0 0 0" }}>
+                          <a
+                            href={copy.reflectionCtaHref}
+                            style={{
+                              display: "inline-block",
+                              backgroundColor: accent,
+                              color: "#ffffff",
+                              textDecoration: "none",
+                              fontSize: "14px",
+                              lineHeight: "20px",
+                              fontWeight: 700,
+                              padding: "10px 16px",
+                            }}
+                          >
+                            {copy.reflectionCtaLabel}
+                          </a>
+                        </p>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style={{ padding: "12px 24px 0 24px" }}>
                         <p
                           style={{
                             margin: 0,

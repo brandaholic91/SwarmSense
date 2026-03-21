@@ -103,7 +103,11 @@ async def process_run(
     try:  # P9: catch aggregation/finalization errors to avoid stuck composing state
         final_status = _resolve_final_status(result=result)
         aggregation_payload = _build_result_payload(
-            run_id=run_id, result=result, final_status=final_status
+            run_id=run_id,
+            result=result,
+            final_status=final_status,
+            topic=topic,
+            audience=audience,
         )
         should_increment = _should_increment_monthly_cost(run_id=run_id)  # P1
         _update_run_row(
@@ -164,6 +168,8 @@ def _build_result_payload(
     run_id: str,
     result: PersonaRunResult,
     final_status: str,  # P12: status passed in, not recomputed
+    topic: str,
+    audience: str,
 ) -> dict[str, Any]:
     stance_counts: dict[str, int] = {"support": 0, "reject": 0, "conditional": 0}
     arguments_frequency: dict[str, int] = {}
@@ -191,11 +197,18 @@ def _build_result_payload(
     return {
         "run_id": run_id,
         "status": final_status,
+        "topic": topic,
+        "audience": audience,
         "completed_persona_count": result.successful_count,
         "total_persona_count": result.total_personas,
         "persona_count_label": _format_persona_count_label(
             completed=result.successful_count,
             total=result.total_personas,
+        ),
+        "persona_count_header_display": _format_persona_count_header_display(
+            completed=result.successful_count,
+            total=result.total_personas,
+            final_status=final_status,
         ),
         "stance_counts": stance_counts,
         "aggregate_score": aggregate_score_payload,
@@ -258,6 +271,14 @@ def _build_consensus_payload(*, stance_counts: dict[str, int]) -> dict[str, Any]
 
 def _format_persona_count_label(*, completed: int, total: int) -> str:
     return f"{completed}/{total} persona"
+
+
+def _format_persona_count_header_display(
+    *, completed: int, total: int, final_status: str
+) -> str:
+    if final_status == "partial":
+        return f"{completed}/{total} persona valaszolt"
+    return _format_persona_count_label(completed=completed, total=total)
 
 
 def _should_increment_monthly_cost(*, run_id: str) -> bool:
@@ -364,12 +385,33 @@ def _dispatch_result_email(
             result_payload=payload,
         )
     except Exception as exc:
+        failure_timestamp = datetime.now(UTC).isoformat()
+        provider_error_code, provider_error_message = _extract_provider_error_metadata(
+            exc
+        )
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("run_id", run_id)
             scope.set_tag("error_code", "RESULT_EMAIL_DISPATCH_FAILED")
+            scope.set_extra("timestamp", failure_timestamp)
             scope.set_extra("status", payload.get("status"))
             scope.set_extra("persona_count", payload.get("persona_count_label"))
+            scope.set_extra("provider_error_code", provider_error_code)
+            scope.set_extra("provider_error_message", provider_error_message)
             sentry_sdk.capture_exception(exc)
+
+
+def _extract_provider_error_metadata(exc: Exception) -> tuple[str | None, str]:
+    provider_error_code = getattr(exc, "error_code", None) or getattr(exc, "code", None)
+    if provider_error_code is None:
+        status_code = getattr(exc, "status_code", None)
+        if status_code is not None:
+            provider_error_code = str(status_code)
+
+    provider_error_message = str(exc) or exc.__class__.__name__
+    return (
+        str(provider_error_code) if provider_error_code is not None else None,
+        provider_error_message,
+    )
 
 
 def _load_user_email(*, user_id: str) -> str | None:

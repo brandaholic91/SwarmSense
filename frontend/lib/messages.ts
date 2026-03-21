@@ -221,7 +221,7 @@ export const messages = {
       expiry: "Ez a link 24 órán belül lejár.",
     },
     result: {
-      subject: "A SwarmSense eredményed megérkezett",
+      subject: "A SwarmSense elemzesed elkeszult",
       preview: "A SwarmSense eredményed megérkezett",
       title: "Itt van a SwarmSense eredményed",
       intro:
@@ -238,6 +238,11 @@ export const messages = {
       primaryArgumentLabel: "Elsődleges érv",
       changeConditionLabel: "Mi változtatná meg a véleményét",
       sentToPrefix: "Erre a címre küldtük:",
+      reflectionQuestion: "Mit tennel maskepp ennek alapjan?",
+      reflectionCtaLabel: "Feliratkozas a Pro varolistara",
+      reflectionHelper:
+        "Jelentkezz a varolistara, hogy elso korben kapj ertesitest a Pro tier nyitasarol.",
+      reflectionCtaHref: "/blocked",
       footerNote: "Ez egy automatikus értesítő levél, válasz helyett indíts új elemzést.",
       interpretiveDisclaimer:
         "Fontos: az itt látható eredmények AI-alapú szintetikus szimulációból származnak, nem valós emberi kutatásból.",
@@ -249,6 +254,5 @@ export const messages = {
     placeholder: "A részletes tartalom hamarosan érkezik.",
   },
   piiWarning: "Ne adj meg személyes adatot vagy bizalmas információt.",
-  reflectionQuestion: "Mit tennél másképp ennek alapján?",
   genericError: "Váratlan hiba történt. Kérjük, próbáld újra.",
 };

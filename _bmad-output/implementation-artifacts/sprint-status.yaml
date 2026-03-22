@@ -76,12 +76,13 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: Result Delivery & User Communication Lifecycle
-  epic-5: done
+  epic-5: in-progress
   5-1-result-email-react-email-templates-and-design-tokens: done
   5-2-result-email-content-structure-and-persona-cards: done
   5-3-result-email-reflection-question-cta-and-delivery: done
   5-4-automated-follow-up-email-sequence: done
   5-5-data-deletion-request-handling: done
+  5-6-enrich-follow-up-emails-with-run-synthesis: ready-for-dev
   epic-5-retrospective: optional
 
   # Epic 6: Operator Monitoring & Administration

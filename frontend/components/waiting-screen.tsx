@@ -219,6 +219,10 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
           </div>
         </div>
 
+        <p className="text-center text-sm" style={{ color: textSecondary }}>
+          {waiting.canCloseNotice}
+        </p>
+
         {email ? (
           <p className="text-center text-sm" style={{ color: textSecondary }}>
             {interpolate(waiting.emailDeliveryNotice, { email })}

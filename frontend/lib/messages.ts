@@ -234,10 +234,11 @@ export const messages = {
       generating: "Personák generálása...",
       /** Interpolate {current} and {total} before rendering. */
       running: "Futtatás: {current}/{total} persona",
-      composing: "Eredmény összeállítása...",
-      completed: "Eredmény elkészült",
+      composing: "Az eredmény összeállítása...",
+      completed: "Az eredmény elkészült",
       failed: "Hiba történt a feldolgozás közben.",
     },
+    canCloseNotice: "Nem kell itt várnod, bezárhatod ezt az ablakot. Az eredmény emailben érkezik.",
     /** Interpolate {email} before rendering. */
     emailDeliveryNotice: "Az eredményed erre az emailre érkezik: {email}",
     delayedNotice:
@@ -305,19 +306,19 @@ export const messages = {
     },
     followup: {
       day1: {
-        preview: "1 nap telt el az eredményed óta",
-        title: "Mit viszel tovább az első nap után?",
-        body: "Nézd át újra a legerősebb ellenérvet, és használd hipotézisként a következő iterációdban.",
+        preview: "Tetszett az eredmény? Mutatunk többet.",
+        title: "Egy futtatás csak az eleje.",
+        body: "Képzeld el, hogy minden kampányüzeneted, árazási döntésed és go-to-market hipotézised előtt lefuttatod ezt. A Pro hozzáférés hamarosan nyílik — iratkozz fel elsőként.",
       },
       day3: {
-        preview: "3 napos emlékeztető a SwarmSense eredményedről",
-        title: "Három nap után új perspektíva",
-        body: "Válassz ki egy support és egy reject álláspontot, majd formálj belőlük tesztelhető üzenetpárokat.",
+        preview: "Már több százan várják a Pro hozzáférést.",
+        title: "Feliratkoztál már a várólistára?",
+        body: "Az ingyenes próba megmutatta, mire képes a szintetikus kutatás. A Pro verzióval korlátlanul futtathatod — kampányonként, termékenként, piaconként. Az első körben értesítünk.",
       },
       day7: {
-        preview: "7 napos follow-up: mi a következő lépés?",
-        title: "Eltelt egy hét - ideje döntést hozni",
-        body: "Ha még nem léptél, most priorizáld a következő kísérletet az eredmény alapján.",
+        preview: "Utolsó emlékeztető a Pro várólistáról.",
+        title: "Egy hete gondolkodsz — itt az ideje dönteni.",
+        body: "A Pro hozzáférés korlátozott helyszámmal indul. Ha szeretnél az elsők között lenni, most érdemes feliratkozni — utána már csak sorban állás.",
       },
       ctaLabel: "Feliratkozás a Pro várólistára",
       ctaHref: "/blocked",

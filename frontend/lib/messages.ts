@@ -4,6 +4,14 @@ type PreviewCard = {
   stance: "reject" | "support" | "conditional";
   stanceLabel: string;
   summary: string;
+  primaryArgument: string;
+  changeCondition: string;
+  coreConcern: string;
+  buyingTrigger: string;
+  riskAppetite: string;
+  decisionStyle: string;
+  priceSensitivity: string;
+  techAdoption: string;
 };
 
 export const messages = {
@@ -31,7 +39,7 @@ export const messages = {
     },
     preview: {
       eyebrow: "Így néz ki egy eredmény",
-      heading: "Konkrét reakciók, nem általános vélemények",
+      heading: "Konkrét reakciók, különböző attitűdök",
       researchLabel: "Kutatási téma",
       researchValue: "Meggyőző-e ez az üzenet B2B döntéshozóknak: Csökkentsd a sales ciklust 40%-kal automatizálással?",
       audienceLabel: "Célközönség",
@@ -41,31 +49,79 @@ export const messages = {
       rejectLabel: "Ellenzi (39%)",
       supportPercent: 61,
       rejectPercent: 39,
-      cardAriaTemplate: "{name} - {stanceLabel} - {role}",
+      primaryArgumentLabel: "Fő érv",
+      changeConditionLabel: "Mikor változtatna",
+      coreConcernLabel: "Fő aggodalom",
+      buyingTriggerLabel: "Vásárlási döntő",
+      synthesis: {
+        label: "Szintézis",
+        summary:
+          "Az üzenet erős rezonanciát kelt a kkv-s sales vezetők körében, de az adathiány és az általánosság megosztja a döntéshozókat. A támogatók a fájdalomfelismerést értékelik, a kételkedők bizonyítékokat hiányolnak.",
+        barriersLabel: "Fő akadályok",
+        barriers: [
+          "A 40%-os ígéret mögül hiányzik az auditált módszertan",
+          "Általános megfogalmazás — nincs szegmensspecifikus relevancia",
+        ],
+        winningConditionsLabel: "Mikor vennék meg",
+        winningConditions:
+          "Konkrét esettanulmányok és ingyenes pilot ajánlat esetén a szegmens 70%+ elérése reális.",
+        bestTargetLabel: "Legjobb célszegmens",
+        bestTarget:
+          "45–150 fős tech-barát B2B cégek sales és marketing vezetői, ahol már van CRM-rendszer.",
+        recommendationLabel: "Stratégiai javaslat",
+        recommendation:
+          "Adj hozzá 1 konkrét esettanulmányt és egy ingyenes próbalehetőséget — ez a két elem a feltételes szavazókat is átbillenti.",
+      },
       cards: ([
         {
           name: "Tóth Andrea",
           role: "Sales vezető, 45 fős IT cég",
           stance: "support",
           stanceLabel: "Támogatja",
-          summary:
-            "A 40% konkrét szám, és az ügyfeleim pont ezt a fájdalmat érzik. Ez bejön.",
+          summary: "A 40% konkrét szám, és az ügyfeleim pont ezt a fájdalmat érzik. Ez bejön.",
+          primaryArgument:
+            "A konkrét 40%-os szám és a sales ciklus fájdalma teljesen reális — az én csapatom is szenved ettől. Ez hiteles ígéret.",
+          changeCondition: "Ha látok legalább 2 hasonló méretű cégnél működő esettanulmányt.",
+          coreConcern: "Az integráció a meglévő CRM-ünkkel és a bevezetési idő.",
+          buyingTrigger: "Ingyenes pilot program, ahol saját adatainkon tesztelhetek.",
+          riskAppetite: "Közepes",
+          decisionStyle: "Adatvezérelt",
+          priceSensitivity: "Árérzékeny",
+          techAdoption: "Korai többség",
         },
         {
           name: "Fekete Márton",
           role: "CEO, B2B SaaS startup",
           stance: "conditional",
           stanceLabel: "Feltételes",
-          summary:
-            "Csak akkor hiteles, ha van mögötte valódi referencia-adat. Így üres állítás.",
+          summary: "Csak akkor hiteles, ha van mögötte valódi referencia-adat. Így üres állítás.",
+          primaryArgument:
+            "Az üzenet célba ér, de a 40%-os ígéret módszertan nélkül üres marketing szöveg — ilyen számhoz auditált adat kell.",
+          changeCondition: "Auditált adatok és átlátható számítási módszertan a 40%-hoz.",
+          coreConcern:
+            "Ha nem hozza az ígért számot, elveszítjük a hitelességünket az ügyfelek felé.",
+          buyingTrigger: "Részletes ROI kalkulátor és referencia ügyfelek közvetlen elérése.",
+          riskAppetite: "Alacsony",
+          decisionStyle: "Konszenzuskereső",
+          priceSensitivity: "Magas",
+          techAdoption: "Korai többség",
         },
         {
           name: "Varga Katalin",
           role: "Marketing vezető, szolgáltató cég",
           stance: "reject",
           stanceLabel: "Elutasítja",
-          summary:
-            "Túl általános. Minden automatizáló eszköz ugyanezt mondja. Nem differenciál.",
+          summary: "Túl általános. Minden automatizáló eszköz ugyanezt mondja. Nem differenciál.",
+          primaryArgument:
+            "Minden automatizáló eszköz pontosan ugyanezt mondja — az üzenet nem differenciál, és nem szól specifikusan az én szegmensemhez.",
+          changeCondition: "Szegmensspecifikus megfogalmazás és konkrét iparági benchmark adatok.",
+          coreConcern:
+            "A 40% teljesen kontextusfüggő — az én iparágamban ez nem reális szám.",
+          buyingTrigger: "Dedikált pilot az én iparágamra szabva, valódi ROI garanciával.",
+          riskAppetite: "Nagyon alacsony",
+          decisionStyle: "Szabálykövető",
+          priceSensitivity: "Alacsony",
+          techAdoption: "Késői többség",
         },
       ] satisfies PreviewCard[]),
     },

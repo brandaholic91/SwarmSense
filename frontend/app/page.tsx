@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowRight, FilePlus, Mail, Zap } from "lucide-react";
+import { ArrowRight, FilePlus, Mail, Zap } from "lucide-react";
 
-import { PersonaCard } from "@/components/persona-card";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { messages } from "@/lib/messages";
 import {
@@ -11,6 +10,10 @@ import {
   onPrimary,
   onSurface,
   outlineVariant,
+  stanceConditional,
+  stanceReject,
+  stanceSupport,
+  surface,
   surfaceContainer,
   surfaceContainerHigh,
   surfaceContainerHighest,
@@ -18,9 +21,6 @@ import {
   tertiaryContainer,
   textSecondary,
 } from "@/lib/tokens";
-
-const formatAriaLabel = (template: string, values: Record<string, string>) =>
-  template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? `{${key}}`);
 
 const headlineFont: CSSProperties = { fontFamily: "var(--font-headline)" };
 const labelFont: CSSProperties = { fontFamily: "var(--font-label)" };
@@ -103,32 +103,68 @@ export default function Home() {
               {landing.painBridge.heading}
             </h2>
             <div className="mt-12 grid w-full grid-cols-1 gap-6 md:grid-cols-3">
-              {landing.painBridge.items.map((item) => (
+              {landing.painBridge.items.map((item, i) => (
                 <div
                   key={item.before}
-                  className="flex flex-col items-center gap-3 rounded-2xl border p-6 transition-transform duration-300 hover:-translate-y-1"
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border p-7 text-left transition-all duration-500 hover:-translate-y-2"
                   style={{
                     backgroundColor: surfaceContainerHigh,
                     borderColor: outlineVariant,
                   }}
                 >
+                  {/* Hover glow */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute -bottom-8 left-1/2 h-24 w-40 -translate-x-1/2 rounded-full blur-[40px] opacity-0 transition-opacity duration-500 group-hover:opacity-30"
+                    style={{ backgroundColor: accent }}
+                  />
+
+                  {/* Card index */}
                   <span
-                    className="text-sm line-through opacity-50"
-                    style={{ color: onSurface }}
+                    className="text-[10px] tracking-[0.3em] opacity-25"
+                    style={{ color: onSurface, fontFamily: "var(--font-geist-mono)" }}
                   >
-                    {item.before}
+                    0{i + 1}
                   </span>
-                  <ArrowDown
-                    className="h-4 w-4"
-                    style={{ color: accent }}
+
+                  {/* Korábban */}
+                  <div className="mt-5">
+                    <p
+                      className="text-[11px] uppercase tracking-[0.2em]"
+                      style={{ color: textSecondary, ...labelFont }}
+                    >
+                      Korábban
+                    </p>
+                    <p
+                      className="mt-2 text-sm line-through"
+                      style={{ color: textSecondary, opacity: 0.8 }}
+                    >
+                      {item.before}
+                    </p>
+                  </div>
+
+                  {/* Divider */}
+                  <div
+                    className="my-5 h-px w-full"
+                    style={{ backgroundColor: outlineVariant }}
                     aria-hidden="true"
                   />
-                  <span
-                    className="text-base font-semibold"
-                    style={{ color: accent }}
-                  >
-                    {item.after}
-                  </span>
+
+                  {/* Most */}
+                  <div>
+                    <p
+                      className="text-[11px] uppercase tracking-[0.2em]"
+                      style={{ color: accent, ...labelFont }}
+                    >
+                      Most
+                    </p>
+                    <p
+                      className="mt-2 text-2xl font-bold"
+                      style={{ color: accent, ...headlineFont }}
+                    >
+                      {item.after}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -211,7 +247,7 @@ export default function Home() {
                       <div
                         className="h-full"
                         style={{
-                          backgroundColor: accent,
+                          backgroundColor: stanceSupport,
                           width: `${landing.preview.supportPercent}%`,
                         }}
                       />
@@ -228,25 +264,175 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
-              {previewCards.map((card, i) => (
-                <div key={`${card.name}-${card.stance}`} className={["sr", "sr-d1", "sr-d2"][i] ?? "sr"}>
-                <PersonaCard
-                  key={`${card.name}-${card.stance}`}
-                  name={card.name}
-                  role={card.role}
-                  stance={card.stance}
-                  stanceLabel={card.stanceLabel}
-                  summary={card.summary}
-                  variant="compact"
-                  ariaLabel={formatAriaLabel(landing.preview.cardAriaTemplate, {
-                    name: card.name,
-                    stanceLabel: card.stanceLabel,
-                    role: card.role,
-                  })}
-                />
+            {/* Synthesis */}
+            <div
+              className="sr-d2 mt-6 rounded-2xl border p-6"
+              style={{ backgroundColor: surfaceContainerHigh, borderColor: outlineVariant }}
+            >
+              <p
+                className="text-[11px] uppercase tracking-[0.2em]"
+                style={{ color: accent, ...labelFont }}
+              >
+                {landing.preview.synthesis.label}
+              </p>
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: onSurface }}>
+                {landing.preview.synthesis.summary}
+              </p>
+              <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <p
+                    className="text-[10px] uppercase tracking-[0.2em]"
+                    style={{ color: textSecondary, ...labelFont }}
+                  >
+                    {landing.preview.synthesis.barriersLabel}
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {landing.preview.synthesis.barriers.map((b) => (
+                      <li
+                        key={b}
+                        className="flex items-start gap-2 text-xs leading-relaxed"
+                        style={{ color: textSecondary }}
+                      >
+                        <span style={{ color: errorDim }} aria-hidden="true">—</span>
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ))}
+                <div>
+                  <p
+                    className="text-[10px] uppercase tracking-[0.2em]"
+                    style={{ color: textSecondary, ...labelFont }}
+                  >
+                    {landing.preview.synthesis.bestTargetLabel}
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed" style={{ color: textSecondary }}>
+                    {landing.preview.synthesis.bestTarget}
+                  </p>
+                </div>
+                <div>
+                  <p
+                    className="text-[10px] uppercase tracking-[0.2em]"
+                    style={{ color: textSecondary, ...labelFont }}
+                  >
+                    {landing.preview.synthesis.winningConditionsLabel}
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed" style={{ color: textSecondary }}>
+                    {landing.preview.synthesis.winningConditions}
+                  </p>
+                </div>
+                <div>
+                  <p
+                    className="text-[10px] uppercase tracking-[0.2em]"
+                    style={{ color: accent, ...labelFont }}
+                  >
+                    {landing.preview.synthesis.recommendationLabel}
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed" style={{ color: onSurface }}>
+                    {landing.preview.synthesis.recommendation}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Persona cards */}
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+              {previewCards.map((card, i) => {
+                const stanceColor =
+                  card.stance === "support"
+                    ? stanceSupport
+                    : card.stance === "reject"
+                      ? stanceReject
+                      : stanceConditional;
+                return (
+                  <article
+                    key={card.name}
+                    className={`${["sr", "sr-d1", "sr-d2"][i] ?? "sr"} flex h-full flex-col rounded-xl border border-l-4 p-4`}
+                    style={{
+                      backgroundColor: surface,
+                      borderColor: outlineVariant,
+                      borderLeftColor: stanceColor,
+                    }}
+                    aria-label={`${card.name} — ${card.stanceLabel} — ${card.role}`}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: onSurface }}>
+                          {card.name}
+                        </p>
+                        <p
+                          className="mt-0.5 text-[10px] uppercase tracking-[0.12em]"
+                          style={{ color: textSecondary }}
+                        >
+                          {card.role}
+                        </p>
+                      </div>
+                      <span
+                        className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                        style={{ color: stanceColor }}
+                      >
+                        {card.stanceLabel}
+                      </span>
+                    </div>
+
+                    {/* Attribute tags */}
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {[
+                        { label: "Kockázat", value: card.riskAppetite },
+                        { label: "Döntés", value: card.decisionStyle },
+                        { label: "Ár", value: card.priceSensitivity },
+                        { label: "Tech", value: card.techAdoption },
+                      ].map(({ label, value }, j) => (
+                        <span
+                          key={j}
+                          className="rounded px-1.5 py-0.5 text-[9px]"
+                          style={{ backgroundColor: surfaceContainerHighest, color: textSecondary }}
+                        >
+                          <span className="opacity-50">{label}: </span>{value}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Primary argument */}
+                    <div className="mt-4">
+                      <p
+                        className="text-[10px] uppercase tracking-[0.2em]"
+                        style={{ color: textSecondary, ...labelFont }}
+                      >
+                        {landing.preview.primaryArgumentLabel}
+                      </p>
+                      <p className="mt-1.5 text-xs leading-relaxed" style={{ color: onSurface }}>
+                        {card.primaryArgument}
+                      </p>
+                    </div>
+
+                    {/* Key fields */}
+                    <div
+                      className="mt-4 space-y-3 border-t pt-4"
+                      style={{ borderColor: outlineVariant }}
+                    >
+                      {[
+                        { label: landing.preview.changeConditionLabel, value: card.changeCondition },
+                        { label: landing.preview.coreConcernLabel, value: card.coreConcern },
+                        { label: landing.preview.buyingTriggerLabel, value: card.buyingTrigger },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p
+                            className="text-[10px] uppercase tracking-[0.2em]"
+                            style={{ color: textSecondary, ...labelFont }}
+                          >
+                            {label}
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed" style={{ color: textSecondary }}>
+                            {value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>

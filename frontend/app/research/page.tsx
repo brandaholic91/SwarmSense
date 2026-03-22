@@ -2,14 +2,10 @@
 
 import * as React from "react";
 import type { CSSProperties } from "react";
-import Link from "next/link";
-import { ArrowRight, Info, Send, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Info } from "lucide-react";
 
-import { isRedirectError } from "next/dist/client/components/redirect-error";
-
-import { submitRunAction } from "@/app/actions/submit-run";
 import { RotatingPlaceholder } from "@/components/rotating-placeholder";
-import { Input } from "@/components/ui/input";
 import { messages } from "@/lib/messages";
 import {
   accent,
@@ -18,10 +14,10 @@ import {
   onSurface,
   outlineVariant,
   surfaceContainer,
-  surfaceContainerHigh,
   surfaceContainerLow,
   textSecondary,
 } from "@/lib/tokens";
+
 
 const headlineFont: CSSProperties = { fontFamily: "var(--font-headline)" };
 const labelFont: CSSProperties = { fontFamily: "var(--font-label)" };
@@ -32,29 +28,16 @@ const focusLineStyle = {
 
 export default function ResearchPage() {
   const { form } = messages.research;
+  const router = useRouter();
   const [researchTopic, setResearchTopic] = React.useState("");
   const [audienceDescription, setAudienceDescription] = React.useState("");
-  const [isSubmitted, setIsSubmitted] = React.useState(false);
-  const [email, setEmail] = React.useState("");
-  const [hasConsent, setHasConsent] = React.useState(false);
-  const [isCheckingEmail, startEmailCheckTransition] = React.useTransition();
   const [errors, setErrors] = React.useState<{
     researchTopic?: string;
     audienceDescription?: string;
-    email?: string;
   }>({});
 
   const isComplete =
     researchTopic.trim().length > 0 && audienceDescription.trim().length > 0;
-  const canSubmitEmail =
-    email.trim().length > 0 && hasConsent && !isCheckingEmail;
-
-  React.useEffect(() => {
-    if (!isComplete) {
-      setIsSubmitted(false);
-      setErrors({});
-    }
-  }, [isComplete]);
 
   const handleBlur = (
     field: "researchTopic" | "audienceDescription",
@@ -88,7 +71,9 @@ export default function ResearchPage() {
     }
 
     setErrors({});
-    setIsSubmitted(true);
+    router.push(
+      `/research/email?topic=${encodeURIComponent(researchTopic.trim())}&audience=${encodeURIComponent(audienceDescription.trim())}`
+    );
   };
 
   return (
@@ -144,11 +129,7 @@ export default function ResearchPage() {
                     onBlur={(event) => handleBlur("researchTopic", event)}
                     maxLength={500}
                     examples={form.researchExamples}
-                    readOnly={isSubmitted}
-                    aria-readonly={isSubmitted ? "true" : undefined}
-                    className={`min-h-[140px] w-full resize-none border-none bg-transparent p-5 text-sm leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0 ${
-                      isSubmitted ? "opacity-80" : ""
-                    }`}
+                    className="min-h-[140px] w-full resize-none border-none bg-transparent p-5 text-sm leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0"
                     style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
                   />
                   <div
@@ -184,11 +165,7 @@ export default function ResearchPage() {
                     onBlur={(event) => handleBlur("audienceDescription", event)}
                     maxLength={500}
                     examples={form.audienceExamples}
-                    readOnly={isSubmitted}
-                    aria-readonly={isSubmitted ? "true" : undefined}
-                    className={`min-h-[110px] w-full resize-none border-none bg-transparent p-5 text-sm leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0 ${
-                      isSubmitted ? "opacity-80" : ""
-                    }`}
+                    className="min-h-[110px] w-full resize-none border-none bg-transparent p-5 text-sm leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0"
                     style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
                   />
                   <div
@@ -224,130 +201,6 @@ export default function ResearchPage() {
             </form>
           </section>
 
-          {isSubmitted ? (
-            <section
-              className="space-y-8 rounded-lg border p-6 animate-in fade-in slide-in-from-top-2"
-              style={{ backgroundColor: surfaceContainerHigh, borderColor: outlineVariant }}
-            >
-              <div className="space-y-2">
-                <h2
-                  className="text-2xl font-semibold"
-                  style={{ ...headlineFont, color: onSurface }}
-                >
-                  {form.email.heading}
-                </h2>
-                <p className="text-sm" style={{ color: textSecondary }}>
-                  {form.email.subheadline}
-                </p>
-              </div>
-              <form
-                className="space-y-6"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const trimmed = email.trim();
-                  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-                    setErrors((prev) => ({ ...prev, email: form.errors.email }));
-                    return;
-                  }
-
-                  if (!hasConsent) {
-                    return;
-                  }
-
-                  setErrors((prev) => ({ ...prev, email: undefined }));
-
-                  startEmailCheckTransition(async () => {
-                    try {
-                      await submitRunAction({
-                        email: trimmed,
-                        hasConsent: true,
-                        consentTimestamp: new Date().toISOString(),
-                        topic: researchTopic,
-                        audience: audienceDescription,
-                      });
-                    } catch (error) {
-                      if (isRedirectError(error)) {
-                        throw error;
-                      }
-                      setErrors((prev) => ({ ...prev, email: messages.genericError }));
-                    }
-                  });
-                }}
-              >
-                <div className="space-y-3">
-                  <label
-                    className="text-xs uppercase tracking-[0.2em]"
-                    htmlFor="email"
-                    style={{ color: textSecondary, ...labelFont }}
-                  >
-                    {form.email.label}
-                  </label>
-                  <div className="relative group">
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder={form.email.placeholder}
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      className="w-full border-none bg-transparent p-5 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
-                      style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
-                    />
-                    <div
-                      className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-[var(--base-color)] opacity-20 transition-all duration-200 group-focus-within:bg-[var(--focus-color)] group-focus-within:opacity-100"
-                      style={focusLineStyle}
-                    />
-                  </div>
-                  {errors.email ? (
-                    <p className="text-xs font-semibold" style={{ color: errorDim }}>
-                      {errors.email}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex items-start gap-3">
-                  <input
-                    id="gdpr-consent"
-                    name="gdprConsent"
-                    type="checkbox"
-                    checked={hasConsent}
-                    onChange={(event) => setHasConsent(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border"
-                    style={{ borderColor: outlineVariant }}
-                  />
-                  <label htmlFor="gdpr-consent" className="text-xs leading-relaxed" style={{ color: textSecondary }}>
-                    {form.email.consentPrefix}
-                    <Link href="/privacy" target="_blank" rel="noopener" className="underline">
-                      {form.email.privacyPolicyLink}
-                    </Link>
-                    {form.email.consentConnector}
-                    <Link href="/terms" target="_blank" rel="noopener" className="underline">
-                      {form.email.termsOfServiceLink}
-                    </Link>
-                    .
-                  </label>
-                </div>
-                <div className="space-y-4">
-                  <button
-                    type="submit"
-                    className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-transform active:scale-[0.98]"
-                    style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
-                    disabled={!canSubmitEmail}
-                    aria-disabled={!canSubmitEmail ? "true" : undefined}
-                  >
-                    {form.email.cta}
-                    <Send className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  <div
-                    className="flex items-center justify-center gap-2 text-[11px]"
-                    style={{ color: textSecondary, ...labelFont }}
-                  >
-                    <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                    <span>{form.email.privacyNote}</span>
-                  </div>
-                </div>
-              </form>
-            </section>
-          ) : null}
         </div>
       </main>
 

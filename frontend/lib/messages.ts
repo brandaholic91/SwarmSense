@@ -117,7 +117,7 @@ export const messages = {
       ],
       piiWarning:
         "Ne adj meg személyes adatokat a kutatási témában",
-      submitCta: "Elemzés indítása",
+      submitCta: "Tovább",
       helper: "Egy ingyenes elemzés email-címenként.",
       errors: {
         researchTopic: "Add meg a kutatási témát.",
@@ -244,11 +244,11 @@ export const messages = {
       changeConditionLabel: "Mi változtatná meg a véleményét",
       coreConcernLabel: "Mélyebb aggodalom",
       buyingTriggerLabel: "Vásárlási trigger",
-      synthesisTitle: "Szintézis",
+      synthesisTitle: "Összefoglalás",
       synthesisSummaryLabel: "Összefoglalás",
       synthesisBarriersLabel: "Fő akadályok",
       synthesisWinningConditionsLabel: "Sikerhez szükséges",
-      synthesisBestTargetLabel: "Legreceptívebb szegmens",
+      synthesisBestTargetLabel: "Kire érdemes fókuszálni",
       synthesisRecommendationLabel: "Stratégiai ajánlás",
       sentToPrefix: "Erre a címre küldtük:",
       unsubscribeLabel: "Leiratkozás",
@@ -257,7 +257,7 @@ export const messages = {
       reflectionHelper:
         "Jelentkezz a várólistára, hogy első körben kapj értesítést a Pro tier nyitásáról.",
       reflectionCtaHref: "/blocked",
-      footerNote: "Ez egy automatikus értesítő levél, válasz helyett indíts új elemzést.",
+      footerNote: "Ez az e-mail automatikusan lett küldve, kérjük ne válaszolj rá.",
       interpretiveDisclaimer:
         "Fontos: az itt látható eredmények AI-alapú szintetikus szimulációból származnak, nem valós emberi kutatásból.",
     },

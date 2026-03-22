@@ -14,7 +14,7 @@ from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 from app.services.synthesis_service import execute_synthesis
 
 MIN_SUCCESSFUL_PERSONAS = 12
-CONSENSUS_THRESHOLD = 15
+CONSENSUS_THRESHOLD = 12
 FINAL_STATUSES = {"completed", "partial", "failed"}
 
 

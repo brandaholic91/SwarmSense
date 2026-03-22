@@ -92,7 +92,7 @@ def _build_result_email_props(
         "personas": personas,
         "persona_count": persona_count_header,
         "aggregate_score": str(result_payload.get("aggregate_score_display", "")),
-        "consensus_flag": str(result_payload.get("consensus_flag_display", "")) or None,
+        "consensus_flag": result_payload.get("consensus_flag_display") or None,
         "synthesis": synthesis,
         "user_email": recipient_email,
         "unsubscribe_url": unsubscribe_url,

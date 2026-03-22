@@ -229,6 +229,13 @@ export const messages = {
     },
   },
   waiting: {
+    eyebrow: "Futó elemzés",
+    subheadline:
+      "A szintetikus personák a háttérben futnak. A kész összefoglalót a megadott emailre küldjük.",
+    personaSectionLabel: "Persona",
+    progressAriaLabel: "Elemzés folyamata",
+    completedStatusHint: "Minden persona lefutott",
+    partialStatusHint: "Részleges lefutás — részletek az emailben",
     states: {
       queued: "Sorban...",
       generating: "Personák generálása...",
@@ -236,6 +243,7 @@ export const messages = {
       running: "Futtatás: {current}/{total} persona",
       composing: "Az eredmény összeállítása...",
       completed: "Az eredmény elkészült",
+      partial: "Részleges eredmény elkészült",
       failed: "Hiba történt a feldolgozás közben.",
     },
     canCloseNotice: "Nem kell itt várnod, bezárhatod ezt az ablakot. Az eredmény emailben érkezik.",
@@ -306,19 +314,19 @@ export const messages = {
     },
     followup: {
       day1: {
-        preview: "Tetszett az eredmény? Mutatunk többet.",
+        preview: "Tetszett az eredmény? Tudunk többet is mutatni.",
         title: "Egy futtatás csak az eleje.",
         body: "Képzeld el, hogy minden kampányüzeneted, árazási döntésed és go-to-market hipotézised előtt lefuttatod ezt. A Pro hozzáférés hamarosan nyílik — iratkozz fel elsőként.",
       },
       day3: {
-        preview: "Már több százan várják a Pro hozzáférést.",
+        preview: "A többiek már várják a Pro hozzáférést.",
         title: "Feliratkoztál már a várólistára?",
-        body: "Az ingyenes próba megmutatta, mire képes a szintetikus kutatás. A Pro verzióval korlátlanul futtathatod — kampányonként, termékenként, piaconként. Az első körben értesítünk.",
+        body: "Az ingyenes próba megmutatta, mire képes a szintetikus kutatás. A Pro verzióval teljes hozzáférést kaphatsz — kampányonként, termékenként, piaconként. Az első körben értesítünk.",
       },
       day7: {
         preview: "Utolsó emlékeztető a Pro várólistáról.",
         title: "Egy hete gondolkodsz — itt az ideje dönteni.",
-        body: "A Pro hozzáférés korlátozott helyszámmal indul. Ha szeretnél az elsők között lenni, most érdemes feliratkozni — utána már csak sorban állás.",
+        body: "A Pro hozzáférés korlátozott helyszámmal indul. Ha szeretnél az elsők között lenni, most érdemes feliratkozni — utána már csak a sorban állás marad.",
       },
       ctaLabel: "Feliratkozás a Pro várólistára",
       ctaHref: "/blocked",

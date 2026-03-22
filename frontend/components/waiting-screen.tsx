@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { AlertTriangle, ArrowRight, CheckCircle2, Mail } from "lucide-react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 
 import { messages } from "@/lib/messages";
@@ -12,6 +13,7 @@ import {
   onPrimary,
   onSurface,
   outlineVariant,
+  stanceSupport,
   surfaceContainer,
   surfaceContainerLow,
   textSecondary,
@@ -42,7 +44,7 @@ type UiState = {
 
 const FINAL_STATUSES: RunStatus[] = ["completed", "partial", "failed"];
 const headlineFont: CSSProperties = { fontFamily: "var(--font-headline)" };
-
+const labelFont: CSSProperties = { fontFamily: "var(--font-label)" };
 function interpolate(template: string, values: Record<string, string | number>): string {
   return Object.entries(values).reduce(
     (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
@@ -82,10 +84,19 @@ function buildUiState(payload: RunStatusResponse | undefined): UiState {
     };
   }
 
-  if (payload.status === "partial" || payload.status === "completed") {
+  if (payload.status === "partial") {
+    return {
+      label: waiting.states.partial,
+      status: "partial",
+      current: total,
+      total,
+    };
+  }
+
+  if (payload.status === "completed") {
     return {
       label: waiting.states.completed,
-      status: payload.status,
+      status: "completed",
       current: total,
       total,
     };
@@ -146,6 +157,11 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
 
   const uiState = buildUiState(query.data);
   const isFinal = uiState.status !== "generating" && FINAL_STATUSES.includes(uiState.status);
+  const isCompleted = uiState.status === "completed";
+  const isPartial = uiState.status === "partial";
+  const isFailed = uiState.status === "failed";
+
+  const progressFillColor = isCompleted ? stanceSupport : isFailed ? errorDim : accent;
 
   React.useEffect(() => {
     if (isFinal) {
@@ -179,77 +195,139 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
         </span>
       </header>
 
-      <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-16">
-      <section className="mx-auto w-full max-w-2xl space-y-10">
-        <header className="space-y-3 text-center">
-          <p aria-live="polite" className="text-sm md:text-base" style={{ color: textSecondary }}>
-            {query.isError ? messages.genericError : uiState.label}
-          </p>
-        </header>
+      <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-24">
+        <div className="w-full max-w-[600px] space-y-12">
+          <section className="space-y-8">
+            <div className="space-y-4">
+              <span className="text-xs uppercase tracking-[0.3em]" style={{ color: textSecondary, ...labelFont }}>
+                {waiting.eyebrow}
+              </span>
+              <h1
+                aria-live="polite"
+                className="text-3xl font-semibold md:text-4xl"
+                style={{ ...headlineFont, color: onSurface }}
+              >
+                {query.isError ? messages.genericError : uiState.label}
+              </h1>
+              {query.isError ? null : (
+                <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
+                  {waiting.subheadline}
+                </p>
+              )}
+            </div>
 
-        <div
-          className="rounded-2xl border px-6 py-10 text-center"
-          style={{ borderColor: outlineVariant, backgroundColor: surfaceContainerLow }}
-        >
-          <p className="text-xs uppercase tracking-[0.22em]" style={{ color: textSecondary }}>
-            Persona
-          </p>
-          <p className="mt-4 text-7xl font-semibold md:text-8xl" style={headlineFont}>
-            {uiState.status === "running" ? uiState.current : uiState.total}
-          </p>
-          <p className="mt-2 text-sm" style={{ color: textSecondary }}>
-            / {uiState.total}
-          </p>
-          <div
-            className="mt-8 h-3 w-full overflow-hidden rounded-full"
-            style={{ backgroundColor: outlineVariant }}
-          >
-            <div
-              role="progressbar"
-              aria-label="Elemzés folyamata"
-              aria-valuemin={0}
-              aria-valuemax={uiState.total}
-              aria-valuenow={progressNow}
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${(progressNow / uiState.total) * 100}%`,
-                backgroundColor: accent,
-              }}
-            />
-          </div>
-        </div>
+            <div className="space-y-3">
+              <p
+                className="text-xs uppercase tracking-[0.2em]"
+                style={{ color: textSecondary, ...labelFont }}
+              >
+                {waiting.personaSectionLabel}
+              </p>
+              <div
+                className="relative overflow-hidden rounded-lg px-5 py-8 text-center md:py-10"
+                style={{ backgroundColor: surfaceContainerLow }}
+              >
+                <div className="flex flex-col items-center justify-center gap-3">
+                  {isCompleted ? (
+                    <CheckCircle2
+                      className="h-12 w-12 md:h-14 md:w-14"
+                      style={{ color: stanceSupport }}
+                      strokeWidth={1.25}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  {isPartial ? (
+                    <AlertTriangle
+                      className="h-12 w-12 md:h-14 md:w-14"
+                      style={{ color: accent }}
+                      strokeWidth={1.25}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  {isCompleted ? (
+                    <p className="text-sm font-medium" style={{ color: stanceSupport }}>
+                      {waiting.completedStatusHint}
+                    </p>
+                  ) : null}
+                  {isPartial ? (
+                    <p className="text-sm font-medium" style={{ color: textSecondary }}>
+                      {waiting.partialStatusHint}
+                    </p>
+                  ) : null}
 
-        <p className="text-center text-sm" style={{ color: textSecondary }}>
-          {waiting.canCloseNotice}
-        </p>
+                  <p
+                    className="text-6xl font-semibold tabular-nums tracking-tight md:text-7xl"
+                    style={headlineFont}
+                    aria-live="polite"
+                  >
+                    {uiState.status === "running" ? uiState.current : uiState.total}
+                  </p>
+                  <p className="text-sm tabular-nums" style={{ color: textSecondary }}>
+                    / {uiState.total}
+                  </p>
+                </div>
 
-        {email ? (
-          <p className="text-center text-sm" style={{ color: textSecondary }}>
-            {interpolate(waiting.emailDeliveryNotice, { email })}
-          </p>
-        ) : null}
+                <div
+                  className="mt-8 h-2.5 w-full overflow-hidden rounded-full"
+                  style={{ backgroundColor: outlineVariant }}
+                >
+                  <div
+                    role="progressbar"
+                    aria-label={waiting.progressAriaLabel}
+                    aria-valuemin={0}
+                    aria-valuemax={uiState.total}
+                    aria-valuenow={progressNow}
+                    className="h-full rounded-full transition-all duration-700 ease-out"
+                    style={{
+                      width: `${(progressNow / uiState.total) * 100}%`,
+                      backgroundColor: progressFillColor,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
 
-        {showDelayedNotice ? (
-          <p className="text-center text-sm" style={{ color: textSecondary }}>
-            {waiting.delayedNotice}
-          </p>
-        ) : null}
-
-        {uiState.status === "failed" ? (
-          <div className="space-y-4 text-center">
-            <p className="text-sm font-semibold" style={{ color: errorDim }}>
-              {waiting.retrySuggestion}
+            <p className="text-center text-sm leading-relaxed" style={{ color: textSecondary }}>
+              {waiting.canCloseNotice}
             </p>
-            <Link
-              href="/research"
-              className="inline-flex rounded-lg px-6 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: accent, color: onPrimary }}
-            >
-              {messages.research.form.submitCta}
-            </Link>
-          </div>
-        ) : null}
-      </section>
+
+            {email ? (
+              <div
+                className="flex items-start gap-3 rounded-lg px-5 py-4 text-left"
+                style={{ backgroundColor: surfaceContainerLow }}
+              >
+                <Mail className="mt-0.5 h-5 w-5 shrink-0" style={{ color: accent }} aria-hidden="true" />
+                <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
+                  {interpolate(waiting.emailDeliveryNotice, { email })}
+                </p>
+              </div>
+            ) : null}
+
+            {showDelayedNotice ? (
+              <div className="rounded-lg border-l-2 px-5 py-4" style={{ borderColor: accent, backgroundColor: surfaceContainerLow }}>
+                <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
+                  {waiting.delayedNotice}
+                </p>
+              </div>
+            ) : null}
+
+            {uiState.status === "failed" ? (
+              <div className="space-y-3">
+                <p className="text-center text-sm font-semibold" style={{ color: errorDim }}>
+                  {waiting.retrySuggestion}
+                </p>
+                <Link
+                  href="/research"
+                  className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+                  style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
+                >
+                  {messages.research.form.submitCta}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            ) : null}
+          </section>
+        </div>
       </main>
 
       <div

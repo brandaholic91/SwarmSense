@@ -65,5 +65,5 @@ async def unsubscribe_via_link(
             detail="Failed to process unsubscribe",
         ) from exc
     return PlainTextResponse(
-        "You are now unsubscribed from SwarmSense follow-up emails."
+        "Leiratkoztál a SwarmSense marketing e-mailekről."
     )

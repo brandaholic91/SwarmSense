@@ -52,7 +52,7 @@ export const messages = {
       primaryArgumentLabel: "Fő érv",
       changeConditionLabel: "Mikor változtatna",
       coreConcernLabel: "Fő aggodalom",
-      buyingTriggerLabel: "Vásárlási döntő",
+      buyingTriggerLabel: "Vásárlási trigger",
       synthesis: {
         label: "Szintézis",
         summary:
@@ -150,13 +150,13 @@ export const messages = {
         { value: "Ingyenes próba", label: "regisztráció nélkül" },
         { value: "90 másodperc", label: "átlagos várakozás" },
         { value: "Strukturált elemzés", label: "emailben, azonnal" },
-        { value: "15–20 persona", label: "diverz nézőpont" },
+        { value: "15–20 persona", label: "különböző nézőpont" },
       ],
     },
     closingCta: {
       heading: "Teszteld le a következő feltételezésed még ma.",
       cta: "Ingyen kipróbálom",
-      helper: "Egy ingyenes futtatás. Nincs hitelkártya.",
+      helper: "Egy ingyenes futtatás. Regisztráció nélkül.",
     },
     footer: {
       privacy: "Adatkezelési tájékoztató",
@@ -372,18 +372,18 @@ export const messages = {
     followup: {
       day1: {
         preview: "Tetszett az eredmény? Tudunk többet is mutatni.",
-        title: "Egy futtatás csak az eleje.",
-        body: "Képzeld el, hogy minden kampányüzeneted, árazási döntésed és go-to-market hipotézised előtt lefuttatod ezt. A Pro hozzáférés hamarosan nyílik — iratkozz fel elsőként.",
+        title: "Egy futtatás csak a kezdet.",
+        body: "Képzeld el, hogy minden kampányüzeneted, árazási döntésed és go-to-market hipotézised előtt lefuttatod ezt. A Pro hozzáférés hamarosan nyílik — iratkozz fel, hogy ne maradj le róla.",
       },
       day3: {
         preview: "A többiek már várják a Pro hozzáférést.",
         title: "Feliratkoztál már a várólistára?",
-        body: "Az ingyenes próba megmutatta, mire képes a szintetikus kutatás. A Pro verzióval teljes hozzáférést kaphatsz — kampányonként, termékenként, piaconként. Az első körben értesítünk.",
+        body: "Az ingyenes próba megmutatta, mire képes a szintetikus kutatás. A Pro verzióval teljes hozzáférést kaphatsz — kampányonként, termékenként, piaconként. Iratkozz fel a várólistára, és első körben értesítünk.",
       },
       day7: {
         preview: "Utolsó emlékeztető a Pro várólistáról.",
         title: "Egy hete gondolkodsz — itt az ideje dönteni.",
-        body: "A Pro hozzáférés korlátozott helyszámmal indul. Ha szeretnél az elsők között lenni, most érdemes feliratkozni — utána már csak a sorban állás marad.",
+        body: "A Pro hozzáférés korlátozott létszámmal indul. Ha szeretnél az elsők között lenni, most érdemes feliratkozni — utána már csak a sorban állás marad.",
       },
       ctaLabel: "Feliratkozás a Pro várólistára",
       ctaHref: "/blocked",

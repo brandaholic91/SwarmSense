@@ -30,7 +30,7 @@ export default function Home() {
   const previewCards = landing.preview.cards;
 
   return (
-    <div className="min-h-screen w-full" style={{ color: onSurface }}>
+    <div className="min-h-dvh w-full" style={{ color: onSurface }}>
       <nav
         className="sticky top-0 z-50 w-full border-b backdrop-blur-xl"
         style={{ backgroundColor: navBackground, borderColor: outlineVariant }}
@@ -44,7 +44,7 @@ export default function Home() {
           </span>
           <Link
             href="/research"
-            className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-semibold"
+            className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
             style={{ backgroundColor: accent, color: onPrimary, ...labelFont }}
           >
             {landing.nav.cta}
@@ -72,7 +72,7 @@ export default function Home() {
             <div className="mt-10 flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
                 href="/research"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-8 py-4 text-base font-semibold sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-8 py-4 text-base font-semibold transition-opacity hover:opacity-90 sm:w-auto"
                 style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
               >
                 {landing.hero.cta}
@@ -112,7 +112,7 @@ export default function Home() {
                 <div className="space-y-5">
                   <div>
                     <p
-                      className="text-[10px] uppercase tracking-[0.2em]"
+                      className="text-[11px] uppercase tracking-[0.2em]"
                       style={{ color: textSecondary, ...labelFont }}
                     >
                       {landing.preview.researchLabel}
@@ -123,7 +123,7 @@ export default function Home() {
                   </div>
                   <div>
                     <p
-                      className="text-[10px] uppercase tracking-[0.2em]"
+                      className="text-[11px] uppercase tracking-[0.2em]"
                       style={{ color: textSecondary, ...labelFont }}
                     >
                       {landing.preview.audienceLabel}
@@ -144,7 +144,7 @@ export default function Home() {
                   </div>
                   <div className="w-full max-w-xs space-y-2">
                     <div
-                      className="flex justify-between text-[10px] uppercase tracking-[0.2em]"
+                      className="flex justify-between text-[11px] uppercase tracking-[0.2em]"
                       style={{ color: textSecondary, ...labelFont }}
                     >
                       <span>{landing.preview.supportLabel}</span>
@@ -246,7 +246,7 @@ export default function Home() {
           className="border-y px-6 py-10"
           style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
         >
-          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-8 opacity-80 md:justify-between">
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-8 md:justify-between">
             {landing.stats.items.map((item) => (
               <div key={item.label} className="flex flex-col items-center md:items-start">
                 <span
@@ -256,7 +256,7 @@ export default function Home() {
                   {item.value}
                 </span>
                 <span
-                  className="text-[10px] uppercase tracking-[0.2em]"
+                  className="text-[11px] uppercase tracking-[0.2em]"
                   style={{ color: textSecondary, ...labelFont }}
                 >
                   {item.label}
@@ -280,7 +280,7 @@ export default function Home() {
               </h2>
               <Link
                 href="/research"
-                className="mt-8 inline-flex w-full items-center justify-center rounded-xl px-10 py-4 text-lg font-semibold sm:w-auto"
+                className="mt-8 inline-flex w-full items-center justify-center rounded-xl px-10 py-4 text-lg font-semibold transition-opacity hover:opacity-90 sm:w-auto"
                 style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
               >
                 {landing.closingCta.cta}
@@ -308,7 +308,7 @@ export default function Home() {
           </span>
           <Link
             href="/privacy"
-            className="text-[10px] uppercase tracking-[0.3em]"
+            className="text-[11px] uppercase tracking-[0.3em]"
             style={{ color: textSecondary, ...labelFont }}
           >
             {landing.footer.privacy}

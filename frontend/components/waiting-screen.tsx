@@ -169,7 +169,7 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
   const progressNow = Math.min(Math.max(0, uiState.current), uiState.total);
 
   return (
-    <div className="relative min-h-screen" style={{ color: onSurface }}>
+    <div className="relative min-h-dvh" style={{ color: onSurface }}>
       <header
         className="sticky top-0 z-40 flex h-20 items-center justify-center border-b"
         style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
@@ -179,7 +179,7 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
         </span>
       </header>
 
-      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center px-6 py-16">
+      <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-16">
       <section className="mx-auto w-full max-w-2xl space-y-10">
         <header className="space-y-3 text-center">
           <p aria-live="polite" className="text-sm md:text-base" style={{ color: textSecondary }}>
@@ -238,7 +238,7 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
             </p>
             <Link
               href="/research"
-              className="inline-flex rounded-lg px-6 py-3 text-sm font-semibold"
+              className="inline-flex rounded-lg px-6 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
               style={{ backgroundColor: accent, color: onPrimary }}
             >
               {messages.research.form.submitCta}

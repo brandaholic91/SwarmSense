@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 import { startRunAction } from "@/app/actions/start-run";
 import {
@@ -38,6 +39,10 @@ type QualifierPayload = {
 
 const headlineFont: CSSProperties = { fontFamily: "var(--font-headline)" };
 const labelFont: CSSProperties = { fontFamily: "var(--font-label)" };
+const focusLineStyle = {
+  "--focus-color": accent,
+  "--base-color": outlineVariant,
+} as CSSProperties;
 
 function createQualifierPayload(
   roleAnswer: string,
@@ -133,7 +138,7 @@ export default function QualifierPage() {
   };
 
   return (
-    <div className="relative min-h-screen" style={{ color: onSurface }}>
+    <div className="relative min-h-dvh" style={{ color: onSurface }}>
       <header
         className="sticky top-0 z-40 flex h-20 items-center justify-center border-b"
         style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
@@ -146,7 +151,7 @@ export default function QualifierPage() {
         </span>
       </header>
 
-      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center px-6 py-20">
+      <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-20">
         <section className="w-full max-w-lg space-y-8">
           <h1
             className="text-3xl font-semibold md:text-4xl"
@@ -228,9 +233,9 @@ export default function QualifierPage() {
                     <label
                       key={option.value}
                       htmlFor={option.value}
-                      className="flex w-full min-h-12 cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2"
+                      className="flex w-full min-h-12 cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2"
                       style={{
-                        borderColor: outlineVariant,
+                        borderColor: useCaseAnswer === option.value ? accent : outlineVariant,
                         backgroundColor: surfaceContainerLow,
                         outlineColor: accent,
                       }}
@@ -294,25 +299,32 @@ export default function QualifierPage() {
               >
                 {qualifier.form.marketingProblemLabel}
               </label>
-              <Textarea
-                id="marketing-problem"
-                value={marketingProblem}
-                onChange={(e) => setMarketingProblem(e.target.value)}
-                placeholder={qualifier.form.marketingProblemPlaceholder}
-                maxLength={500}
-                rows={3}
-                className="w-full resize-none border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
-                style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
-              />
+              <div className="relative group">
+                <Textarea
+                  id="marketing-problem"
+                  value={marketingProblem}
+                  onChange={(e) => setMarketingProblem(e.target.value)}
+                  placeholder={qualifier.form.marketingProblemPlaceholder}
+                  maxLength={500}
+                  rows={3}
+                  className="w-full resize-none border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
+                />
+                <div
+                  className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-[var(--base-color)] opacity-20 transition-all duration-200 group-focus-within:bg-[var(--focus-color)] group-focus-within:opacity-100"
+                  style={focusLineStyle}
+                />
+              </div>
             </div>
 
             <button
               type="submit"
-              className="flex w-full items-center justify-center rounded-lg px-6 py-4 text-base font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
               disabled={!isComplete || isSubmitting}
               aria-disabled={!isComplete || isSubmitting ? "true" : undefined}
             >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               {qualifier.form.submitCta}
             </button>
           </form>

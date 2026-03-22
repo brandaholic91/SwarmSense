@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Send, ShieldCheck } from "lucide-react";
+import { Loader2, Send, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import { isRedirectError } from "next/dist/client/components/redirect-error";
@@ -71,7 +71,7 @@ export default function ResearchEmailPage() {
   };
 
   return (
-    <div className="relative min-h-screen" style={{ color: onSurface }}>
+    <div className="relative min-h-dvh" style={{ color: onSurface }}>
       <header
         className="sticky top-0 z-40 flex h-20 items-center justify-center border-b"
         style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
@@ -84,7 +84,7 @@ export default function ResearchEmailPage() {
         </span>
       </header>
 
-      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center px-6 py-24">
+      <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-24">
         <div className="w-full max-w-[600px]">
           <section
             className="w-full space-y-8 rounded-xl border p-8"
@@ -166,11 +166,15 @@ export default function ResearchEmailPage() {
                   type="submit"
                   disabled={!canSubmit}
                   aria-disabled={!canSubmit ? "true" : undefined}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
                 >
                   {copy.cta}
-                  <Send className="h-4 w-4" aria-hidden="true" />
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Send className="h-4 w-4" aria-hidden="true" />
+                  )}
                 </button>
                 <div
                   className="flex items-center justify-center gap-2 text-[11px]"

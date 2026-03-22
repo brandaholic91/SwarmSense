@@ -77,7 +77,7 @@ export default function ResearchPage() {
   };
 
   return (
-    <div className="relative min-h-screen" style={{ color: onSurface }}>
+    <div className="relative min-h-dvh" style={{ color: onSurface }}>
       <header
         className="sticky top-0 z-40 flex h-20 items-center justify-center border-b"
         style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
@@ -90,7 +90,7 @@ export default function ResearchPage() {
         </span>
       </header>
 
-      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center px-6 py-24">
+      <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-24">
         <div className="w-full max-w-[600px] space-y-12">
           <section className="space-y-8">
             <div className="space-y-4">
@@ -183,7 +183,7 @@ export default function ResearchPage() {
               <div className="space-y-3">
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
                   disabled={!isComplete}
                   aria-disabled={!isComplete ? "true" : undefined}

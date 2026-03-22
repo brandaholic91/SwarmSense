@@ -42,7 +42,7 @@ export default async function ResearchSentPage({ searchParams }: ResearchSentPag
   const normalizedEmail = normalizeEmail(rawEmail);
 
   return (
-    <div className="relative min-h-screen" style={{ color: onSurface }}>
+    <div className="relative min-h-dvh" style={{ color: onSurface }}>
       <header
         className="sticky top-0 z-40 flex h-20 items-center justify-center border-b"
         style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
@@ -55,7 +55,7 @@ export default async function ResearchSentPage({ searchParams }: ResearchSentPag
         </span>
       </header>
 
-      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center px-6 py-24">
+      <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-24">
         <div className="w-full max-w-[600px]">
           <section
             className="w-full space-y-5 rounded-xl border p-8"
@@ -73,7 +73,7 @@ export default async function ResearchSentPage({ searchParams }: ResearchSentPag
             </p>
             <Link
               href="/research"
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold"
+              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
               style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
             >
               Vissza a kutatáshoz

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowRight, FilePlus, Mail, Zap } from "lucide-react";
+import { ArrowDown, ArrowRight, FilePlus, Mail, Zap } from "lucide-react";
 
 import { PersonaCard } from "@/components/persona-card";
 import { messages } from "@/lib/messages";
@@ -53,7 +53,7 @@ export default function Home() {
       </nav>
 
       <main className="flex w-full flex-col">
-        <header className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-28">
+        <header className="relative flex min-h-[60vh] flex-col items-center justify-center overflow-hidden px-6 pb-14 pt-20">
           <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
             <h1
               className="text-4xl font-bold leading-[1.1] md:text-6xl"
@@ -82,10 +82,57 @@ export default function Home() {
           </div>
           <div
             aria-hidden="true"
-            className="absolute left-1/2 top-1/2 h-[640px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
+            className="absolute left-1/2 top-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]"
             style={{ backgroundColor: accent, opacity: 0.12 }}
           />
         </header>
+
+        <section className="px-6 py-20">
+          <div className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
+            <h2
+              className="text-2xl font-semibold md:text-3xl"
+              style={{ ...headlineFont, color: onSurface }}
+            >
+              {landing.painBridge.heading}
+            </h2>
+            <div className="mt-12 grid w-full grid-cols-1 gap-6 md:grid-cols-3">
+              {landing.painBridge.items.map((item) => (
+                <div
+                  key={item.before}
+                  className="flex flex-col items-center gap-3 rounded-2xl border p-6"
+                  style={{
+                    backgroundColor: surfaceContainerHigh,
+                    borderColor: outlineVariant,
+                  }}
+                >
+                  <span
+                    className="text-sm line-through"
+                    style={{ color: textSecondary }}
+                  >
+                    {item.before}
+                  </span>
+                  <ArrowDown
+                    className="h-4 w-4"
+                    style={{ color: accent }}
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="text-base font-semibold"
+                    style={{ color: accent }}
+                  >
+                    {item.after}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p
+              className="mt-10 max-w-xl text-sm leading-relaxed"
+              style={{ color: textSecondary }}
+            >
+              {landing.painBridge.closing}
+            </p>
+          </div>
+        </section>
 
         <section className="px-6 py-20" style={{ backgroundColor: surfaceContainerLow }}>
           <div className="mx-auto w-full max-w-6xl">
@@ -299,20 +346,29 @@ export default function Home() {
       </main>
 
       <footer className="border-t px-6 py-12" style={{ borderColor: outlineVariant }}>
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-6">
+          <div className="flex gap-6">
+            <Link
+              href="/privacy"
+              className="text-[11px] uppercase tracking-[0.3em]"
+              style={{ color: textSecondary, ...labelFont }}
+            >
+              {landing.footer.privacy}
+            </Link>
+            <Link
+              href="/terms"
+              className="text-[11px] uppercase tracking-[0.3em]"
+              style={{ color: textSecondary, ...labelFont }}
+            >
+              {landing.footer.terms}
+            </Link>
+          </div>
           <span
             className="text-base font-semibold tracking-tight"
             style={{ ...headlineFont, color: onSurface }}
           >
             Swarm<span style={{ color: accent }}>Sense</span>
           </span>
-          <Link
-            href="/privacy"
-            className="text-[11px] uppercase tracking-[0.3em]"
-            style={{ color: textSecondary, ...labelFont }}
-          >
-            {landing.footer.privacy}
-          </Link>
         </div>
       </footer>
     </div>

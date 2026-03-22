@@ -16,59 +16,69 @@ export const messages = {
       highlight: "pár perc",
       headlineSuffix: "alatt.",
       subheadline:
-        "15–20 attitudinálisan különböző AI persona elemzi a hipotézised. Nem egy ChatGPT válasz — strukturált piackutatás, toborzás és várakozás nélkül.",
+        "Töltsd fel a kérdésed, és perceken belül látod, hogyan reagál rá a célközönséged — ügynökség és várakozás nélkül.",
       cta: "Ingyen kipróbálom",
+    },
+    painBridge: {
+      heading: "A piackutatás még sosem volt ilyen egyszerű",
+      closing:
+        "A SwarmSense szintetikus piackutatással ad választ — AI personák döntéshozatala alapján.",
+      items: [
+        { before: "Hetek, hónapok", after: "Pár perc" },
+        { before: "Ügynökségi büdzsé", after: "Megfizethető ár" },
+        { before: "Csak nagyvállalatoknak", after: "Bárki számára" },
+      ],
     },
     preview: {
       eyebrow: "Így néz ki egy eredmény",
-      heading: "Valós idejű szimulációs output",
+      heading: "Konkrét reakciók, nem általános vélemények",
       researchLabel: "Kutatási téma",
-      researchValue: "Érdemes-e 15%-os áremelést végrehajtani a prémium szegmensben?",
+      researchValue: "Meggyőző-e ez az üzenet B2B döntéshozóknak: Csökkentsd a sales ciklust 40%-kal automatizálással?",
       audienceLabel: "Célközönség",
-      audienceValue: "KKV marketing döntéshozók",
-      consensusLabel: "⚠ 9/18 elutasítja — megosztott eredmény",
-      supportLabel: "Támogatja (50%)",
-      rejectLabel: "Ellenzi (50%)",
-      supportPercent: 50,
-      rejectPercent: 50,
+      audienceValue: "Közép- és kisvállalati sales és marketing vezetők",
+      consensusLabel: "✓ 11/18 támogatja — gyenge konszenzus",
+      supportLabel: "Támogatja (61%)",
+      rejectLabel: "Ellenzi (39%)",
+      supportPercent: 61,
+      rejectPercent: 39,
       cardAriaTemplate: "{name} - {stanceLabel} - {role}",
       cards: ([
         {
-          name: "Kovács Péter",
-          role: "CFO, 280 fős SaaS",
-          stance: "reject",
-          stanceLabel: "Elutasítja",
-          summary:
-            "Ebben a gazdasági környezetben a 15% már az a lélektani határ, ami miatt elkezdenénk alternatívákat keresni.",
-        },
-        {
-          name: "Nagy Eszter",
-          role: "Marketing vezető, B2B szolgáltató",
-          stance: "conditional",
-          stanceLabel: "Feltételes",
-          summary:
-            "Csak akkor fogadható el, ha a szolgáltatás minősége vagy az ügyfélszolgálat elérhetősége is arányosan javul.",
-        },
-        {
-          name: "Horváth Gábor",
-          role: "Termékvezető, prémium szegmens",
+          name: "Tóth Andrea",
+          role: "Sales vezető, 45 fős IT cég",
           stance: "support",
           stanceLabel: "Támogatja",
           summary:
-            "A prémium szegmensben az ár minőségi jelzés is, így a pozicionálást erősíti.",
+            "A 40% konkrét szám, és az ügyfeleim pont ezt a fájdalmat érzik. Ez bejön.",
+        },
+        {
+          name: "Fekete Márton",
+          role: "CEO, B2B SaaS startup",
+          stance: "conditional",
+          stanceLabel: "Feltételes",
+          summary:
+            "Csak akkor hiteles, ha van mögötte valódi referencia-adat. Így üres claim.",
+        },
+        {
+          name: "Varga Katalin",
+          role: "Marketing vezető, szolgáltató cég",
+          stance: "reject",
+          stanceLabel: "Elutasítja",
+          summary:
+            "Túl generikus — minden automatizáló eszköz ugyanezt mondja. Nem differenciál.",
         },
       ] satisfies PreviewCard[]),
     },
     howItWorks: {
-      heading: "Három lépés, 90 másodperc",
+      heading: "Eredmény három lépésben",
       steps: [
         {
           title: "Beküldöd",
           description:
-            "Add meg a kérdésed és határozd meg a célközönséged paramétereit.",
+            "Add meg a kérdésed és határozd meg a célközönséged.",
         },
         {
-          title: "A swarm fut",
+          title: "A kutatás fut",
           description:
             "15-20 egyedi AI persona szimulálja a döntéshozatali folyamatot valós időben.",
         },
@@ -81,20 +91,20 @@ export const messages = {
     },
     stats: {
       items: [
-        { value: "~$0.002", label: "/ futtatás" },
+        { value: "Ingyenes próba", label: "regisztráció nélkül" },
         { value: "90 másodperc", label: "átlagos várakozás" },
-        { value: "Nincs regisztráció", label: "azonnali hozzáférés" },
+        { value: "Strukturált elemzés", label: "emailben, azonnal" },
         { value: "15–20 persona", label: "diverz nézőpont" },
       ],
     },
     closingCta: {
-      heading: "Teszteld le a következő kampányüzeneted még ma.",
+      heading: "Teszteld le a következő feltételezésed még ma.",
       cta: "Ingyen kipróbálom",
       helper: "Egy ingyenes futtatás. Nincs hitelkártya.",
     },
     footer: {
-      brand: "SwarmSense",
-      privacy: "Privacy Policy",
+      privacy: "Adatkezelési tájékoztató",
+      terms: "Felhasználási feltételek",
     },
   },
   research: {

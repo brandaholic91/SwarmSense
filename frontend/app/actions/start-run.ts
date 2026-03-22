@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 type StartRunInput = {
   role_answer: string;
   use_case_answer: string;
+  company_size?: string;
+  marketing_problem?: string;
 };
 
 type StartRunSuccess = {
@@ -61,6 +63,8 @@ function parseRunContext(raw: string | undefined): RunContext | null {
 export async function startRunAction({
   role_answer,
   use_case_answer,
+  company_size,
+  marketing_problem,
 }: StartRunInput): Promise<StartRunSuccess | StartRunFailure> {
   const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
@@ -96,6 +100,8 @@ export async function startRunAction({
       audience: runContext.audience,
       role_answer: role_answer.trim(),
       use_case_answer: use_case_answer.trim(),
+      ...(company_size ? { company_size } : {}),
+      ...(marketing_problem?.trim() ? { marketing_problem: marketing_problem.trim() } : {}),
     }),
     cache: "no-store",
   });

@@ -50,16 +50,19 @@ def create_run_session(
 
     # Step 2: insert qualifier response
     try:
+        qualifier_row: dict = {
+            "run_id": run_id,
+            "user_id": payload.user_id,
+            "role_answer": payload.role_answer,
+            "use_case_answer": payload.use_case_answer,
+        }
+        if payload.company_size is not None:
+            qualifier_row["company_size"] = payload.company_size
+        if payload.marketing_problem is not None:
+            qualifier_row["marketing_problem"] = payload.marketing_problem
         (
             supabase.table("qualifier_responses")
-            .insert(
-                {
-                    "run_id": run_id,
-                    "user_id": payload.user_id,
-                    "role_answer": payload.role_answer,
-                    "use_case_answer": payload.use_case_answer,
-                }
-            )
+            .insert(qualifier_row)
             .execute()
         )
     except Exception as exc:  # pragma: no cover - defensive server error fallback

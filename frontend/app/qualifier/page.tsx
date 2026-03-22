@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { getErrorMessageByCode } from "@/lib/errors";
 import { messages } from "@/lib/messages";
 import {
@@ -31,6 +32,8 @@ type QualifierField = "role_answer" | "use_case_answer";
 type QualifierPayload = {
   role_answer: string;
   use_case_answer: string;
+  company_size?: string;
+  marketing_problem?: string;
 };
 
 const headlineFont: CSSProperties = { fontFamily: "var(--font-headline)" };
@@ -38,11 +41,15 @@ const labelFont: CSSProperties = { fontFamily: "var(--font-label)" };
 
 function createQualifierPayload(
   roleAnswer: string,
-  useCaseAnswer: string
+  useCaseAnswer: string,
+  companySize: string,
+  marketingProblem: string,
 ): QualifierPayload {
   return {
     role_answer: roleAnswer,
     use_case_answer: useCaseAnswer,
+    ...(companySize ? { company_size: companySize } : {}),
+    ...(marketingProblem.trim() ? { marketing_problem: marketingProblem.trim() } : {}),
   };
 }
 
@@ -51,6 +58,8 @@ export default function QualifierPage() {
   const router = useRouter();
   const [roleAnswer, setRoleAnswer] = React.useState("");
   const [useCaseAnswer, setUseCaseAnswer] = React.useState("");
+  const [companySize, setCompanySize] = React.useState("");
+  const [marketingProblem, setMarketingProblem] = React.useState("");
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errors, setErrors] = React.useState<Partial<Record<QualifierField, string>>>({});
@@ -107,7 +116,7 @@ export default function QualifierPage() {
     setIsSubmitting(true);
 
     try {
-      const payload = createQualifierPayload(roleAnswerRef.current, useCaseAnswerRef.current);
+      const payload = createQualifierPayload(roleAnswerRef.current, useCaseAnswerRef.current, companySize, marketingProblem);
       const result = await startRunAction(payload);
 
       if (!result.ok) {
@@ -249,6 +258,52 @@ export default function QualifierPage() {
                   {errors.use_case_answer}
                 </p>
               ) : null}
+            </div>
+
+            <div className="space-y-3">
+              <label
+                htmlFor="company-size"
+                className="text-xs uppercase tracking-[0.2em]"
+                style={{ color: textSecondary, ...labelFont }}
+              >
+                {qualifier.form.companySizeLabel}
+              </label>
+              <Select value={companySize} onValueChange={setCompanySize}>
+                <SelectTrigger
+                  id="company-size"
+                  className="h-12 w-full"
+                  style={{ backgroundColor: surfaceContainerLow, borderColor: outlineVariant }}
+                >
+                  <SelectValue placeholder={qualifier.form.companySizePlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {qualifier.form.companySizeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <label
+                htmlFor="marketing-problem"
+                className="text-xs uppercase tracking-[0.2em]"
+                style={{ color: textSecondary, ...labelFont }}
+              >
+                {qualifier.form.marketingProblemLabel}
+              </label>
+              <Textarea
+                id="marketing-problem"
+                value={marketingProblem}
+                onChange={(e) => setMarketingProblem(e.target.value)}
+                placeholder={qualifier.form.marketingProblemPlaceholder}
+                maxLength={500}
+                rows={3}
+                className="w-full resize-none border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+                style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
+              />
             </div>
 
             <button

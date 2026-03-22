@@ -12,6 +12,8 @@ class QualifierCreateRequest(BaseModel):
     user_id: str
     role_answer: str
     use_case_answer: str
+    company_size: str | None = None
+    marketing_problem: str | None = None
 
     @field_validator("run_id", "user_id", mode="before")
     @classmethod

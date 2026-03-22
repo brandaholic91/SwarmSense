@@ -169,12 +169,19 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
   const progressNow = Math.min(Math.max(0, uiState.current), uiState.total);
 
   return (
-    <main className="min-h-screen px-6 py-16" style={{ backgroundColor: surfaceContainer, color: onSurface }}>
+    <div className="relative min-h-screen" style={{ color: onSurface }}>
+      <header
+        className="sticky top-0 z-40 flex h-20 items-center justify-center border-b"
+        style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
+      >
+        <span className="text-lg font-semibold tracking-tight" style={{ ...headlineFont, color: onSurface }}>
+          Swarm<span style={{ color: accent }}>Sense</span>
+        </span>
+      </header>
+
+      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center px-6 py-16">
       <section className="mx-auto w-full max-w-2xl space-y-10">
         <header className="space-y-3 text-center">
-          <h1 className="text-3xl font-semibold md:text-4xl" style={headlineFont}>
-            SwarmSense
-          </h1>
           <p aria-live="polite" className="text-sm md:text-base" style={{ color: textSecondary }}>
             {query.isError ? messages.genericError : uiState.label}
           </p>
@@ -239,7 +246,22 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
           </div>
         ) : null}
       </section>
-    </main>
+      </main>
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div
+          className="absolute right-[-10%] top-[-10%] h-[520px] w-[520px] rounded-full blur-[120px]"
+          style={{ backgroundColor: accent, opacity: 0.1 }}
+        />
+        <div
+          className="absolute bottom-[-5%] left-[-5%] h-[420px] w-[420px] rounded-full blur-[100px]"
+          style={{ backgroundColor: accent, opacity: 0.06 }}
+        />
+      </div>
+    </div>
   );
 }
 

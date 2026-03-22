@@ -36,7 +36,14 @@ export function ResearchSummarySection({
   synthesis_best_target_segment,
   synthesis_strategic_recommendation,
 }: Omit<FollowUpEmailProps, "unsubscribe_url">) {
-  if (!topic) return null;
+  const hasSynthesisData =
+    Boolean(synthesis_summary) ||
+    Boolean(synthesis_main_barriers && synthesis_main_barriers.length > 0) ||
+    Boolean(synthesis_winning_conditions) ||
+    Boolean(synthesis_best_target_segment) ||
+    Boolean(synthesis_strategic_recommendation);
+
+  if (!topic || !hasSynthesisData) return null;
 
   const total = (support_count ?? 0) + (reject_count ?? 0) + (conditional_count ?? 0);
 

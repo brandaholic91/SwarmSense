@@ -57,6 +57,23 @@ describe("FollowUpDay1Email", () => {
     expect(html).toContain("Leiratkozás");
   });
 
+  it("omits research summary section when synthesis is missing", async () => {
+    const html = await render(
+      <FollowUpDay1Email
+        unsubscribe_url="https://example.com/unsubscribe"
+        topic="AI piac felmérés"
+        audience="KKV döntéshozók"
+        synthesis_summary={null}
+        synthesis_main_barriers={null}
+        synthesis_winning_conditions={null}
+        synthesis_best_target_segment={null}
+        synthesis_strategic_recommendation={null}
+      />
+    );
+
+    expect(html).not.toContain("A kutatásod eredménye");
+  });
+
   it("omits research summary section when topic is undefined", async () => {
     const html = await render(
       <FollowUpDay1Email unsubscribe_url="https://example.com/unsubscribe" />

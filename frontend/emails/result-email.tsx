@@ -45,6 +45,7 @@ export type ResultEmailProps = {
   synthesis?: ResultEmailSynthesis;
   user_email: string;
   unsubscribe_url?: string;
+  waitlist_url?: string;
 };
 
 export function ResultEmail({
@@ -57,6 +58,7 @@ export function ResultEmail({
   synthesis,
   user_email,
   unsubscribe_url,
+  waitlist_url,
 }: ResultEmailProps) {
   const copy = messages.email.result;
 
@@ -455,7 +457,7 @@ export function ResultEmail({
                         ) : null}
                         <p style={{ margin: "12px 0 0 0" }}>
                           <a
-                            href={copy.reflectionCtaHref}
+                            href={waitlist_url ?? `${copy.reflectionCtaHref}?email=${encodeURIComponent(user_email)}`}
                             style={{
                               display: "inline-block",
                               backgroundColor: accent,

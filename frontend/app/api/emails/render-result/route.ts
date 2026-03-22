@@ -14,6 +14,7 @@ export interface ResultEmailRenderRequest {
   synthesis?: ResultEmailSynthesis;
   user_email: string;
   unsubscribe_url?: string;
+  waitlist_url?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
         synthesis: body.synthesis,
         user_email: body.user_email,
         unsubscribe_url: body.unsubscribe_url,
+        waitlist_url: body.waitlist_url,
       })
     );
 

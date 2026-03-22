@@ -153,7 +153,8 @@ describe("ResultEmail", () => {
 
     const linkMatches = html.match(/<a\s+[^>]*href=/g) ?? [];
     expect(linkMatches).toHaveLength(1);
-    expect(html).toContain('href="/blocked"');
+    // waitlist_url not provided → falls back to relative /blocked?email=
+    expect(html).toContain(`href="/blocked?email=${encodeURIComponent(sampleProps.user_email)}"`);
   });
 
   it("renders unsubscribe link when unsubscribe_url is provided", async () => {

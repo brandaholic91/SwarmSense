@@ -86,6 +86,9 @@ def _build_result_email_props(
     synthesis_raw = result_payload.get("synthesis")
     synthesis = synthesis_raw if isinstance(synthesis_raw, dict) else None
 
+    base = frontend_origin.rstrip("/")
+    waitlist_url = f"{base}/pro?email={quote(recipient_email)}"
+
     return {
         "topic": str(result_payload.get("topic", "")),
         "audience": str(result_payload.get("audience", "")),
@@ -96,6 +99,7 @@ def _build_result_email_props(
         "synthesis": synthesis,
         "user_email": recipient_email,
         "unsubscribe_url": unsubscribe_url,
+        "waitlist_url": waitlist_url,
     }
 
 

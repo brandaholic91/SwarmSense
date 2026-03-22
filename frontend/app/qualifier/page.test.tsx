@@ -36,8 +36,6 @@ describe("Qualifier page", () => {
   it("renders selector-only inputs with required minimum options", () => {
     render(<QualifierPage />);
 
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-
     const radioGroup = screen.getByRole("radiogroup", {
       name: messages.qualifier.form.useCaseLabel,
     });

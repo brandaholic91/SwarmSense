@@ -82,7 +82,7 @@ development_status:
   5-3-result-email-reflection-question-cta-and-delivery: done
   5-4-automated-follow-up-email-sequence: done
   5-5-data-deletion-request-handling: done
-  5-6-enrich-follow-up-emails-with-run-synthesis: ready-for-dev
+  5-6-enrich-follow-up-emails-with-run-synthesis: review
   epic-5-retrospective: optional
 
   # Epic 6: Operator Monitoring & Administration

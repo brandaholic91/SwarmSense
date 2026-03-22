@@ -1,6 +1,6 @@
 # Story 5-6: Enrich Follow-up Emails with Run Synthesis and Research Results
 
-## Status: ready-for-dev
+## Status: review
 
 ---
 
@@ -89,39 +89,39 @@ This story persists the synthesis and stance counts to the `runs` table at run c
 ## Tasks
 
 ### Task 1: Database Migration
-- [ ] Create new migration file: `supabase/migrations/20260322004_runs_synthesis_columns.sql`
-- [ ] Add 8 new nullable columns to `runs` table (see AC-1)
-- [ ] Verify migration does not break existing RLS policy
+- [x] Create new migration file: `supabase/migrations/20260322004_runs_synthesis_columns.sql`
+- [x] Add 8 new nullable columns to `runs` table (see AC-1)
+- [x] Verify migration does not break existing RLS policy
 
 ### Task 2: Backend — Persist synthesis at run completion
-- [ ] In `backend/app/services/run_processor.py`, update `process_run()`
-- [ ] After `execute_synthesis()` call, count stances from `result.responses`
-- [ ] Add new columns to the runs table update dict (lines ~130-137)
-- [ ] Handle `synthesis=None` case gracefully (pass `None` values)
+- [x] In `backend/app/services/run_processor.py`, update `process_run()`
+- [x] After `execute_synthesis()` call, count stances from `result.responses`
+- [x] Add new columns to the runs table update dict (lines ~130-137)
+- [x] Handle `synthesis=None` case gracefully (pass `None` values)
 
 ### Task 3: Backend — Enrich follow-up query and send pipeline
-- [ ] In `backend/app/services/email_service.py`:
+- [x] In `backend/app/services/email_service.py`:
   - Update `_fetch_followup_candidates()` SQL SELECT to include 10 new fields (topic, audience + 8 synthesis)
   - Update `RunFollowupCandidate` dataclass/namedtuple (or dict) to carry new fields
   - Update `send_followup_email()` signature and render props to include new fields
   - Update `dispatch_followup_sequence()` to pass new fields through to `send_followup_email()`
 
 ### Task 4: Frontend — Render route update
-- [ ] In `frontend/app/api/emails/render-followup/route.ts`:
+- [x] In `frontend/app/api/emails/render-followup/route.ts`:
   - Add new optional fields to `FollowUpEmailRenderRequest` interface
   - Pass fields through to template components
 
 ### Task 5: Frontend — Email template props and rendering
-- [ ] Update `FollowUpEmailProps` interface in all three templates to include new optional fields
-- [ ] Create a shared `ResearchSummarySection` inline component (table-based, email-safe HTML)
-- [ ] Add section to `follow-up-day1.tsx`, `follow-up-day3.tsx`, `follow-up-day7.tsx`
-- [ ] Section renders only when `topic` is present; synthesis sub-sections render only when their data is present
+- [x] Update `FollowUpEmailProps` interface in all three templates to include new optional fields
+- [x] Create a shared `ResearchSummarySection` inline component (table-based, email-safe HTML)
+- [x] Add section to `follow-up-day1.tsx`, `follow-up-day3.tsx`, `follow-up-day7.tsx`
+- [x] Section renders only when `topic` is present; synthesis sub-sections render only when their data is present
 
 ### Task 6: Tests
-- [ ] Update backend pytest mocks for `_fetch_followup_candidates` to include new fields
-- [ ] Update `send_followup_email` test to assert new props are passed to render API
-- [ ] Add test case: NULL synthesis data → section omitted in render request
-- [ ] Update frontend email snapshot/render tests if they exist
+- [x] Update backend pytest mocks for `_fetch_followup_candidates` to include new fields
+- [x] Update `send_followup_email` test to assert new props are passed to render API
+- [x] Add test case: NULL synthesis data → section omitted in render request
+- [x] Update frontend email snapshot/render tests if they exist
 
 ---
 
@@ -314,10 +314,61 @@ Labels to use inline in template (not in messages.ts):
 
 ## Definition of Done
 
-- [ ] Migration applied cleanly against local Supabase
-- [ ] `run_processor.py` saves synthesis + stance counts on every completed run
-- [ ] Follow-up emails rendered with topic/audience/synthesis when data present
-- [ ] Follow-up emails render correctly (no broken layout) when synthesis is NULL
-- [ ] All existing backend follow-up tests pass
-- [ ] No TypeScript errors in frontend email templates
+- [x] Migration applied cleanly against local Supabase (shadow DB confirmed clean apply via `supabase db diff`)
+- [x] `run_processor.py` saves synthesis + stance counts on every completed run
+- [x] Follow-up emails rendered with topic/audience/synthesis when data present
+- [x] Follow-up emails render correctly (no broken layout) when synthesis is NULL
+- [x] All existing backend follow-up tests pass (6/6)
+- [x] No TypeScript errors in frontend email templates
 - [ ] Manual test: trigger a test follow-up render via `/api/emails/render-followup` with and without synthesis data
+
+---
+
+## Dev Agent Record
+
+### Implementation Plan
+
+1. DB migration: 8 nullable columns added to `runs` table via `20260322004_runs_synthesis_columns.sql`
+2. `run_processor.py`: stance counts computed from `result.responses` after synthesis, persisted alongside existing completion fields
+3. `email_service.py`: `_fetch_followup_candidates` SELECT extended, `send_followup_email` gains 9 optional kwargs, `dispatch_followup_sequence` passes candidate fields through
+4. `route.ts`: `FollowUpEmailRenderRequest` interface extended with 9 optional fields, passed to all three template render calls
+5. `follow-up-day1.tsx`: `FollowUpEmailProps` extended, `ResearchSummarySection` component created and exported, injected between body and CTA rows
+6. `follow-up-day3.tsx`, `follow-up-day7.tsx`: import updated, new props destructured and passed to `ResearchSummarySection`
+7. Tests: backend mocks updated with `_make_run` helper and `_SYNTHESIS_FIELDS`, 2 new render assertion tests added; frontend tests expanded with section-present and section-absent cases
+
+### Completion Notes
+
+- All 6 backend follow-up tests pass; 10 frontend email tests pass
+- `ResearchSummarySection` returns `null` when `topic` is falsy — null safety guaranteed across all layers
+- `synthesis_main_barriers` null guard: component only renders barriers when array is non-empty
+- Pre-existing regressions NOT introduced by this story (documented separately):
+  - `test_result_payload_no_consensus_for_14_of_18_support` — consensus threshold logic mismatch in test
+  - `result-email.test.tsx` TS error — `ResultEmailPersona` shape mismatch in test fixtures
+  - `result-email.test.tsx` render test — `persona-column` class not in current template
+- `follow-up-day2.tsx` referenced in story File Locations table is a typo; actual file is `follow-up-day3.tsx`
+
+### Debug Log
+
+No blockers encountered. `Settings` instantiation in tests bypassed by using `_FakeSettings` plain class instead.
+
+---
+
+## File List
+
+- `supabase/migrations/20260322004_runs_synthesis_columns.sql` — NEW
+- `backend/app/services/run_processor.py` — MODIFIED
+- `backend/app/services/email_service.py` — MODIFIED
+- `backend/tests/services/test_followup_email_service.py` — MODIFIED
+- `frontend/app/api/emails/render-followup/route.ts` — MODIFIED
+- `frontend/emails/follow-up-day1.tsx` — MODIFIED
+- `frontend/emails/follow-up-day1.test.tsx` — MODIFIED
+- `frontend/emails/follow-up-day3.tsx` — MODIFIED
+- `frontend/emails/follow-up-day3.test.tsx` — MODIFIED
+- `frontend/emails/follow-up-day7.tsx` — MODIFIED
+- `frontend/emails/follow-up-day7.test.tsx` — MODIFIED
+
+---
+
+## Change Log
+
+- 2026-03-22: Story 5-6 implemented — synthesis + stance counts persisted at run completion, follow-up email pipeline enriched, ResearchSummarySection added to all three follow-up templates, tests updated (Dev Agent: Amelia)

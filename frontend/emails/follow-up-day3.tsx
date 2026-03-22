@@ -1,6 +1,6 @@
 import { Body, Head, Html, Preview } from "@react-email/components";
 
-import type { FollowUpEmailProps } from "@/emails/follow-up-day1";
+import { type FollowUpEmailProps, ResearchSummarySection } from "@/emails/follow-up-day1";
 import { messages } from "@/lib/messages";
 import {
   accent,
@@ -11,7 +11,19 @@ import {
   emailTextSecondary,
 } from "@/lib/tokens";
 
-export function FollowUpDay3Email({ unsubscribe_url }: FollowUpEmailProps) {
+export function FollowUpDay3Email({
+  unsubscribe_url,
+  topic,
+  audience,
+  support_count,
+  reject_count,
+  conditional_count,
+  synthesis_summary,
+  synthesis_main_barriers,
+  synthesis_winning_conditions,
+  synthesis_best_target_segment,
+  synthesis_strategic_recommendation,
+}: FollowUpEmailProps) {
   const copy = messages.email.followup;
 
   return (
@@ -47,13 +59,25 @@ export function FollowUpDay3Email({ unsubscribe_url }: FollowUpEmailProps) {
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ padding: "28px 24px 12px 24px" }}>
+                      <td style={{ padding: "28px 24px 20px 24px" }}>
                         <h1 style={{ margin: 0, fontSize: "28px", lineHeight: "34px" }}>{copy.day3.title}</h1>
                         <p style={{ margin: "12px 0 0 0", color: emailTextSecondary }}>{copy.day3.body}</p>
                       </td>
                     </tr>
+                    <ResearchSummarySection
+                      topic={topic}
+                      audience={audience}
+                      support_count={support_count}
+                      reject_count={reject_count}
+                      conditional_count={conditional_count}
+                      synthesis_summary={synthesis_summary}
+                      synthesis_main_barriers={synthesis_main_barriers}
+                      synthesis_winning_conditions={synthesis_winning_conditions}
+                      synthesis_best_target_segment={synthesis_best_target_segment}
+                      synthesis_strategic_recommendation={synthesis_strategic_recommendation}
+                    />
                     <tr>
-                      <td style={{ padding: "0 24px" }}>
+                      <td style={{ padding: "20px 24px 0 24px" }}>
                         <a
                           href={copy.ctaHref}
                           style={{

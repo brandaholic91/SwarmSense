@@ -121,36 +121,69 @@ class FakeSupabase:
         return FakeQuery(self, name)
 
 
+_SYNTHESIS_FIELDS: dict[str, Any] = {
+    "topic": "AI piac felmérés",
+    "audience": "KKV döntéshozók",
+    "support_count": 10,
+    "reject_count": 3,
+    "conditional_count": 7,
+    "synthesis_summary": "Az AI adoptáció fő hajtóereje a hatékonyság.",
+    "synthesis_main_barriers": ["Magas belépési költség", "Adatvédelmi aggályok"],
+    "synthesis_winning_conditions": "ROI demonstrálása 3 hónapon belül",
+    "synthesis_best_target_segment": "50-200 fős tech-forward cégek",
+    "synthesis_strategic_recommendation": "Fókuszálj a proof-of-concept projektekre",
+}
+
+_NULL_SYNTHESIS_FIELDS: dict[str, Any] = {
+    "topic": None,
+    "audience": None,
+    "support_count": None,
+    "reject_count": None,
+    "conditional_count": None,
+    "synthesis_summary": None,
+    "synthesis_main_barriers": None,
+    "synthesis_winning_conditions": None,
+    "synthesis_best_target_segment": None,
+    "synthesis_strategic_recommendation": None,
+}
+
+
+def _make_run(run_id: str, user_id: str, **overrides: Any) -> dict[str, Any]:
+    base: dict[str, Any] = {
+        "id": run_id,
+        "user_id": user_id,
+        "status": "completed",
+        "day1_sent": False,
+        "day3_sent": False,
+        "day7_sent": False,
+        **_NULL_SYNTHESIS_FIELDS,
+    }
+    base.update(overrides)
+    return base
+
+
 def test_dispatch_followups_sends_only_eligible_thresholds(monkeypatch) -> None:
     now = datetime.now(UTC)
     runs = [
-        {
-            "id": "run-day1",
-            "user_id": "user-1",
-            "status": "completed",
-            "completed_at": (now - timedelta(days=2)).isoformat(),
-            "day1_sent": False,
-            "day3_sent": False,
-            "day7_sent": False,
-        },
-        {
-            "id": "run-day3",
-            "user_id": "user-2",
-            "status": "partial",
-            "completed_at": (now - timedelta(days=4)).isoformat(),
-            "day1_sent": True,
-            "day3_sent": False,
-            "day7_sent": False,
-        },
-        {
-            "id": "run-too-early",
-            "user_id": "user-3",
-            "status": "completed",
-            "completed_at": (now - timedelta(hours=12)).isoformat(),
-            "day1_sent": False,
-            "day3_sent": False,
-            "day7_sent": False,
-        },
+        _make_run(
+            "run-day1",
+            "user-1",
+            completed_at=(now - timedelta(days=2)).isoformat(),
+            **_SYNTHESIS_FIELDS,
+        ),
+        _make_run(
+            "run-day3",
+            "user-2",
+            status="partial",
+            completed_at=(now - timedelta(days=4)).isoformat(),
+            day1_sent=True,
+            **_SYNTHESIS_FIELDS,
+        ),
+        _make_run(
+            "run-too-early",
+            "user-3",
+            completed_at=(now - timedelta(hours=12)).isoformat(),
+        ),
     ]
     users = [
         {"id": "user-1", "email": "u1@example.com", "unsubscribed_at": None},
@@ -162,11 +195,11 @@ def test_dispatch_followups_sends_only_eligible_thresholds(monkeypatch) -> None:
     monkeypatch.setattr(email_service, "get_supabase_client", lambda: fake_supabase)
 
     sent: list[tuple[str, str]] = []
-    monkeypatch.setattr(
-        email_service,
-        "send_followup_email",
-        lambda *, recipient_email, day, user_id: sent.append((recipient_email, day)),
-    )
+
+    def _capture_send(*, recipient_email: str, day: str, user_id: str, **kwargs: Any) -> None:
+        sent.append((recipient_email, day))
+
+    monkeypatch.setattr(email_service, "send_followup_email", _capture_send)
 
     total = email_service.dispatch_followup_sequence()
 
@@ -181,15 +214,11 @@ def test_dispatch_followups_sends_only_eligible_thresholds(monkeypatch) -> None:
 def test_dispatch_followups_skips_unsubscribed_users(monkeypatch) -> None:
     now = datetime.now(UTC)
     runs = [
-        {
-            "id": "run-1",
-            "user_id": "user-1",
-            "status": "completed",
-            "completed_at": (now - timedelta(days=2)).isoformat(),
-            "day1_sent": False,
-            "day3_sent": False,
-            "day7_sent": False,
-        }
+        _make_run(
+            "run-1",
+            "user-1",
+            completed_at=(now - timedelta(days=2)).isoformat(),
+        )
     ]
     users = [
         {
@@ -203,11 +232,11 @@ def test_dispatch_followups_skips_unsubscribed_users(monkeypatch) -> None:
     monkeypatch.setattr(email_service, "get_supabase_client", lambda: fake_supabase)
 
     sent: list[tuple[str, str]] = []
-    monkeypatch.setattr(
-        email_service,
-        "send_followup_email",
-        lambda *, recipient_email, day, user_id: sent.append((recipient_email, day)),
-    )
+
+    def _capture_send(*, recipient_email: str, day: str, user_id: str, **kwargs: Any) -> None:
+        sent.append((recipient_email, day))
+
+    monkeypatch.setattr(email_service, "send_followup_email", _capture_send)
 
     total = email_service.dispatch_followup_sequence()
 
@@ -219,22 +248,18 @@ def test_dispatch_followups_skips_unsubscribed_users(monkeypatch) -> None:
 def test_dispatch_followups_does_not_mark_sent_on_provider_failure(monkeypatch) -> None:
     now = datetime.now(UTC)
     runs = [
-        {
-            "id": "run-1",
-            "user_id": "user-1",
-            "status": "completed",
-            "completed_at": (now - timedelta(days=2)).isoformat(),
-            "day1_sent": False,
-            "day3_sent": False,
-            "day7_sent": False,
-        }
+        _make_run(
+            "run-1",
+            "user-1",
+            completed_at=(now - timedelta(days=2)).isoformat(),
+        )
     ]
     users = [{"id": "user-1", "email": "u1@example.com", "unsubscribed_at": None}]
     fake_supabase = FakeSupabase(runs=runs, users=users)
 
     monkeypatch.setattr(email_service, "get_supabase_client", lambda: fake_supabase)
 
-    def _raise_error(*, recipient_email: str, day: str, user_id: str) -> None:
+    def _raise_error(*, recipient_email: str, day: str, user_id: str, **kwargs: Any) -> None:
         _ = (recipient_email, day, user_id)
         raise RuntimeError("provider down")
 
@@ -249,15 +274,11 @@ def test_dispatch_followups_does_not_mark_sent_on_provider_failure(monkeypatch) 
 def test_mark_followup_sent_is_idempotent(monkeypatch) -> None:
     now = datetime.now(UTC)
     runs = [
-        {
-            "id": "run-1",
-            "user_id": "user-1",
-            "status": "completed",
-            "completed_at": (now - timedelta(days=2)).isoformat(),
-            "day1_sent": False,
-            "day3_sent": False,
-            "day7_sent": False,
-        }
+        _make_run(
+            "run-1",
+            "user-1",
+            completed_at=(now - timedelta(days=2)).isoformat(),
+        )
     ]
     users = [{"id": "user-1", "email": "u1@example.com", "unsubscribed_at": None}]
     fake_supabase = FakeSupabase(runs=runs, users=users)
@@ -269,3 +290,79 @@ def test_mark_followup_sent_is_idempotent(monkeypatch) -> None:
 
     assert first is True
     assert second is False
+
+
+class _FakeSettings:
+    resend_api_key = "fake"
+    email_from = "noreply@test.com"
+    email_reply_to = ""
+    frontend_origin = "http://localhost:3000"
+    backend_origin = "http://localhost:8000"
+    internal_secret = "test-secret"
+
+
+def test_send_followup_email_passes_synthesis_props_to_render(monkeypatch) -> None:
+    """send_followup_email passes all synthesis fields through to the render API."""
+    captured_props: dict[str, Any] = {}
+
+    def _mock_render(*, day: str, props: dict[str, Any], frontend_origin: str) -> str:
+        captured_props.update(props)
+        return "<html>ok</html>"
+
+    monkeypatch.setattr(email_service, "_render_followup_email_via_frontend_api", _mock_render)
+
+    import resend as _resend
+    monkeypatch.setattr(_resend.Emails, "send", lambda params: None)
+    monkeypatch.setattr(email_service, "get_settings", lambda: _FakeSettings())
+
+    email_service.send_followup_email(
+        recipient_email="user@example.com",
+        day="day1",
+        user_id="user-123",
+        topic="AI felmérés",
+        audience="KKV-k",
+        support_count=8,
+        reject_count=2,
+        conditional_count=5,
+        synthesis_summary="Összefoglalás szövege",
+        synthesis_main_barriers=["Akadály 1", "Akadály 2"],
+        synthesis_winning_conditions="Feltételek",
+        synthesis_best_target_segment="Szegmens",
+        synthesis_strategic_recommendation="Ajánlás",
+    )
+
+    assert captured_props["topic"] == "AI felmérés"
+    assert captured_props["audience"] == "KKV-k"
+    assert captured_props["support_count"] == 8
+    assert captured_props["reject_count"] == 2
+    assert captured_props["conditional_count"] == 5
+    assert captured_props["synthesis_summary"] == "Összefoglalás szövege"
+    assert captured_props["synthesis_main_barriers"] == ["Akadály 1", "Akadály 2"]
+    assert captured_props["synthesis_winning_conditions"] == "Feltételek"
+    assert captured_props["synthesis_best_target_segment"] == "Szegmens"
+    assert captured_props["synthesis_strategic_recommendation"] == "Ajánlás"
+
+
+def test_send_followup_email_passes_null_synthesis_when_not_provided(monkeypatch) -> None:
+    """When synthesis fields are omitted, all pass as None to render API."""
+    captured_props: dict[str, Any] = {}
+
+    def _mock_render(*, day: str, props: dict[str, Any], frontend_origin: str) -> str:
+        captured_props.update(props)
+        return "<html>ok</html>"
+
+    monkeypatch.setattr(email_service, "_render_followup_email_via_frontend_api", _mock_render)
+
+    import resend as _resend
+    monkeypatch.setattr(_resend.Emails, "send", lambda params: None)
+    monkeypatch.setattr(email_service, "get_settings", lambda: _FakeSettings())
+
+    email_service.send_followup_email(
+        recipient_email="user@example.com",
+        day="day1",
+        user_id="user-123",
+    )
+
+    assert captured_props["topic"] is None
+    assert captured_props["synthesis_summary"] is None
+    assert captured_props["synthesis_main_barriers"] is None

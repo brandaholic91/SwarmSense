@@ -296,7 +296,22 @@ def _resolve_unsubscribe_url(*, backend_origin: str, user_id: str, secret: str) 
     return f"{base}/api/v1/unsubscribe?user_id={quote(user_id)}&token={quote(token)}"
 
 
-def send_followup_email(*, recipient_email: str, day: str, user_id: str) -> None:
+def send_followup_email(
+    *,
+    recipient_email: str,
+    day: str,
+    user_id: str,
+    topic: str | None = None,
+    audience: str | None = None,
+    support_count: int | None = None,
+    reject_count: int | None = None,
+    conditional_count: int | None = None,
+    synthesis_summary: str | None = None,
+    synthesis_main_barriers: list[str] | None = None,
+    synthesis_winning_conditions: str | None = None,
+    synthesis_best_target_segment: str | None = None,
+    synthesis_strategic_recommendation: str | None = None,
+) -> None:
     if day not in _VALID_DAYS:
         raise ValueError(f"Invalid follow-up day: {day!r}")
     settings = get_settings()
@@ -313,7 +328,19 @@ def send_followup_email(*, recipient_email: str, day: str, user_id: str) -> None
     )
     rendered_html = _render_followup_email_via_frontend_api(
         day=day,
-        props={"unsubscribe_url": unsubscribe_url},
+        props={
+            "unsubscribe_url": unsubscribe_url,
+            "topic": topic,
+            "audience": audience,
+            "support_count": support_count,
+            "reject_count": reject_count,
+            "conditional_count": conditional_count,
+            "synthesis_summary": synthesis_summary,
+            "synthesis_main_barriers": synthesis_main_barriers,
+            "synthesis_winning_conditions": synthesis_winning_conditions,
+            "synthesis_best_target_segment": synthesis_best_target_segment,
+            "synthesis_strategic_recommendation": synthesis_strategic_recommendation,
+        },
         frontend_origin=str(settings.frontend_origin),
     )
 
@@ -339,7 +366,12 @@ def _fetch_followup_candidates(
     cutoff = datetime.now(UTC) - timedelta(days=threshold_days)
     result = (
         supabase.table("runs")
-        .select("id,user_id,completed_at,day1_sent,day3_sent,day7_sent,status")
+        .select(
+            "id,user_id,completed_at,day1_sent,day3_sent,day7_sent,status,"
+            "topic,audience,support_count,reject_count,conditional_count,"
+            "synthesis_summary,synthesis_main_barriers,synthesis_winning_conditions,"
+            "synthesis_best_target_segment,synthesis_strategic_recommendation"
+        )
         .lt("completed_at", cutoff.isoformat())
         .eq(day_field, False)
         .in_("status", ["completed", "partial"])
@@ -448,6 +480,16 @@ def dispatch_followup_sequence() -> int:
                     recipient_email=recipient_email,
                     day=day,
                     user_id=user_id,
+                    topic=candidate.get("topic"),
+                    audience=candidate.get("audience"),
+                    support_count=candidate.get("support_count"),
+                    reject_count=candidate.get("reject_count"),
+                    conditional_count=candidate.get("conditional_count"),
+                    synthesis_summary=candidate.get("synthesis_summary"),
+                    synthesis_main_barriers=candidate.get("synthesis_main_barriers"),
+                    synthesis_winning_conditions=candidate.get("synthesis_winning_conditions"),
+                    synthesis_best_target_segment=candidate.get("synthesis_best_target_segment"),
+                    synthesis_strategic_recommendation=candidate.get("synthesis_strategic_recommendation"),
                 )
                 sent += 1
                 logger.info(

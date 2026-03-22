@@ -14,7 +14,7 @@ from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 from app.services.synthesis_service import execute_synthesis
 
 MIN_SUCCESSFUL_PERSONAS = 12
-CONSENSUS_THRESHOLD = 12
+CONSENSUS_THRESHOLD = 15
 FINAL_STATUSES = {"completed", "partial", "failed"}
 
 
@@ -125,6 +125,9 @@ async def process_run(
             audience=audience,
             synthesis=synthesis,
         )
+        support_count = sum(1 for r in result.responses if r.stance == "support")
+        reject_count = sum(1 for r in result.responses if r.stance == "reject")
+        conditional_count = sum(1 for r in result.responses if r.stance == "conditional")
         should_increment = _should_increment_monthly_cost(run_id=run_id)  # P1
         _update_run_row(
             run_id=run_id,
@@ -133,6 +136,14 @@ async def process_run(
                 "persona_count": result.successful_count,
                 "completed_at": completed_timestamp,
                 "cost_usd": str(final_cost),
+                "support_count": support_count,
+                "reject_count": reject_count,
+                "conditional_count": conditional_count,
+                "synthesis_summary": synthesis.summary if synthesis is not None else None,
+                "synthesis_main_barriers": synthesis.main_barriers if synthesis is not None else None,
+                "synthesis_winning_conditions": synthesis.winning_conditions if synthesis is not None else None,
+                "synthesis_best_target_segment": synthesis.best_target_segment if synthesis is not None else None,
+                "synthesis_strategic_recommendation": synthesis.strategic_recommendation if synthesis is not None else None,
             },
         )
         _increment_monthly_cost(

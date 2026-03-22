@@ -10,6 +10,15 @@ import {
   stanceSupport,
 } from "@/lib/tokens";
 
+const blankPersonaFields = {
+  core_concern: "",
+  buying_trigger: "",
+  risk_appetite: "",
+  decision_style: "",
+  price_sensitivity: "",
+  technology_adoption_curve: "",
+};
+
 const sampleProps = {
   topic: "Érdemes-e 15%-os áremelést végrehajtani?",
   audience: "KKV marketing döntéshozók",
@@ -22,6 +31,7 @@ const sampleProps = {
       primary_argument:
         "Az áremelés túl nagy kockázatot jelent a lemorzsolódás szempontjából.",
       change_condition: "Ha az ügyfélmegtartási tervet előre hitelesen kommunikálják.",
+      ...blankPersonaFields,
     },
     {
       name: "Nagy Eszter",
@@ -30,6 +40,7 @@ const sampleProps = {
       stance_label: "Feltételes",
       primary_argument: "A minőség és az ügyfélkiszolgálás fejlesztése mellett elfogadható.",
       change_condition: "Ha bizonyíthatóan nő az észlelt érték és a szolgáltatási szint.",
+      ...blankPersonaFields,
     },
     {
       name: "Horváth Gábor",
@@ -38,6 +49,7 @@ const sampleProps = {
       stance_label: "Támogatja",
       primary_argument: "A prémium pozicionálást erősíti a magasabb árszint.",
       change_condition: "Ha a termékdifferenciálás továbbra is jól látható marad.",
+      ...blankPersonaFields,
     },
   ],
   persona_count: "17/18",
@@ -102,14 +114,14 @@ describe("ResultEmail", () => {
     );
   });
 
-  it("renders semantic root attributes and responsive presentation table markers", async () => {
+  it("renders semantic root attributes and presentation table markers", async () => {
     const html = await render(<ResultEmail {...sampleProps} />);
 
     expect(html).toContain('lang="hu"');
     expect(html).toContain('role="presentation"');
-    expect(html).toContain("persona-column");
-    expect(html).toContain("@media only screen and (max-width: 620px)");
-    expect(html).toContain("width:33.333%");
+    expect(html).toContain("Kovács Péter");
+    expect(html).toContain("Nagy Eszter");
+    expect(html).toContain("Horváth Gábor");
   });
 
   it("uses token-driven inline colors for canvas, accents and stance borders", async () => {

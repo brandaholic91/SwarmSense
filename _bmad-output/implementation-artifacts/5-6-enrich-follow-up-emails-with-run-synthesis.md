@@ -1,6 +1,6 @@
 # Story 5-6: Enrich Follow-up Emails with Run Synthesis and Research Results
 
-## Status: review
+## Status: done
 
 ---
 
@@ -320,7 +320,7 @@ Labels to use inline in template (not in messages.ts):
 - [x] Follow-up emails render correctly (no broken layout) when synthesis is NULL
 - [x] All existing backend follow-up tests pass (6/6)
 - [x] No TypeScript errors in frontend email templates
-- [ ] Manual test: trigger a test follow-up render via `/api/emails/render-followup` with and without synthesis data
+- [x] Manual test: trigger a test follow-up render via `/api/emails/render-followup` with and without synthesis data
 
 ---
 

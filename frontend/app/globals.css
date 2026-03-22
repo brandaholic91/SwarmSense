@@ -124,6 +124,65 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ===== Landing page animations ===== */
+
+@keyframes swarm-fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes swarm-blob-fadein {
+  from { opacity: 0;    }
+  to   { opacity: 0.12; }
+}
+
+@keyframes swarm-float {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%       { transform: scale(1.08) translateY(-2%); }
+}
+
+@keyframes swarm-hero-pulse {
+  0%, 100% { opacity: 0.10; }
+  50%       { opacity: 0.22; }
+}
+
+@keyframes swarm-glow-pulse {
+  0%, 100% { opacity: 0.10; transform: translate(-50%, 0)    scale(1); }
+  50%       { opacity: 0.22; transform: translate(-50%, -4%) scale(1.06); }
+}
+
+/* Hero staggered entrance — time-based, plays immediately on load */
+.hero-h1  { animation: swarm-fade-up 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s  both; }
+.hero-sub { animation: swarm-fade-up 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s  both; }
+.hero-cta { animation: swarm-fade-up 2.2s cubic-bezier(0.16, 1, 0.3, 1) 1.2s  both; }
+
+/* Section immediately after hero — appears after CTA is visible */
+.after-hero { animation: swarm-fade-up 1.8s cubic-bezier(0.16, 1, 0.3, 1) 1.9s both; }
+
+/* Ambient blobs */
+.hero-blob {
+  animation:
+    swarm-blob-fadein  2s  cubic-bezier(0.16, 1, 0.3, 1) 0.2s both,
+    swarm-float       12s  ease-in-out                   2.2s infinite,
+    swarm-hero-pulse   5s  ease-in-out                   2.2s infinite;
+}
+.cta-blob  { animation: swarm-glow-pulse   5s ease-in-out infinite; }
+
+/* Scroll reveal — IntersectionObserver adds .sr-visible */
+.sr, .sr-d1, .sr-d2, .sr-d3 {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sr-d1 { transition-delay: 80ms; }
+.sr-d2 { transition-delay: 160ms; }
+.sr-d3 { transition-delay: 240ms; }
+.sr.sr-visible, .sr-d1.sr-visible, .sr-d2.sr-visible, .sr-d3.sr-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

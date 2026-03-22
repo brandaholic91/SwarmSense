@@ -57,7 +57,7 @@ export const messages = {
           stance: "conditional",
           stanceLabel: "Feltételes",
           summary:
-            "Csak akkor hiteles, ha van mögötte valódi referencia-adat. Így üres claim.",
+            "Csak akkor hiteles, ha van mögötte valódi referencia-adat. Így üres állítás.",
         },
         {
           name: "Varga Katalin",
@@ -65,7 +65,7 @@ export const messages = {
           stance: "reject",
           stanceLabel: "Elutasítja",
           summary:
-            "Túl generikus — minden automatizáló eszköz ugyanezt mondja. Nem differenciál.",
+            "Túl általános. Minden automatizáló eszköz ugyanezt mondja. Nem differenciál.",
         },
       ] satisfies PreviewCard[]),
     },

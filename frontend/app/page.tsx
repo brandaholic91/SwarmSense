@@ -55,7 +55,7 @@ export default function Home() {
       </nav>
 
       <main className="flex w-full flex-col">
-        <header className="relative flex min-h-[60vh] flex-col items-center justify-center overflow-hidden px-6 pb-14 pt-20">
+        <header className="relative flex min-h-[92vh] flex-col items-center justify-center overflow-hidden px-6 pb-8 pt-24">
           <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
             <h1
               className="hero-h1 text-4xl font-bold leading-[1.1] md:text-6xl"

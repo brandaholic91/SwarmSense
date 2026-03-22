@@ -260,7 +260,7 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
                     style={headlineFont}
                     aria-live="polite"
                   >
-                    {uiState.status === "running" ? uiState.current : uiState.total}
+                    {uiState.current}
                   </p>
                   <p className="text-sm tabular-nums" style={{ color: textSecondary }}>
                     / {uiState.total}

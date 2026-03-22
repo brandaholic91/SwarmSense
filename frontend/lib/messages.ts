@@ -194,10 +194,11 @@ export const messages = {
         heading: "Hova küldjük az eredményt?",
         subheadline: "Az eredményed erre az emailre érkezik",
         successHeading: "Link elküldve",
+        successEyebrow: "Következő lépés",
         successBodyPrefix:
           "Elküldtük a kutatás indításához szükséges linket erre az email-címre:",
         successHint:
-          "Nyisd meg az emailed, kattints a linkre — és a kutatás elindul.",
+          "Nyisd meg az emailed, kattints a linkre, és a kutatás elindul.",
         label: "Email cím",
         placeholder: "pelda@email.hu",
         cta: "Küldés",

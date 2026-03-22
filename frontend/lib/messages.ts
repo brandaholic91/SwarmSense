@@ -394,39 +394,161 @@ export const messages = {
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",
     termsTitle: "Felhasználási feltételek",
-    privacyIntro:
-      "A SwarmSense szolgáltatás használata során a személyes adatokat az érvényes adatvédelmi jogszabályoknak megfelelően kezeljük.",
-    controllerTitle: "1. Adatkezelő",
-    controllerBody:
-      "Adatkezelő: SwarmSense üzemeltetője. Kapcsolat: support@swarmsense.ai",
-    processedDataTitle: "2. Kezelt adatok köre",
-    processedDataItems: [
-      "e-mail cím",
-      "kutatási téma és célközönség leírás",
-      "qualifier válaszok",
-      "futási metaadatok (státusz, időpontok)",
+    termsEffectiveDate: "Hatálybalépés: 2026. március 23. · Verzió: 1.0",
+    termsIntroParagraphs: [
+      "A jelen Felhasználási feltételek (a továbbiakban: Feltételek) szabályozzák a SwarmSense elérhető online szolgáltatás igénybevételét.",
+      "A szolgáltatás használatával — különösen a kutatási folyamat megkezdésével, az e-mail cím megadásával és az adatkezeléshez szükséges jelölőnégyzet elfogadásával — a Feltételeket elfogadod, és tudomásul veszed az Adatkezelési tájékoztató tartalmát.",
     ],
-    legalBasisTitle: "3. Jogalap és adatkezelés célja",
+    termsSections: [
+      {
+        title: "1. Hatály és szerződő felek",
+        paragraphs: [
+          "A Feltételek vonatkoznak minden olyan természetes személyre (a továbbiakban: felhasználó), aki a SwarmSense webes felületét vagy kapcsolódó szolgáltatásait igénybe veszi.",
+          "Szolgáltató: a SwarmSense szolgáltatást üzemeltető. A kapcsolattartási elérhetőségeket — amint azok közzétételre kerülnek — az Adatkezelési tájékoztató és ezen az oldalon tesszük közzé.",
+        ],
+      },
+      {
+        title: "2. A szolgáltatás jellege",
+        paragraphs: [
+          "A SwarmSense szintetikus piackutatást nyújt: a megadott kutatási kérdés és célközönség-leírás alapján a rendszer AI által generált, fiktív personák (szintetikus döntéshozói profilok) reakcióit és összefoglaló elemzését állítja elő, és az eredményt e-mailben kézbesíti.",
+          "A szolgáltatás tartalma, elérhetősége és funkciói változhatnak (beleértve a próba- vagy ingyenes futtatások korlátait); a lényeges változásokról ésszerűen tájékoztatunk (például ezen az oldalon vagy a szolgáltatás felületén).",
+        ],
+      },
+      {
+        title: "3. Regisztráció, e-mail, hitelesítés",
+        paragraphs: [
+          "A szolgáltatás egyes lépéseihez érvényes e-mail cím megadása és — ahol kérjük — a Felhasználási feltételek és az Adatkezelési tájékoztató elfogadása szükséges. A megadott e-mail címért felelsz: azt csak jogosultságodban álló címre add meg.",
+          "Ahol a folyamat mágikus linkes vagy hasonló hitelesítést használ, a linket tartsd bizalmasan; a linken keresztül történő hozzáférésért te felelsz.",
+        ],
+      },
+      {
+        title: "4. Felhasználói magatartás és tiltott tartalom",
+        paragraphs: [
+          "Kötelezed magad, hogy a szolgáltatást jogszerűen, mások jogait és a vonatkozó szabályokat nem sértve veszed igénybe. Különösen tilos:",
+        ],
+        list: [
+          "a kutatási témába vagy bármely mezőbe valós személyek azonosítására alkalmas adat, különleges kategóriájú személyes adat, illetve jogellenes vagy mások jogát sértő tartalom megadása;",
+          "a szolgáltatás visszaélésszerű használata (pl. automatizált visszaélésszerű terhelés, mások zaklatása, rosszindulatú tartalom terjesztése);",
+          "megkísérelni a szolgáltatás, más felhasználók adatainak vagy háttérrendszerek jogosulatlan elérését.",
+        ],
+      },
+      {
+        title: "5. Szellemi alkotások és licence a bemenetekre",
+        paragraphs: [
+          "A SwarmSense megjelenése, logói, szövegei és szoftverkomponensei a szolgáltató vagy partnerei jogosultságát képezik; ezeket a felhasználó nem másolhatja, nem terjesztheti és nem módosíthatja a jogszabály által megengedett szűk kör kivételével.",
+          "A kutatási témaként, célközönség-leírásként és egyéb mezőkben általad megadott tartalomért te felelsz; a szolgáltató részére nem kizárólagos, a szolgáltatás nyújtásához szükséges felhasználási jogot adsz (feldolgozás, tárolás, elemzés előállítása és kézbesítés).",
+        ],
+      },
+      {
+        title: "6. Szintetikus eredmény — nem tanácsadás, nem reprezentatív felmérés",
+        paragraphs: [
+          "Az előállított elemzés, personák és összefoglalók tájékoztató jellegűek, piaci vagy termékhipotézisek gyors előtesztelésére; nem minősülnek szakmai, pénzügyi, jogi vagy egyéb szakértői tanácsadásnak, és nem helyettesítik a valós piaci vagy fogyasztói kutatást.",
+          "A szolgáltató nem vállal felelősséget azért, hogy az eredmény bármely üzleti vagy jogi döntéshez megfelelő vagy teljes lenne; a döntéseket saját felelősségre hozod.",
+        ],
+      },
+      {
+        title: "7. Elérhetőség, változtatás, szünet",
+        paragraphs: [
+          "A szolgáltatást igyekszünk folyamatosan rendelkezésre bocsátani, de nem garantáljuk a megszakításmentes működést. Karbantartás, frissítés, harmadik felek hibái vagy vis maior esetén szünet előfordulhat; erről ésszerűen törekszünk tájékoztatni, ha az indokolt.",
+        ],
+      },
+      {
+        title: "8. Díjazás",
+        paragraphs: [
+          "A szolgáltatás egyes funkciói — a felületen feltüntetett módon — ingyenes próba vagy korlátozott futtatás keretében érhetők el. Későbbi fizetős csomagok vagy előfizetés bevezetése esetén a díjakat és feltételeket külön, előzetesen közöljük.",
+        ],
+      },
+      {
+        title: "9. Felelősség korlátozása",
+        paragraphs: [
+          "A szolgáltatást „ahogy van” (as-is) biztosítjuk, a jogszabályok által megkövetelt kötelező szavatossági és kellékszavatossági szabályok alkalmazásával. A szolgáltató — a jogszabály által kizárni nem engedett mértékig — nem felel a közvetett kárért, elmaradt haszonért vagy olyan kárért, amely a szolgáltatáson kívüli körülményből fakad.",
+          "Ha a felelősség valamilyen formában fennáll, a szolgáltató díjazás esetén — a jogszabály által megengedett keretek között — általában a vonatkozó szolgáltatásért az adott ügyben ténylegesen megfizetett összeggel arányosított mértékben felel.",
+        ],
+      },
+      {
+        title: "10. Adatvédelem",
+        paragraphs: [
+          "A személyes adatok kezelését az Adatkezelési tájékoztató részletezi; kérjük, azt külön olvasd el.",
+        ],
+        linkPrivacy: true,
+      },
+      {
+        title: "11. Panasz, vitarendezés",
+        paragraphs: [
+          "Panaszodat először a szolgáltató felé — a közzétett kapcsolattartási csatornán — jelezheted, amint az elérhető. Fogyasztói jogvita esetén élni lehet a lakóhely szerinti békéltető testület vagy a szolgáltató székhelye szerinti testület eljárása iránti igénnyel, valamint az online vitarendezési platform (ODR) lehetőségével, ha alkalmazható.",
+        ],
+      },
+      {
+        title: "12. Alkalmazandó jog",
+        paragraphs: [
+          "A Feltételekre a magyar jog irányadó; az Európai Unió fogyasztóvédelmi előírásai a fogyasztóval szemben alkalmazandó szabályok szerint érvényesülhetnek.",
+        ],
+      },
+      {
+        title: "13. A Feltételek módosítása",
+        paragraphs: [
+          "A Feltételeket időről időre módosíthatjuk. A hatályos szöveg mindig ezen az oldalon érhető el; lényeges változásnál — ha indokolt — külön is felhívjuk a figyelmet (például a szolgáltatás felületén vagy e-mailben). A módosítás közzététele után a szolgáltatás további használata a módosítás elfogadásának minősül, kivéve, ha a jogszabály másként rendelkezik.",
+        ],
+      },
+    ],
+    privacyEffectiveDate: "Hatálybalépés: 2026. március 23. · Verzió: 1.0",
+    privacyIntroParagraphs: [
+      "A SwarmSense egy szintetikus piackutatási szolgáltatás: a feltöltött kutatási kérdésre és célközönség-leírásra a rendszer szintetikus personák (AI által generált, fiktív döntéshozói profilok) reakcióit és összefoglaló elemzését állítja elő, majd az eredményt e-mailben eljuttatja a megadott címre.",
+      "Személyes adataidat az Európai Parlament és a Tanács (EU) 2016/679 rendelete (GDPR) szerint, valamint az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvény (Infotv.) előírásai szerint kezeljük.",
+    ],
+    controllerTitle: "1. Adatkezelő és elérhetőség",
+    controllerBody:
+      "Adatkezelő: a SwarmSense szolgáltatást üzemeltető. Dedikált általános és adatvédelmi e-mail címek egyelőre nem állnak rendelkezésre; a pontos elérhetőséget ezen a tájékoztató oldalon tesszük közzé, amint elérhetővé válik.",
+    processedDataTitle: "2. Kezelt személyes adatok köre",
+    processedDataItems: [
+      "e-mail cím (azonosítás, eredmény és értesítések kézbesítése)",
+      "a GDPR-hozzájárulás ténye és időbélyege (consent_timestamp)",
+      "kutatási téma és célközönség szöveges leírása (futáshoz kötve)",
+      "qualifier kérdőív válaszok: szerepkör, use case, valamint — ha megadod — cégméret és marketing probléma",
+      "futáshoz kapcsolódó elemzési eredmények és szintézis mezők (összefoglalók, támogató / elutasító / feltételes arányok, stratégiai javaslat szövegek)",
+      "futás státusza, technikai és költség jellegű metaadatok, időbélyegek",
+      "marketing / follow-up e-mailek küldésének státusza (pl. nap 1 / 3 / 7 jelölések), valamint leiratkozás időpontja (unsubscribed_at), ha leiratkoztál",
+      "Pro várólistára felvett e-mail cím, ha a szolgáltatás ezt igénybe veszed",
+      "mágikus linkes hitelesítéshez kapcsolódó technikai token metaadatok (érvényesség szerint kezelve)",
+    ],
+    legalBasisTitle: "3. Az adatkezelés jogalapja és célja",
     legalBasisBody:
-      "Az adatkezelés jogalapja a felhasználó hozzájárulása és a szolgáltatás nyújtásához fűződő jogos érdek. A cél az eredmény küldése, a szolgáltatás minőségének fenntartása és a biztonságos üzemeltetés.",
-    retentionTitle: "4. Megőrzési időtartamok",
+      "Az e-mail cím és a szolgáltatás nyújtásához szükséges tartalom kezelésének jogalapja a GDPR 6. cikk (1) bekezdés b) pontja (szerződés vagy az arra való előkészület — szolgáltatás nyújtása). A külön megadott, egyértelmű hozzájárulás (a tájékoztató és a felhasználási feltételek elfogadása az e-mail beküldésekor) a GDPR 6. cikk (1) bekezdés a) pontja szerinti jogalapot teremti a hozzájáruláshoz kötött elemekre. A szolgáltatás biztonságos működtetése, visszaélések megelőzése és minőségbiztosítás céljából szükséges, mértékű adatkezelés jogalapja a GDPR 6. cikk (1) bekezdés f) pontja szerinti jogos érdek; ilyenkor figyelembe vesszük az érdekmérlegelést. Marketing jellegű (nem tranzakciós) e-mailek küldéséhez — ha alkalmazunk ilyet — a hozzájárulásod vagy jogos érdekünk és a leiratkozási jog biztosítása a mérvadó.",
+    aiProcessingTitle: "4. Szintetikus kutatás és automatizált feldolgozás",
+    aiProcessingBody:
+      "A SwarmSense nem valós személyeket kérdez meg; a válaszokat és összefoglalókat nagy nyelvi modellek és kapcsolódó automatizmusok állítják elő a megadott bemenetek alapján. Az eredmény tájékoztató jellegű, piaci hipotézisek gyors tesztelésére szolgál — nem minősül valós fogyasztói vagy iparági reprezentatív felmérésnek, és nem helyettesíti a szakmai vagy jogi tanácsadást. Kérjük, a kutatási témában ne adj meg különleges kategóriájú személyes adatot vagy bizalmas vállalati titkot.",
+    cookiesTitle: "5. Cookie-k és látogatás-statisztika",
+    cookiesBody:
+      "A webes felületen elsősorban a működéshez szükséges (pl. munkamenet / bejelentkezéshez kötött) technikai jellegű tárolást használhatunk. Látogatás-statisztikára — ha beépítésre kerül — olyan megoldást részesítünk előnyben, amely személyazonosításra nem alkalmas, és lehetőség szerint nem igényel külön sütihozzájáruló bannert (pl. cookie-mentes, aggregált analitika). Konkrét eszközök listáját e tájékoztató frissítésekor tesszük közzé.",
+    processorsTitle: "6. Adatfeldolgozók, tárolás, harmadik felek",
+    processorsBody:
+      "Az adatokat elsősorban az Európai Gazdasági Térségben (EGT) elhelyezett vagy ahhoz megfelelőségi döntés / megfelelő garanciák (pl. szerződéses záradékok) mellett kezelt felhőszolgáltatásokban tároljuk (adatbázis, alkalmazás-hosztolás). E-mail kézbesítéshez megbízott levelezési szolgáltatót veszünk igénybe. A pontos alvállalkozók és szolgáltatók neve, valamint az adattovábbítás részletei változáskor ezen az oldalon frissülnek. Harmadik országba csak megfelelő garanciák mellett továbbítunk adatot.",
+    retentionTitle: "7. Megőrzési időtartamok",
     retentionBody:
-      "Az adatokat addig kezeljük, amíg az a szolgáltatás teljesítéséhez, jogi kötelezettség teljesítéséhez vagy jogos igények érvényesítéséhez szükséges.",
-    deletionTitle: "5. Törlési kérelem (GDPR 17. cikk)",
-    deletionContactLabel: "Törlési kapcsolattartó e-mail",
-    deletionContactEmail: "privacy@swarmsense.ai",
-    deletionAckSlaLabel: "Automatikus visszaigazolás",
+      "A személyes adatokat csak addig őrizzük meg, ameddig a szolgáltatás nyújtásához, jogi kötelezettség teljesítéséhez (pl. számviteli, vitarendezési igény) vagy jogos érdek érvényesítéséhez szükséges — ezután töröljük vagy anonimizáljuk. Technikai naplók és biztonsági másolatok megőrzése rövidebb, szigorúan szükséges ideig történhet.",
+    marketingCommsTitle: "8. Tájékoztató és marketing jellegű e-mailek, leiratkozás",
+    marketingCommsBody:
+      "A szolgáltatáshoz kapcsolódó tranzakciós üzenetek (pl. eredmény, hitelesítő link) a szolgáltatás részeként kerülnek kiküldésre. Ettől elkülönülő, tájékoztató vagy promóciós jellegű e-maileket csak akkor küldünk, ha azt a jogszabályoknak megfelelően megtehetjük; ilyenkor minden levélben biztosítjuk a leiratkozás lehetőségét (pl. link). A leiratkozás után marketing célú üzenetet nem küldünk a megadott címre.",
+    userRightsTitle: "9. Érintetti jogok és felügyeleti hatóság",
+    userRightsBody:
+      "Jogosult vagy tájékoztatást kérni az általunk kezelt adataidról, kérheted azok helyesbítését, törlését, az adatkezelés korlátozását, valamint — a jogalaptól függően — tiltakozhatsz az adatkezelés ellen, és kérheted az adathordozhatóságot, ha az alkalmazható. Az érintetti kérelmek benyújtására szolgáló dedikált kapcsolattartási cím bevezetés alatt áll; a pontos elérhetőséget ezen a tájékoztató oldalon frissítjük.",
+    userRightsSupervisoryBody:
+      "Panaszoddal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH) fordulhatsz:",
+    userRightsSupervisoryLinkLabel: "www.naih.hu",
+    userRightsSupervisoryHref: "https://www.naih.hu/",
+    deletionTitle: "10. Törlési kérelem (GDPR 17. cikk)",
+    deletionContactLabel: "Kérelem benyújtása",
+    deletionContactEmail:
+      "Dedikált e-mail cím a törlési kérelmekhez: bevezetés alatt — a pontos címet ezen a tájékoztató oldalon tesszük közzé.",
+    deletionAckSlaLabel: "Tervezett visszaigazolás (a kérelemfogadó csatorna elindításától)",
     deletionAckSlaValue: "15 percen belül",
-    deletionCompletionSlaLabel: "Törlés teljesítése",
+    deletionCompletionSlaLabel: "Tervezett törlés teljesítése (a kérelemfogadó csatorna elindításától)",
     deletionCompletionSlaValue: "7 naptári napon belül",
     deletionMvpScope:
-      "MVP-ben a törlési kérelem kizárólag e-mailben nyújtható be, önkiszolgáló portál nem áll rendelkezésre.",
-    userRightsTitle: "6. Érintetti jogok",
-    userRightsBody:
-      "Jogod van tájékoztatást kérni, helyesbítést kérni, törlést kérni, az adatkezelés korlátozását kérni, valamint panaszt tenni a felügyeleti hatóságnál.",
-    updatesTitle: "7. Tájékoztató módosítása",
+      "Önkiszolgáló törlőportál nem áll rendelkezésre. Amint a törlési és adatvédelmi kérelmek fogadására dedikált e-mail elérhető, a kérelmet onnan lehet benyújtani; a kérelemben egyértelműen jelöld meg az érintett e-mail címet. A törlés a vonatkozó adatbázis-rekordokra és a szolgáltatás keretében tárolt tartalmakra terjed ki, a jogszabály által megengedett kivételekkel (pl. számviteli bizonylat).",
+    updatesTitle: "11. A tájékoztató módosítása",
     updatesBody:
-      "A tájékoztatót időről időre frissíthetjük. A változásokat ezen az oldalon tesszük közzé.",
+      "A tájékoztatót a szolgáltatás vagy a jogszabályi környezet változásakor frissíthetjük. A hatályos verzió mindig ezen az oldalon érhető el; jelentős változásnál — ha szükséges — külön is felhívjuk a figyelmet (pl. e-mailben vagy a szolgáltatás felületén).",
     deletionEmailTemplates: {
       acknowledgementSubject: "SwarmSense adattörlési kérelem – visszaigazolás",
       acknowledgementBody:

@@ -80,6 +80,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
+
           <div
             aria-hidden="true"
             className="absolute left-1/2 top-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]"
@@ -106,8 +107,8 @@ export default function Home() {
                   }}
                 >
                   <span
-                    className="text-sm line-through"
-                    style={{ color: textSecondary }}
+                    className="text-sm line-through opacity-50"
+                    style={{ color: onSurface }}
                   >
                     {item.before}
                   </span>

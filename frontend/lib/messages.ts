@@ -116,14 +116,14 @@ export const messages = {
       researchLabel: "Mit vizsgálsz?",
       audienceLabel: "Kinek szól?",
       researchExamples: [
-        "Érdemes-e 15%-os áremelést végrehajtani a prémium szegmensben?",
-        "Milyen érvek győzik meg a középvállalati IT vezetőt egy új eszközről?",
-        "Hogyan dönt egy marketing vezető egy új automatizációs platformról?",
+        "Meggyőző-e ez az árazás: 19 900 Ft/hó az alap, 49 900 Ft/hó a pro — vagy túl közel van egymáshoz a két tier?",
+        "Melyik launch üzenet rezonál jobban: 'Spórolj 10 órát hetente' vagy 'Soha többé manuális riportolás'?",
+        "Komoly akadályt jelent-e a 3 hónapos szerződéskötési kötelezettség egy új SaaS eszköznél?",
       ],
       audienceExamples: [
-        "KKV marketing döntéshozók, 30–50 év, növekedési fókuszban",
-        "B2B szolgáltató cégek marketing vezetői 100-300 fős szervezetből",
-        "SaaS CFO-k, akik költségcsökkentési célokat kaptak 2026-ra",
+        "Alapítók és growth leadek 10-50 fős B2B SaaS startupokban, akik első fizetős ügyfeleiket szerzik",
+        "E-commerce marketing vezetők, akik szezonális kampányokat terveznek kisebb büdzsével",
+        "HR vezetők 100-500 fős cégeknél, akik új onboarding eszközt keresnek",
       ],
       piiWarning:
         "Ne adj meg személyes adatokat a kutatási témában",
@@ -137,11 +137,11 @@ export const messages = {
       email: {
         heading: "Hova küldjük az eredményt?",
         subheadline: "Az eredményed erre az emailre érkezik",
-        successHeading: "Kiküldtük a kutatásindító linket",
+        successHeading: "Link elküldve",
         successBodyPrefix:
-          "A kutatás indításához szükséges linket elküldtük erre az email-címre:",
+          "Elküldtük a kutatás indításához szükséges linket erre az email-címre:",
         successHint:
-          "Nyisd meg az emailed, kattints a linkre, és indulhat az elemzés.",
+          "Nyisd meg az emailed, kattints a linkre — és a kutatás elindul.",
         label: "Email cím",
         placeholder: "pelda@email.hu",
         cta: "Küldés",
@@ -154,12 +154,12 @@ export const messages = {
     },
   },
   qualifier: {
-    intro: "Segíts kalibrálni a personákat",
+    intro: "Mesélj egy kicsit magadról",
     form: {
-      roleLabel: "Mi jellemzi legjobban a szerepkörét?",
+      roleLabel: "Mi jellemzi legjobban a szerepkörödet?",
       rolePlaceholder: "Válassz szerepkört",
-      companySizeLabel: "Hány főt foglalkoztat a céged?",
-      companySizePlaceholder: "Válassz cégeméretet",
+      companySizeLabel: "Hány fős cégnél dolgozol?",
+      companySizePlaceholder: "Válassz cégméretet",
       companySizeOptions: [
         { value: "1_10", label: "1–10 fő" },
         { value: "11_50", label: "11–50 fő" },
@@ -167,10 +167,9 @@ export const messages = {
         { value: "200_plus", label: "200+ fő" },
       ],
       marketingProblemLabel: "Mi jelenleg a legnagyobb marketing problémád?",
-      marketingProblemPlaceholder: "Pl. nem tudjuk elérni a döntéshozókat, drága az ügyfélszerzés...",
+      marketingProblemPlaceholder: "Pl. nem konvertálnak a landing page-eim, drága az ügyfélszerzés, nem érem el a döntéshozókat, nem tudom, mi tartja vissza az érdeklődőket a vásárlástól...",
       roleOptions: [
-        { value: "founder_ceo", label: "Alapító / CEO" },
-        { value: "owner_md", label: "Tulajdonos / Ügyvezető" },
+        { value: "founder_ceo", label: "Alapító / Ügyvezető" },
         { value: "marketing_lead", label: "Marketing vezető" },
         { value: "product_manager", label: "Termékmenedzser" },
         { value: "sales_lead", label: "Sales vezető" },
@@ -179,7 +178,7 @@ export const messages = {
         { value: "other", label: "Egyéb" },
       ],
       useCaseLabel:
-        "Milyen célra szeretné leginkább használni a szintetikus kutatást?",
+        "Milyen célra szeretnéd leginkább használni a szintetikus kutatást?",
       useCaseOptions: [
         {
           value: "message_validation",
@@ -218,7 +217,7 @@ export const messages = {
         },
         {
           value: "churn_retention",
-          label: "Churn okok és megtartás",
+          label: "Lemorzsolódás okok és megtartás",
           description: "Miért maradnak vagy miért mennek el az ügyfelek.",
         },
       ],
@@ -262,10 +261,10 @@ export const messages = {
   },
   email: {
     magicLink: {
-      subject: "SwarmSense – Bejelentkezési link",
-      heading: "Folytasd a SwarmSense elemzést",
-      intro: "Kattints a lenti gombra az azonosításhoz.",
-      buttonLabel: "Bejelentkezés magic linkkel",
+      subject: "SwarmSense – indítsd el a kutatást",
+      heading: "Egy kattintás, és indul a kutatás",
+      intro: "Kattints a gombra, és a kutatás azonnal elindul.",
+      buttonLabel: "Kutatás indítása",
       expiry: "Ez a link 24 órán belül lejár.",
     },
     result: {

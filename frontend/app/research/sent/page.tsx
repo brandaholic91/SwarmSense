@@ -1,10 +1,7 @@
 import type { CSSProperties } from "react";
-import Link from "next/link";
-
 import { messages } from "@/lib/messages";
 import {
   accent,
-  onPrimary,
   onSurface,
   outlineVariant,
   surfaceContainer,
@@ -71,13 +68,6 @@ export default async function ResearchSentPage({ searchParams }: ResearchSentPag
             <p className="text-sm" style={{ color: textSecondary }}>
               {copy.successHint}
             </p>
-            <Link
-              href="/research"
-              className="inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
-            >
-              Vissza a kutatáshoz
-            </Link>
           </section>
         </div>
       </main>

@@ -43,6 +43,13 @@ export function FollowUpDay1Email({ unsubscribe_url }: FollowUpEmailProps) {
                 >
                   <tbody>
                     <tr>
+                      <td style={{ padding: "24px 24px", borderBottom: `1px solid ${emailBorder}` }}>
+                        <span style={{ fontSize: "18px", fontWeight: 700, color: emailTextPrimary }}>
+                          Swarm<span style={{ color: accent }}>Sense</span>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
                       <td style={{ padding: "28px 24px 12px 24px" }}>
                         <h1 style={{ margin: 0, fontSize: "28px", lineHeight: "34px" }}>{copy.day1.title}</h1>
                         <p style={{ margin: "12px 0 0 0", color: emailTextSecondary }}>{copy.day1.body}</p>

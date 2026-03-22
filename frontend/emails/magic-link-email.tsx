@@ -48,7 +48,14 @@ export function MagicLinkEmail({ verifyUrl }: MagicLinkEmailProps) {
                 >
                   <tbody>
                     <tr>
-                      <td>
+                      <td style={{ paddingBottom: "24px", borderBottom: `1px solid ${border}` }}>
+                        <span style={{ fontSize: "18px", fontWeight: 700, color: textPrimary }}>
+                          Swarm<span style={{ color: accent }}>Sense</span>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ paddingTop: "24px" }}>
                         <h1 style={{ margin: 0, fontSize: "24px", lineHeight: "32px" }}>
                           {copy.heading}
                         </h1>

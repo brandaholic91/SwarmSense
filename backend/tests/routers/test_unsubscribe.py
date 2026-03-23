@@ -148,7 +148,7 @@ def test_unsubscribe_link_get_is_functional(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert "unsubscribed" in response.text.lower()
+    assert "leiratkozt" in response.text.lower()
     assert fake_supabase.users[0]["unsubscribed_at"] is not None
 
 

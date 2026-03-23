@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-03-19"
-last_updated: "2026-03-23" # story 6-1 context created, epic-6 started
+last_updated: "2026-03-23" # story 6-1 moved to review
 project: SwarmSense
 project_key: NOKEY
 tracking_system: file-system
@@ -87,7 +87,7 @@ development_status:
 
   # Epic 6: Operator Monitoring & Administration
   epic-6: in-progress
-  6-1-operator-run-log-endpoint: ready-for-dev
+  6-1-operator-run-log-endpoint: review
   6-2-qualifier-response-log-endpoint: backlog
   6-3-api-cost-tracking-80-percent-alert-and-hard-cap-enforcement: backlog
   6-4-email-delivery-and-open-rate-monitoring: backlog

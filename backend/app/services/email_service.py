@@ -72,7 +72,9 @@ def _build_result_email_props(
                     "risk_appetite": str(item.get("risk_appetite", "")),
                     "decision_style": str(item.get("decision_style", "")),
                     "price_sensitivity": str(item.get("price_sensitivity", "")),
-                    "technology_adoption_curve": str(item.get("technology_adoption_curve", "")),
+                    "technology_adoption_curve": str(
+                        item.get("technology_adoption_curve", "")
+                    ),
                 }
             )
 
@@ -250,6 +252,7 @@ def send_magic_link_email(recipient_email: str, verify_url: str) -> None:
             "reply_to": reply_to,
             "subject": "SwarmSense – Bejelentkezési link",
             "html": rendered_html,
+            "tags": [{"name": "email_type", "value": "magic_link"}],
         }
     )
 
@@ -290,6 +293,7 @@ def send_run_result_email(
             "reply_to": reply_to,
             "subject": RESULT_EMAIL_SUBJECT,
             "html": rendered_html,
+            "tags": [{"name": "email_type", "value": "result"}],
         }
     )
 
@@ -355,6 +359,7 @@ def send_followup_email(
             "reply_to": reply_to,
             "subject": FOLLOW_UP_SUBJECTS[day],
             "html": rendered_html,
+            "tags": [{"name": "email_type", "value": f"followup_{day}"}],
             "headers": {
                 "List-Unsubscribe": f"<{unsubscribe_url}>",
                 "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -491,9 +496,15 @@ def dispatch_followup_sequence() -> int:
                     conditional_count=candidate.get("conditional_count"),
                     synthesis_summary=candidate.get("synthesis_summary"),
                     synthesis_main_barriers=candidate.get("synthesis_main_barriers"),
-                    synthesis_winning_conditions=candidate.get("synthesis_winning_conditions"),
-                    synthesis_best_target_segment=candidate.get("synthesis_best_target_segment"),
-                    synthesis_strategic_recommendation=candidate.get("synthesis_strategic_recommendation"),
+                    synthesis_winning_conditions=candidate.get(
+                        "synthesis_winning_conditions"
+                    ),
+                    synthesis_best_target_segment=candidate.get(
+                        "synthesis_best_target_segment"
+                    ),
+                    synthesis_strategic_recommendation=candidate.get(
+                        "synthesis_strategic_recommendation"
+                    ),
                 )
                 sent += 1
                 logger.info(

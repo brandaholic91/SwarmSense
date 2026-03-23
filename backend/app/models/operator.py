@@ -66,3 +66,20 @@ class OperatorCostResponse(BaseModel):
     cap_usd: float = Field(..., ge=0)
     percentage: float = Field(..., ge=0)
     status: Literal["ok", "warning", "capped"]
+
+
+class OperatorEmailStatsResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    window_days: int = Field(..., ge=1)
+    result_emails_sent: int = Field(..., ge=0)
+    result_delivery_rate: float = Field(..., ge=0, le=1)
+    result_open_rate: float = Field(..., ge=0, le=1)
+    magic_link_sent: int = Field(..., ge=0)
+    magic_link_delivery_rate: float = Field(..., ge=0, le=1)
+    followup_day1_sent: int = Field(..., ge=0)
+    followup_day3_sent: int = Field(..., ge=0)
+    followup_day7_sent: int = Field(..., ge=0)
+    followup_delivery_rate: float = Field(..., ge=0, le=1)
+    followup_open_rate: float = Field(..., ge=0, le=1)
+    overall_delivery_rate: float = Field(..., ge=0, le=1)

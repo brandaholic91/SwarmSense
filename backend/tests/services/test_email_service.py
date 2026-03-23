@@ -98,6 +98,7 @@ def test_send_run_result_email_uses_required_subject_and_reply_to(
     assert len(sent) == 1
     assert sent[0]["subject"] == "A SwarmSense elemzésed elkészült"
     assert sent[0]["reply_to"] == "support@swarmsense.ai"
+    assert sent[0]["tags"] == [{"name": "email_type", "value": "result"}]
 
 
 def test_send_run_result_email_falls_back_reply_to_when_empty(
@@ -180,6 +181,7 @@ def test_send_magic_link_email_uses_frontend_rendered_template(monkeypatch) -> N
     assert len(sent) == 1
     assert sent[0]["subject"] == "SwarmSense – Bejelentkezési link"
     assert sent[0]["reply_to"] == "support@swarmsense.ai"
+    assert sent[0]["tags"] == [{"name": "email_type", "value": "magic_link"}]
     assert (
         "magic:https://swarmsense.vercel.app/verify?token=test-token" in sent[0]["html"]
     )
@@ -217,3 +219,4 @@ def test_send_followup_email_uses_day_template_and_unsubscribe_link(
     assert "List-Unsubscribe" in sent[0]["headers"]
     assert "List-Unsubscribe-Post" in sent[0]["headers"]
     assert sent[0]["headers"]["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+    assert sent[0]["tags"] == [{"name": "email_type", "value": "followup_day3"}]

@@ -550,3 +550,99 @@ def test_get_cost_returns_capped_payload_at_or_above_100_percent(monkeypatch):
     assert payload["cap_usd"] == 50.0
     assert payload["percentage"] == 100.0
     assert payload["status"] == "capped"
+
+
+def test_get_email_stats_requires_valid_bearer(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/v1/operator/email-stats")
+    assert response.status_code == 403
+
+    response = client.get(
+        "/api/v1/operator/email-stats",
+        headers={"Authorization": "Bearer wrong-key"},
+    )
+    assert response.status_code == 403
+
+
+def test_get_email_stats_returns_stable_contract(monkeypatch):
+    client = build_client(monkeypatch)
+    import app.routers.operator as operator_router
+
+    monkeypatch.setattr(
+        operator_router,
+        "get_email_stats_summary",
+        lambda *, window_days: {
+            "window_days": window_days,
+            "result_emails_sent": 14,
+            "result_delivery_rate": 0.97,
+            "result_open_rate": 0.61,
+            "magic_link_sent": 20,
+            "magic_link_delivery_rate": 0.99,
+            "followup_day1_sent": 10,
+            "followup_day3_sent": 8,
+            "followup_day7_sent": 7,
+            "followup_delivery_rate": 0.96,
+            "followup_open_rate": 0.49,
+            "overall_delivery_rate": 0.97,
+        },
+    )
+
+    response = client.get(
+        "/api/v1/operator/email-stats",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "window_days": 7,
+        "result_emails_sent": 14,
+        "result_delivery_rate": 0.97,
+        "result_open_rate": 0.61,
+        "magic_link_sent": 20,
+        "magic_link_delivery_rate": 0.99,
+        "followup_day1_sent": 10,
+        "followup_day3_sent": 8,
+        "followup_day7_sent": 7,
+        "followup_delivery_rate": 0.96,
+        "followup_open_rate": 0.49,
+        "overall_delivery_rate": 0.97,
+    }
+
+
+def test_get_email_stats_handles_empty_metrics(monkeypatch):
+    client = build_client(monkeypatch)
+    import app.routers.operator as operator_router
+
+    monkeypatch.setattr(
+        operator_router,
+        "get_email_stats_summary",
+        lambda *, window_days: {
+            "window_days": window_days,
+            "result_emails_sent": 0,
+            "result_delivery_rate": 0.0,
+            "result_open_rate": 0.0,
+            "magic_link_sent": 0,
+            "magic_link_delivery_rate": 0.0,
+            "followup_day1_sent": 0,
+            "followup_day3_sent": 0,
+            "followup_day7_sent": 0,
+            "followup_delivery_rate": 0.0,
+            "followup_open_rate": 0.0,
+            "overall_delivery_rate": 0.0,
+        },
+    )
+
+    response = client.get(
+        "/api/v1/operator/email-stats",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["window_days"] == 7
+    assert payload["result_emails_sent"] == 0
+    assert payload["followup_day1_sent"] == 0
+    assert payload["followup_day3_sent"] == 0
+    assert payload["followup_day7_sent"] == 0
+    assert payload["overall_delivery_rate"] == 0.0

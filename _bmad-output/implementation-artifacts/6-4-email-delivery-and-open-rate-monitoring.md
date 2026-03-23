@@ -1,6 +1,6 @@
 # Story 6.4: Email Delivery & Open Rate Monitoring
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,26 +17,26 @@ so that I can monitor whether users are actually receiving and engaging with the
 
 ## Tasks / Subtasks
 
-- [ ] Define monitoring data source strategy (AC: 1, 2, 3, 4)
-  - [ ] Decide source of truth per metric: direct Resend API fetch vs internal webhook-backed table
-  - [ ] Keep one canonical aggregation path to avoid conflicting metrics
-- [ ] Implement/extend email stats service layer (AC: 1, 2, 3)
-  - [ ] Add or extend a dedicated service module (e.g. `backend/app/services/email_metrics.py` or equivalent)
-  - [ ] Normalize per-email-type metrics: sent, delivered, opened, delivery_rate
-  - [ ] Apply robust defaults for missing data (return zeros, never crash endpoint)
-- [ ] Implement operator endpoint `GET /api/v1/operator/email-stats` (AC: 3)
-  - [ ] Add route in `backend/app/routers/operator.py`
-  - [ ] Reuse hardened operator auth pattern from stories `6.1–6.3`
-  - [ ] Return stable, documented JSON contract in snake_case
-- [ ] Implement 7-day delivery health check and alerting (AC: 4)
-  - [ ] Compute rolling 7-day delivery success rate from chosen data source
-  - [ ] Trigger Sentry alert when rate drops below `0.95`
-  - [ ] Add anti-spam guardrail (dedupe/throttle) to prevent repeated alerts for unchanged degraded state
-- [ ] Add backend tests for endpoint + alerting behavior (AC: 1, 2, 3, 4)
-  - [ ] Operator auth tests: missing/invalid token -> 403
-  - [ ] Response contract tests for happy path and empty-data path
-  - [ ] Delivery/open metric aggregation tests
-  - [ ] 7-day threshold alert trigger + dedupe tests
+- [x] Define monitoring data source strategy (AC: 1, 2, 3, 4)
+  - [x] Decide source of truth per metric: direct Resend API fetch vs internal webhook-backed table
+  - [x] Keep one canonical aggregation path to avoid conflicting metrics
+- [x] Implement/extend email stats service layer (AC: 1, 2, 3)
+  - [x] Add or extend a dedicated service module (e.g. `backend/app/services/email_metrics.py` or equivalent)
+  - [x] Normalize per-email-type metrics: sent, delivered, opened, delivery_rate
+  - [x] Apply robust defaults for missing data (return zeros, never crash endpoint)
+- [x] Implement operator endpoint `GET /api/v1/operator/email-stats` (AC: 3)
+  - [x] Add route in `backend/app/routers/operator.py`
+  - [x] Reuse hardened operator auth pattern from stories `6.1–6.3`
+  - [x] Return stable, documented JSON contract in snake_case
+- [x] Implement 7-day delivery health check and alerting (AC: 4)
+  - [x] Compute rolling 7-day delivery success rate from chosen data source
+  - [x] Trigger Sentry alert when rate drops below `0.95`
+  - [x] Add anti-spam guardrail (dedupe/throttle) to prevent repeated alerts for unchanged degraded state
+- [x] Add backend tests for endpoint + alerting behavior (AC: 1, 2, 3, 4)
+  - [x] Operator auth tests: missing/invalid token -> 403
+  - [x] Response contract tests for happy path and empty-data path
+  - [x] Delivery/open metric aggregation tests
+  - [x] 7-day threshold alert trigger + dedupe tests
 
 ## Dev Notes
 
@@ -129,13 +129,33 @@ gpt-5.3-codex-low
 ### Debug Log References
 
 - Story context synthesized from sprint status, Epic 6 ACs, PRD NFR/FR mappings, architecture monitoring patterns, and finished 6.1–6.3 intelligence.
+- Implemented canonical Resend-driven aggregation path via `backend/app/services/email_metrics.py` with defensive parsing and zero-default fallback behavior.
+- Added protected operator endpoint `GET /api/v1/operator/email-stats` with strict response model and existing operator bearer validation path.
+- Added 7-day delivery-rate health alerting (<95%) with dedupe guardrail keyed by unchanged degraded rate bucket, plus recovery reset behavior.
+- Executed targeted and full backend regression suites (`pytest tests/routers/test_operator.py tests/services/test_email_metrics.py tests/services/test_email_service.py` and full `pytest`).
 
 ### Completion Notes List
 
 - Story prepared with concrete backend implementation guardrails for email metrics + threshold alerting.
 - Scope constrained to operator endpoint, metrics aggregation, alerting reliability, and test coverage.
-- Status set to `ready-for-dev`.
+- Added `OperatorEmailStatsResponse` and `/api/v1/operator/email-stats` route with compact snake_case payload contract.
+- Added `email_metrics` service for normalized sent/delivered/opened counters and delivery/open rates across result, magic link, and follow-up day 1/3/7 email types.
+- Added resilient provider failure handling: metrics endpoint remains stable with zeroed payloads and Sentry exception capture.
+- Added 7-day rolling delivery-rate Sentry warning (<95%) with anti-spam dedupe for unchanged degraded states.
+- Added Resend email tagging on outbound sends (`result`, `magic_link`, `followup_dayX`) for reliable type attribution.
+- Story status set to `review`.
 
 ### File List
 
-- `_bmad-output/implementation-artifacts/6-4-email-delivery-and-open-rate-monitoring.md` (created)
+- `_bmad-output/implementation-artifacts/6-4-email-delivery-and-open-rate-monitoring.md` (updated)
+- `backend/app/models/operator.py` (updated)
+- `backend/app/routers/operator.py` (updated)
+- `backend/app/services/email_metrics.py` (added)
+- `backend/app/services/email_service.py` (updated)
+- `backend/tests/routers/test_operator.py` (updated)
+- `backend/tests/services/test_email_metrics.py` (added)
+- `backend/tests/services/test_email_service.py` (updated)
+
+## Change Log
+
+- 2026-03-23: Implemented email delivery/open monitoring endpoint, Resend-backed metrics aggregation service, 7-day <95% Sentry alerting with dedupe, and comprehensive router/service test coverage.

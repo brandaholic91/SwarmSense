@@ -9,12 +9,16 @@ from typing import Any, Literal, cast
 from fastapi import APIRouter, HTTPException, Query, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.core.cost_enforcement import MONTHLY_CAP_USD as MONTHLY_API_CAP_USD, WARNING_THRESHOLD_PERCENT
+from app.core.cost_enforcement import (
+    MONTHLY_CAP_USD as MONTHLY_API_CAP_USD,
+    WARNING_THRESHOLD_PERCENT,
+)
 from app.core.database import get_supabase_client
 from app.core.config import get_settings
 from app.models.operator import (
     DEFAULT_ERROR_CODE_FAILED,
     DEFAULT_ERROR_CODE_PARTIAL,
+    OperatorEmailStatsResponse,
     OperatorQualifierResponseRow,
     OperatorQualifierResponsesResponse,
     OperatorCostResponse,
@@ -22,6 +26,7 @@ from app.models.operator import (
     OperatorRunsResponse,
     SendFollowupsResponse,
 )
+from app.services.email_metrics import get_email_stats_summary
 from app.services.email_service import dispatch_followup_sequence
 
 router = APIRouter(prefix="/api/v1/operator", tags=["operator"])
@@ -306,6 +311,14 @@ async def get_cost(
         percentage=float(percentage),
         status=status_value,
     )
+
+
+@router.get("/email-stats", response_model=OperatorEmailStatsResponse)
+async def get_email_stats(
+    credentials: HTTPAuthorizationCredentials | None = Security(_bearer),
+) -> OperatorEmailStatsResponse:
+    _require_valid_operator_credentials(credentials)
+    return get_email_stats_summary(window_days=7)
 
 
 @router.get("/qualifier-responses", response_model=OperatorQualifierResponsesResponse)

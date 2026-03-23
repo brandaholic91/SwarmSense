@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Any, cast
 
 from fastapi.testclient import TestClient
@@ -155,6 +156,47 @@ class FakeQuery:
         return FakeResponse([])
 
 
+class FakeRpcQuery:
+    """Simulates supabase.rpc() for increment_monthly_cost."""
+
+    def __init__(self, supabase: "FakeSupabase", func_name: str, params: dict[str, Any]):
+        self._supabase = supabase
+        self._func_name = func_name
+        self._params = params
+
+    def execute(self) -> FakeResponse:
+        if self._func_name == "increment_monthly_cost":
+            p_month: str = self._params["p_month"]
+            p_run_cost = Decimal(str(self._params.get("p_run_cost", 0)))
+            p_threshold_usd = Decimal(str(self._params.get("p_threshold_usd", "40.00")))
+
+            existing = [r for r in self._supabase.cost_rows if r.get("month") == p_month]
+            if existing:
+                old_total = Decimal(str(existing[0].get("total_usd", "0")))
+                old_alert: str | None = existing[0].get("alert_80_sent_at")
+            else:
+                old_total = Decimal("0")
+                old_alert = None
+                new_row: dict[str, Any] = {"month": p_month, "total_usd": "0"}
+                self._supabase.cost_rows.append(new_row)
+                existing = [new_row]
+
+            new_total = old_total + p_run_cost
+            alert_triggered = (
+                old_total < p_threshold_usd
+                and new_total >= p_threshold_usd
+                and old_alert is None
+            )
+
+            existing[0]["total_usd"] = str(new_total)
+            if alert_triggered:
+                existing[0]["alert_80_sent_at"] = datetime.now(UTC).isoformat()
+
+            return FakeResponse({"total_usd": float(new_total), "alert_triggered": alert_triggered})
+
+        return FakeResponse({})
+
+
 class FakeSupabase:
     def __init__(self, total_usd: str | None = "1.00"):
         current_month = datetime.now(UTC).strftime("%Y-%m")  # P7: match UTC month key
@@ -177,8 +219,11 @@ class FakeSupabase:
         self.inserted_qualifiers: list[dict[str, Any]] = []
         self.updates: list[dict[str, Any]] = []
 
-    def table(self, name: str):
+    def table(self, name: str) -> FakeQuery:
         return FakeQuery(self, name)
+
+    def rpc(self, func_name: str, params: dict[str, Any]) -> FakeRpcQuery:
+        return FakeRpcQuery(self, func_name, params)
 
 
 class _SentryScopeRecorder:

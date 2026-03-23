@@ -9,6 +9,7 @@ from typing import Any, Literal, cast
 from fastapi import APIRouter, HTTPException, Query, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.core.cost_enforcement import MONTHLY_CAP_USD as MONTHLY_API_CAP_USD, WARNING_THRESHOLD_PERCENT
 from app.core.database import get_supabase_client
 from app.core.config import get_settings
 from app.models.operator import (
@@ -34,8 +35,6 @@ _run_statuses = frozenset(
 # Input validation limits
 MAX_USER_IDS_PER_QUERY = 100
 MAX_TEXT_FIELD_LENGTH = 500
-MONTHLY_API_CAP_USD = Decimal("50.00")
-WARNING_THRESHOLD_PERCENT = Decimal("80")
 
 
 def _require_valid_operator_credentials(

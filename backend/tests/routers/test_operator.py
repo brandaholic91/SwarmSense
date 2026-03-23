@@ -460,6 +460,44 @@ def test_list_qualifier_responses_skips_invalid_text_rows(monkeypatch):
     assert [item["user_email"] for item in payload["items"]] == ["anna@example.com"]
 
 
+def test_get_cost_returns_ok_payload_below_80_percent(monkeypatch):
+    fake_supabase = FakeSupabase()
+    current_month = datetime.now(UTC).strftime("%Y-%m")
+    fake_supabase.cost_rows = [{"month": current_month, "total_usd": "12.34"}]
+    client = build_client(monkeypatch, fake_supabase=fake_supabase)
+
+    response = client.get(
+        "/api/v1/operator/cost",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["month"] == current_month
+    assert payload["total_usd"] == 12.34
+    assert payload["cap_usd"] == 50.0
+    assert abs(payload["percentage"] - 24.68) < 0.01
+    assert payload["status"] == "ok"
+
+
+def test_get_cost_returns_ok_for_zero_spend(monkeypatch):
+    fake_supabase = FakeSupabase()
+    current_month = datetime.now(UTC).strftime("%Y-%m")
+    fake_supabase.cost_rows = []
+    client = build_client(monkeypatch, fake_supabase=fake_supabase)
+
+    response = client.get(
+        "/api/v1/operator/cost",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_usd"] == 0.0
+    assert payload["percentage"] == 0.0
+    assert payload["status"] == "ok"
+
+
 def test_get_cost_requires_valid_bearer(monkeypatch):
     client = build_client(monkeypatch)
 

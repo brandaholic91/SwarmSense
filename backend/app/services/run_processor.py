@@ -7,6 +7,7 @@ from typing import Any
 
 import sentry_sdk
 
+from app.core.cost_enforcement import MONTHLY_CAP_USD, WARNING_THRESHOLD_USD
 from app.core.database import get_supabase_client
 from app.models.persona import SynthesisResult
 from app.services.email_service import send_run_result_email
@@ -16,9 +17,6 @@ from app.services.synthesis_service import execute_synthesis
 MIN_SUCCESSFUL_PERSONAS = 12
 CONSENSUS_THRESHOLD = 15
 FINAL_STATUSES = {"completed", "partial", "failed"}
-MONTHLY_CAP_USD = Decimal("50.00")
-WARNING_THRESHOLD_RATIO = Decimal("0.80")
-WARNING_THRESHOLD_USD = MONTHLY_CAP_USD * WARNING_THRESHOLD_RATIO
 
 
 async def process_run(
@@ -376,57 +374,27 @@ def _increment_monthly_cost(
     if not should_increment:
         return
 
-    month = datetime.now(UTC).strftime(
-        "%Y-%m"
-    )  # P7: UTC instead of date.today() local time
+    month = datetime.now(UTC).strftime("%Y-%m")
+    alert_triggered = False
+    new_total: Decimal = run_cost
     try:
         supabase = get_supabase_client()
-        existing = (
-            supabase.table("cost_tracking")
-            .select("total_usd,alert_80_sent_at")
-            .eq("month", month)
-            .limit(1)
-            .execute()
-            .data
-            or []
-        )
-        existing_total = Decimal("0")
-        existing_alert_80_sent_at: str | None = None
-        if existing and isinstance(existing[0], dict):
-            existing_total = _normalize_cost(existing[0].get("total_usd"))
-            alert_sent_at_value = existing[0].get("alert_80_sent_at")
-            if isinstance(alert_sent_at_value, str) and alert_sent_at_value.strip():
-                existing_alert_80_sent_at = alert_sent_at_value.strip()
-
-        updated_total = existing_total + run_cost
-        should_emit_threshold_alert = (
-            existing_total < WARNING_THRESHOLD_USD
-            and updated_total >= WARNING_THRESHOLD_USD
-            and existing_alert_80_sent_at is None
-        )
-
-        upsert_payload: dict[str, str] = {
-            "month": month,
-            "total_usd": str(updated_total),
-        }
-        if existing_alert_80_sent_at is not None:
-            upsert_payload["alert_80_sent_at"] = existing_alert_80_sent_at
-        elif should_emit_threshold_alert:
-            upsert_payload["alert_80_sent_at"] = datetime.now(UTC).isoformat()
-
-        supabase.table(
-            "cost_tracking"
-        ).upsert(  # P2: upsert prevents duplicate-insert race
-            upsert_payload,
-            on_conflict="month",
+        result = supabase.rpc(
+            "increment_monthly_cost",
+            {
+                "p_month": month,
+                "p_run_cost": float(run_cost),
+                "p_threshold_usd": float(WARNING_THRESHOLD_USD),
+            },
         ).execute()
-
-        if should_emit_threshold_alert:
-            _capture_cost_threshold_warning(
-                month=month,
-                total_usd=updated_total,
-                cap_usd=MONTHLY_CAP_USD,
-            )
+        data: dict[str, Any] = result.data if isinstance(result.data, dict) else {}
+        alert_triggered = bool(data.get("alert_triggered", False))
+        total_raw = data.get("total_usd")
+        if total_raw is not None:
+            try:
+                new_total = Decimal(str(total_raw))
+            except Exception:
+                new_total = run_cost
     except Exception as exc:
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("run_id", run_id)
@@ -434,6 +402,13 @@ def _increment_monthly_cost(
             scope.set_extra("month", month)
             scope.set_extra("run_cost", str(run_cost))
             sentry_sdk.capture_exception(exc)
+
+    if alert_triggered:
+        _capture_cost_threshold_warning(
+            month=month,
+            total_usd=new_total,
+            cap_usd=MONTHLY_CAP_USD,
+        )
 
 
 def _capture_cost_threshold_warning(

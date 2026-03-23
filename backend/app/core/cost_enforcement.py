@@ -12,6 +12,9 @@ from app.core.errors import ErrorCode, error_response
 
 RUN_INITIATING_ENDPOINTS = {("POST", "/api/v1/runs"), ("POST", "/api/v1/run-sessions")}
 MONTHLY_CAP_USD = Decimal("50.00")
+WARNING_THRESHOLD_RATIO = Decimal("0.80")
+WARNING_THRESHOLD_USD = MONTHLY_CAP_USD * WARNING_THRESHOLD_RATIO
+WARNING_THRESHOLD_PERCENT = WARNING_THRESHOLD_RATIO * Decimal("100")
 
 
 class CostCheckError(Exception):
@@ -20,11 +23,16 @@ class CostCheckError(Exception):
 
 def _normalize_total(value: object) -> Decimal:
     try:
-        return Decimal(str(value))
+        result = Decimal(str(value))
     except (InvalidOperation, TypeError) as exc:
         raise CostCheckError(
             f"Invalid total_usd value in cost_tracking: {value!r}"
         ) from exc
+    if not result.is_finite() or result < 0:
+        raise CostCheckError(
+            f"Invalid total_usd value in cost_tracking: {value!r}"
+        )
+    return result
 
 
 def _current_month() -> str:

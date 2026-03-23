@@ -1,6 +1,6 @@
 # Story 6.3: API Cost Tracking, 80% Alert & Hard Cap Enforcement
 
-Status: review
+Status: done
 
 ## Story
 
@@ -10,7 +10,7 @@ so that I can monitor burn rate and the system automatically protects against ov
 
 ## Acceptance Criteria
 
-1. Given a run completes and `cost_tracker.py` increments monthly spend, when total reaches or exceeds `$40.00`, then an automated alert is sent within 60 seconds (Sentry alert or email), and the alert fires only once per threshold crossing per month.  
+1. Given a run completes and `run_processor.py` (`_increment_monthly_cost`) increments monthly spend, when total reaches or exceeds `$40.00`, then an automated alert is sent within 60 seconds (Sentry alert or email), and the alert fires only once per threshold crossing per month.  
 2. Given the operator calls `GET /api/v1/operator/cost` with valid Bearer token, then response includes: `month` (`YYYY-MM`), `total_usd`, `cap_usd` (`50.00`), `percentage`, `status` (`ok | warning | capped`).  
 3. Given monthly `total_usd >= 50.00`, when a new run is attempted, then run initiation is blocked with HTTP `402` and `code: "COST_LIMIT_REACHED"`, and user-facing Hungarian message is shown while non-run features remain operational.
 
@@ -138,6 +138,27 @@ gpt-5.3-codex-low
 - Added/extended tests for threshold once-per-month behavior, month rollover reset behavior, and operator cost endpoint auth/payload/status semantics.
 - Ran full backend test suite: `110 passed`.
 
+### Code Review Record (2026-03-23)
+
+Code review executed via `bmad-code-review` skill (3-layer: Blind Hunter, Edge Case Hunter, Acceptance Auditor).
+
+**Findings addressed (8 patch + 1 bad_spec):**
+
+- **P1 (Race condition):** Replaced read-compute-write pattern with atomic Supabase RPC `increment_monthly_cost` using `FOR UPDATE` row lock. Eliminates concurrent double-alert and cost total overwrite. New migration added.
+- **P2+P3 (NaN/Inf/negative Decimal):** `_normalize_total` in `cost_enforcement.py` now guards against NaN, Infinity, and negative values via `is_finite()` and `< 0` check.
+- **P4 (Exception boundary):** `_capture_cost_threshold_warning` call moved outside `try/except` block — Sentry alert failure no longer tagged as `COST_TRACKING_UPDATE_FAILED`.
+- **P5 (Silent undercount):** Eliminated by RPC migration — no local read-then-upsert path remains.
+- **P6 (Missing `ok` test):** Added `test_get_cost_returns_ok_payload_below_80_percent` and `test_get_cost_returns_ok_for_zero_spend` to `test_operator.py`.
+- **P7 (Type annotation):** `upsert_payload: dict[str, str]` replaced by `dict[str, Any]` — resolved naturally by RPC migration.
+- **P8 (Duplicated cap constants):** `WARNING_THRESHOLD_RATIO`, `WARNING_THRESHOLD_USD`, `WARNING_THRESHOLD_PERCENT` added to `cost_enforcement.py`; `run_processor.py` and `operator.py` now import from there. No more three divergent definitions.
+- **B1 (Bad spec):** AC1 text corrected — `cost_tracker.py` → `run_processor.py (_increment_monthly_cost)`.
+
+**Full test suite after review fixes: `112 passed, 0 failed`.**
+
+**Deferred (not actioned):**
+- D1: `cost_tracking.month` UNIQUE constraint — already PRIMARY KEY; not an issue.
+- D2–D6: Pre-existing architectural concerns (UTC boundary, 500 diagnostics, RLS, thread-safety, Sentry trace correlation).
+
 ### File List
 
 - `backend/app/services/run_processor.py` (modified)
@@ -147,5 +168,6 @@ gpt-5.3-codex-low
 - `backend/tests/services/test_run_processor.py` (modified)
 - `backend/tests/routers/test_operator.py` (modified)
 - `supabase/migrations/20260323001_cost_tracking_threshold_alert_marker.sql` (added)
+- `supabase/migrations/20260323002_cost_tracking_atomic_increment.sql` (added — code review fix)
 - `_bmad-output/implementation-artifacts/6-3-api-cost-tracking-80-percent-alert-and-hard-cap-enforcement.md` (updated)
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` (updated)

@@ -174,14 +174,14 @@ def _parse_iso_datetime(value: str | None) -> datetime | None:
         return None
 
 
-def _load_valid_run_ids(
+def _load_run_user_by_run_id(
     *,
     supabase: Any,
     run_ids: list[str],
-) -> set[str]:
-    """Load valid run IDs with validation to prevent oversized IN queries."""
+) -> dict[str, str]:
+    """Load run owner mapping with validation to prevent oversized IN queries."""
     if not run_ids:
-        return set()
+        return {}
 
     if len(run_ids) > MAX_USER_IDS_PER_QUERY:
         raise HTTPException(
@@ -190,7 +190,9 @@ def _load_valid_run_ids(
         )
 
     try:
-        run_result = supabase.table("runs").select("id").in_("id", run_ids).execute()
+        run_result = (
+            supabase.table("runs").select("id,user_id").in_("id", run_ids).execute()
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -199,9 +201,11 @@ def _load_valid_run_ids(
 
     run_rows = run_result.data or []
     return {
-        cast(str, run_row["id"])
+        cast(str, run_row["id"]): cast(str, run_row["user_id"])
         for run_row in run_rows
-        if isinstance(run_row, dict) and isinstance(run_row.get("id"), str)
+        if isinstance(run_row, dict)
+        and isinstance(run_row.get("id"), str)
+        and isinstance(run_row.get("user_id"), str)
     }
 
 
@@ -238,95 +242,113 @@ async def list_qualifier_responses(
     _require_valid_operator_credentials(credentials)
 
     supabase = get_supabase_client()
-    offset = (page - 1) * page_size
-    limit_end = offset + page_size - 1
-
-    try:
-        result = (
-            supabase.table("qualifier_responses")
-            .select(
-                "run_id,user_id,role_answer,use_case_answer,created_at",
-                count=cast(Any, "exact"),
-            )
-            .order("created_at", desc=True)
-            .range(offset, limit_end)
-            .execute()
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to load qualifier responses",
-        ) from exc
-
-    rows = result.data or []
-
-    user_ids: list[str] = list(
-        dict.fromkeys(
-            cast(str, row["user_id"])
-            for row in rows
-            if isinstance(row, dict) and isinstance(row.get("user_id"), str)
-        )
-    )
-    run_ids: list[str] = list(
-        dict.fromkeys(
-            cast(str, row["run_id"])
-            for row in rows
-            if isinstance(row, dict) and isinstance(row.get("run_id"), str)
-        )
-    )
-
-    user_email_by_user_id = _load_user_email_by_user_id(
-        supabase=supabase,
-        user_ids=user_ids,
-    )
-    valid_run_ids = _load_valid_run_ids(
-        supabase=supabase,
-        run_ids=run_ids,
-    )
-
+    target_offset = (page - 1) * page_size
+    scan_offset = 0
+    scan_batch_size = page_size
+    valid_total = 0
     items: list[OperatorQualifierResponseRow] = []
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
 
-        run_id = row.get("run_id")
-        user_id = row.get("user_id")
-        role_answer = row.get("role_answer")
-        use_case_answer = row.get("use_case_answer")
-        created_at_raw = row.get("created_at")
+    while True:
+        scan_limit_end = scan_offset + scan_batch_size - 1
 
-        if not (
-            isinstance(run_id, str)
-            and isinstance(user_id, str)
-            and isinstance(role_answer, str)
-            and isinstance(use_case_answer, str)
-            and isinstance(created_at_raw, str)
-        ):
-            continue
+        try:
+            result = (
+                supabase.table("qualifier_responses")
+                .select("run_id,user_id,role_answer,use_case_answer,created_at")
+                .order("created_at", desc=True)
+                .range(scan_offset, scan_limit_end)
+                .execute()
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load qualifier responses",
+            ) from exc
 
-        user_email = user_email_by_user_id.get(user_id)
-        if user_email is None or run_id not in valid_run_ids:
-            continue
+        rows = result.data or []
+        if not rows:
+            break
 
-        created_at = _parse_iso_datetime(created_at_raw)
-        if created_at is None:
-            continue
-
-        items.append(
-            OperatorQualifierResponseRow(
-                user_email=user_email,
-                role_answer=_validate_text_field(role_answer, "role_answer"),
-                use_case_answer=_validate_text_field(
-                    use_case_answer, "use_case_answer"
-                ),
-                created_at=created_at,
+        user_ids: list[str] = list(
+            dict.fromkeys(
+                cast(str, row["user_id"])
+                for row in rows
+                if isinstance(row, dict) and isinstance(row.get("user_id"), str)
             )
         )
+        run_ids: list[str] = list(
+            dict.fromkeys(
+                cast(str, row["run_id"])
+                for row in rows
+                if isinstance(row, dict) and isinstance(row.get("run_id"), str)
+            )
+        )
+
+        user_email_by_user_id = _load_user_email_by_user_id(
+            supabase=supabase,
+            user_ids=user_ids,
+        )
+        run_user_by_run_id = _load_run_user_by_run_id(
+            supabase=supabase,
+            run_ids=run_ids,
+        )
+
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+
+            run_id = row.get("run_id")
+            user_id = row.get("user_id")
+            role_answer = row.get("role_answer")
+            use_case_answer = row.get("use_case_answer")
+            created_at_raw = row.get("created_at")
+
+            if not (
+                isinstance(run_id, str)
+                and isinstance(user_id, str)
+                and isinstance(role_answer, str)
+                and isinstance(use_case_answer, str)
+                and isinstance(created_at_raw, str)
+            ):
+                continue
+
+            run_owner_user_id = run_user_by_run_id.get(run_id)
+            user_email = user_email_by_user_id.get(user_id)
+            if run_owner_user_id != user_id or user_email is None:
+                continue
+
+            created_at = _parse_iso_datetime(created_at_raw)
+            if created_at is None:
+                continue
+
+            try:
+                validated_role_answer = _validate_text_field(role_answer, "role_answer")
+                validated_use_case_answer = _validate_text_field(
+                    use_case_answer, "use_case_answer"
+                )
+            except HTTPException:
+                continue
+
+            if target_offset <= valid_total < target_offset + page_size:
+                items.append(
+                    OperatorQualifierResponseRow(
+                        user_email=user_email,
+                        role_answer=validated_role_answer,
+                        use_case_answer=validated_use_case_answer,
+                        created_at=created_at,
+                    )
+                )
+
+            valid_total += 1
+
+        scan_offset += len(rows)
+        if len(rows) < scan_batch_size:
+            break
 
     return OperatorQualifierResponsesResponse(
         page=page,
         page_size=page_size,
-        total=len(items),
+        total=valid_total,
         items=items,
     )
 

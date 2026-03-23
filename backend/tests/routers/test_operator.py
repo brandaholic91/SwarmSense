@@ -73,6 +73,9 @@ class FakeQuery:
             for field, value in self._filters.items():
                 rows = [row for row in rows if row.get(field) == value]
 
+            for field, values in self._in_filters.items():
+                rows = [row for row in rows if row.get(field) in values]
+
             if self._order_field is not None:
                 rows = sorted(
                     rows,
@@ -378,3 +381,63 @@ def test_list_qualifier_responses_returns_desc_items_with_expected_fields(monkey
         "use_case_answer",
         "created_at",
     }
+
+
+def test_list_qualifier_responses_total_is_global_not_page_local(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get(
+        "/api/v1/operator/qualifier-responses?page=1&page_size=1",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 2
+    assert len(payload["items"]) == 1
+    assert payload["items"][0]["user_email"] == "csilla@example.com"
+
+
+def test_list_qualifier_responses_enforces_run_user_link(monkeypatch):
+    fake_supabase = FakeSupabase()
+    fake_supabase.qualifier_rows.insert(
+        0,
+        {
+            "id": "qr-mismatch",
+            "run_id": "run-new",
+            "user_id": "user-1",
+            "role_answer": "founder_ceo",
+            "use_case_answer": "message_validation",
+            "created_at": datetime(2026, 3, 24, 9, 1, tzinfo=UTC).isoformat(),
+        },
+    )
+    client = build_client(monkeypatch, fake_supabase=fake_supabase)
+
+    response = client.get(
+        "/api/v1/operator/qualifier-responses?page=1&page_size=10",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 2
+    assert [item["user_email"] for item in payload["items"]] == [
+        "csilla@example.com",
+        "anna@example.com",
+    ]
+
+
+def test_list_qualifier_responses_skips_invalid_text_rows(monkeypatch):
+    fake_supabase = FakeSupabase()
+    fake_supabase.qualifier_rows[1]["role_answer"] = "x" * 501
+    client = build_client(monkeypatch, fake_supabase=fake_supabase)
+
+    response = client.get(
+        "/api/v1/operator/qualifier-responses?page=1&page_size=10",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert [item["user_email"] for item in payload["items"]] == ["anna@example.com"]

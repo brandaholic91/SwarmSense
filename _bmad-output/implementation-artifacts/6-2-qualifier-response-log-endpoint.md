@@ -1,6 +1,6 @@
 # Story 6.2: Qualifier Response Log Endpoint
 
-Status: review
+Status: done
 
 ## Story
 
@@ -117,6 +117,8 @@ gpt-5.3-codex
 - Story context built from sprint status, epic section, architecture references, and previous story 6.1 implementation notes.
 - Added qualifier endpoint tests first, verified expected RED state (`404`) before implementation.
 - Implemented endpoint/model changes and validated via focused + full backend pytest runs.
+- Applied follow-up fixes from story 6.2 code-review patch findings (pagination semantics, run-user linkage integrity, malformed-row resilience).
+- Added regression tests for global `total`, run-user mismatch filtering, and invalid text row skip behavior.
 
 ### Completion Notes List
 
@@ -125,7 +127,12 @@ gpt-5.3-codex
 - Added qualifier retrieval with descending `created_at` ordering, pagination guardrails, and run/user integrity filtering to avoid orphaned data exposure.
 - Enforced response projection to required fields only: `user_email`, `role_answer`, `use_case_answer`, `created_at`.
 - Added endpoint tests for auth failures, successful schema, descending order, and orphan row isolation.
-- Validation run results: `pytest backend/tests/routers/test_operator.py -q` (9 passed), `pytest backend/tests -q` (102 passed).
+- Follow-up patch fixes:
+  - Enforced strict `run_id -> user_id` linkage validation before response projection.
+  - Fixed pagination semantics so `total` reflects full valid dataset (not page-local item count).
+  - Prevented sparse/empty page artifacts from post-range filtering by scanning ordered rows and paging across valid records.
+  - Hardened row-level validation by skipping malformed oversized text rows instead of failing the whole endpoint.
+- Validation run results: `pytest backend/tests/routers/test_operator.py -q` (12 passed), `pytest backend/tests -q` (105 passed).
 
 ### File List
 
@@ -137,3 +144,5 @@ gpt-5.3-codex
 ## Change Log
 
 - 2026-03-23: Implemented operator qualifier response endpoint, response models, and backend tests; story advanced to `review`.
+- 2026-03-23: Applied code-review patch fixes for story 6.2 and expanded operator endpoint regression coverage.
+- 2026-03-23: Story validated after patch fixes and moved to `done`.

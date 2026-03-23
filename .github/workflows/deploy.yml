@@ -66,8 +66,16 @@ jobs:
             set -euo pipefail
             cd "$DEPLOY_PATH"
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-            docker compose pull
-            docker compose up -d
+            if [ -f "docker-compose.yml" ]; then
+              docker compose pull
+              docker compose up -d
+            elif [ -f "docker-compose.swarmsense-backend.yml" ]; then
+              docker compose -f docker-compose.swarmsense-backend.yml pull
+              docker compose -f docker-compose.swarmsense-backend.yml up -d
+            else
+              echo "No docker compose file found in $DEPLOY_PATH" >&2
+              exit 1
+            fi
 
       - name: Post-deploy HTTPS health check
         run: |

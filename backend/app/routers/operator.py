@@ -13,6 +13,8 @@ from app.core.config import get_settings
 from app.models.operator import (
     DEFAULT_ERROR_CODE_FAILED,
     DEFAULT_ERROR_CODE_PARTIAL,
+    OperatorQualifierResponseRow,
+    OperatorQualifierResponsesResponse,
     OperatorRunRow,
     OperatorRunsResponse,
     SendFollowupsResponse,
@@ -172,6 +174,37 @@ def _parse_iso_datetime(value: str | None) -> datetime | None:
         return None
 
 
+def _load_valid_run_ids(
+    *,
+    supabase: Any,
+    run_ids: list[str],
+) -> set[str]:
+    """Load valid run IDs with validation to prevent oversized IN queries."""
+    if not run_ids:
+        return set()
+
+    if len(run_ids) > MAX_USER_IDS_PER_QUERY:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Too many run IDs requested. Maximum: {MAX_USER_IDS_PER_QUERY}",
+        )
+
+    try:
+        run_result = supabase.table("runs").select("id").in_("id", run_ids).execute()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load qualifier responses",
+        ) from exc
+
+    run_rows = run_result.data or []
+    return {
+        cast(str, run_row["id"])
+        for run_row in run_rows
+        if isinstance(run_row, dict) and isinstance(run_row.get("id"), str)
+    }
+
+
 def _is_schema_error(exc: Exception) -> bool:
     """Check if exception is related to missing columns (schema mismatch)."""
     error_str = str(exc).lower()
@@ -193,6 +226,109 @@ def _validate_text_field(value: str, field_name: str) -> str:
             detail=f"Field {field_name} exceeds maximum length",
         )
     return value
+
+
+@router.get("/qualifier-responses", response_model=OperatorQualifierResponsesResponse)
+async def list_qualifier_responses(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    credentials: HTTPAuthorizationCredentials | None = Security(_bearer),
+) -> OperatorQualifierResponsesResponse:
+    """List qualifier survey responses with strict field exposure and auth."""
+    _require_valid_operator_credentials(credentials)
+
+    supabase = get_supabase_client()
+    offset = (page - 1) * page_size
+    limit_end = offset + page_size - 1
+
+    try:
+        result = (
+            supabase.table("qualifier_responses")
+            .select(
+                "run_id,user_id,role_answer,use_case_answer,created_at",
+                count=cast(Any, "exact"),
+            )
+            .order("created_at", desc=True)
+            .range(offset, limit_end)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load qualifier responses",
+        ) from exc
+
+    rows = result.data or []
+
+    user_ids: list[str] = list(
+        dict.fromkeys(
+            cast(str, row["user_id"])
+            for row in rows
+            if isinstance(row, dict) and isinstance(row.get("user_id"), str)
+        )
+    )
+    run_ids: list[str] = list(
+        dict.fromkeys(
+            cast(str, row["run_id"])
+            for row in rows
+            if isinstance(row, dict) and isinstance(row.get("run_id"), str)
+        )
+    )
+
+    user_email_by_user_id = _load_user_email_by_user_id(
+        supabase=supabase,
+        user_ids=user_ids,
+    )
+    valid_run_ids = _load_valid_run_ids(
+        supabase=supabase,
+        run_ids=run_ids,
+    )
+
+    items: list[OperatorQualifierResponseRow] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+
+        run_id = row.get("run_id")
+        user_id = row.get("user_id")
+        role_answer = row.get("role_answer")
+        use_case_answer = row.get("use_case_answer")
+        created_at_raw = row.get("created_at")
+
+        if not (
+            isinstance(run_id, str)
+            and isinstance(user_id, str)
+            and isinstance(role_answer, str)
+            and isinstance(use_case_answer, str)
+            and isinstance(created_at_raw, str)
+        ):
+            continue
+
+        user_email = user_email_by_user_id.get(user_id)
+        if user_email is None or run_id not in valid_run_ids:
+            continue
+
+        created_at = _parse_iso_datetime(created_at_raw)
+        if created_at is None:
+            continue
+
+        items.append(
+            OperatorQualifierResponseRow(
+                user_email=user_email,
+                role_answer=_validate_text_field(role_answer, "role_answer"),
+                use_case_answer=_validate_text_field(
+                    use_case_answer, "use_case_answer"
+                ),
+                created_at=created_at,
+            )
+        )
+
+    return OperatorQualifierResponsesResponse(
+        page=page,
+        page_size=page_size,
+        total=len(items),
+        items=items,
+    )
 
 
 @router.get("/runs", response_model=OperatorRunsResponse)

@@ -88,7 +88,7 @@ development_status:
   # Epic 6: Operator Monitoring & Administration
   epic-6: in-progress
   6-1-operator-run-log-endpoint: done
-  6-2-qualifier-response-log-endpoint: ready-for-dev
+  6-2-qualifier-response-log-endpoint: review
   6-3-api-cost-tracking-80-percent-alert-and-hard-cap-enforcement: backlog
   6-4-email-delivery-and-open-rate-monitoring: backlog
   epic-6-retrospective: optional

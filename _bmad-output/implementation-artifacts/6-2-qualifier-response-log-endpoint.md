@@ -1,6 +1,6 @@
 # Story 6.2: Qualifier Response Log Endpoint
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -15,24 +15,24 @@ so that I can analyse what roles and use cases are most common among early users
 
 ## Tasks / Subtasks
 
-- [ ] Define response models for qualifier log endpoint (AC: 1, 2)
-  - [ ] Extend `backend/app/models/operator.py` with qualifier log row + paginated/list response
-  - [ ] Keep API boundary keys in `snake_case`
-- [ ] Implement protected endpoint `GET /api/v1/operator/qualifier-responses` (AC: 1, 2)
-  - [ ] Add route in `backend/app/routers/operator.py` under existing operator router
-  - [ ] Reuse existing `HTTPBearer(auto_error=False)` + explicit key check pattern
-  - [ ] Return HTTP 403 with `detail="Forbidden"` for missing/invalid token
-- [ ] Implement data retrieval and ordering (AC: 1)
-  - [ ] Read `qualifier_responses` joined with `users` (email) and optional `runs` integrity fields as needed
-  - [ ] Ensure sort is `created_at DESC`
-  - [ ] Apply optional pagination guardrails for consistency with `6.1` endpoint style
-- [ ] Enforce data isolation and safe exposure (AC: 2)
-  - [ ] Return only required fields (`user_email`, `role_answer`, `use_case_answer`, `created_at`)
-  - [ ] Exclude internal identifiers and sensitive columns from response payload
-- [ ] Add backend tests (AC: 1, 2)
-  - [ ] Extend `backend/tests/routers/test_operator.py` (or add dedicated qualifier endpoint tests)
-  - [ ] Cover token auth failures and successful response schema
-  - [ ] Validate descending ordering and cross-user leakage prevention expectations
+- [x] Define response models for qualifier log endpoint (AC: 1, 2)
+  - [x] Extend `backend/app/models/operator.py` with qualifier log row + paginated/list response
+  - [x] Keep API boundary keys in `snake_case`
+- [x] Implement protected endpoint `GET /api/v1/operator/qualifier-responses` (AC: 1, 2)
+  - [x] Add route in `backend/app/routers/operator.py` under existing operator router
+  - [x] Reuse existing `HTTPBearer(auto_error=False)` + explicit key check pattern
+  - [x] Return HTTP 403 with `detail="Forbidden"` for missing/invalid token
+- [x] Implement data retrieval and ordering (AC: 1)
+  - [x] Read `qualifier_responses` joined with `users` (email) and optional `runs` integrity fields as needed
+  - [x] Ensure sort is `created_at DESC`
+  - [x] Apply optional pagination guardrails for consistency with `6.1` endpoint style
+- [x] Enforce data isolation and safe exposure (AC: 2)
+  - [x] Return only required fields (`user_email`, `role_answer`, `use_case_answer`, `created_at`)
+  - [x] Exclude internal identifiers and sensitive columns from response payload
+- [x] Add backend tests (AC: 1, 2)
+  - [x] Extend `backend/tests/routers/test_operator.py` (or add dedicated qualifier endpoint tests)
+  - [x] Cover token auth failures and successful response schema
+  - [x] Validate descending ordering and cross-user leakage prevention expectations
 
 ## Dev Notes
 
@@ -110,18 +110,30 @@ so that I can analyse what roles and use cases are most common among early users
 
 ### Agent Model Used
 
-gpt-5.3-codex-low
+gpt-5.3-codex
 
 ### Debug Log References
 
 - Story context built from sprint status, epic section, architecture references, and previous story 6.1 implementation notes.
+- Added qualifier endpoint tests first, verified expected RED state (`404`) before implementation.
+- Implemented endpoint/model changes and validated via focused + full backend pytest runs.
 
 ### Completion Notes List
 
-- Story prepared with backend-first implementation guardrails.
-- Scope limited to operator qualifier response endpoint + tests.
-- Status set to `ready-for-dev`.
+- Added `OperatorQualifierResponseRow` and `OperatorQualifierResponsesResponse` response models with `snake_case` boundary keys.
+- Implemented `GET /api/v1/operator/qualifier-responses` with existing operator bearer validation pattern and explicit `403 Forbidden` behavior.
+- Added qualifier retrieval with descending `created_at` ordering, pagination guardrails, and run/user integrity filtering to avoid orphaned data exposure.
+- Enforced response projection to required fields only: `user_email`, `role_answer`, `use_case_answer`, `created_at`.
+- Added endpoint tests for auth failures, successful schema, descending order, and orphan row isolation.
+- Validation run results: `pytest backend/tests/routers/test_operator.py -q` (9 passed), `pytest backend/tests -q` (102 passed).
 
 ### File List
 
-- `_bmad-output/implementation-artifacts/6-2-qualifier-response-log-endpoint.md` (created)
+- `backend/app/models/operator.py` (modified)
+- `backend/app/routers/operator.py` (modified)
+- `backend/tests/routers/test_operator.py` (modified)
+- `_bmad-output/implementation-artifacts/6-2-qualifier-response-log-endpoint.md` (modified)
+
+## Change Log
+
+- 2026-03-23: Implemented operator qualifier response endpoint, response models, and backend tests; story advanced to `review`.

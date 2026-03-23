@@ -38,3 +38,21 @@ class OperatorRunsResponse(BaseModel):
     page_size: int
     total: int
     items: list[OperatorRunRow]
+
+
+class OperatorQualifierResponseRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    user_email: str
+    role_answer: str = Field(..., max_length=500)
+    use_case_answer: str = Field(..., max_length=500)
+    created_at: AwareDatetime
+
+
+class OperatorQualifierResponsesResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    page: int
+    page_size: int
+    total: int
+    items: list[OperatorQualifierResponseRow]

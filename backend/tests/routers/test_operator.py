@@ -92,6 +92,30 @@ class FakeQuery:
 
             return FakeResponse(projected, count=total)
 
+        if self._table_name == "qualifier_responses" and self._operation == "select":
+            rows = [dict(row) for row in self._supabase.qualifier_rows]
+            for field, value in self._filters.items():
+                rows = [row for row in rows if row.get(field) == value]
+
+            if self._order_field is not None:
+                rows = sorted(
+                    rows,
+                    key=lambda row: str(row.get(self._order_field, "")),
+                    reverse=self._order_desc,
+                )
+
+            total = len(rows)
+
+            if self._range_start is not None and self._range_end is not None:
+                rows = rows[self._range_start : self._range_end + 1]
+
+            fields = [field.strip() for field in self._select_fields.split(",")]
+            projected: list[dict[str, Any]] = []
+            for row in rows:
+                projected.append({field: row.get(field) for field in fields})
+
+            return FakeResponse(projected, count=total)
+
         return FakeResponse([])
 
 
@@ -138,6 +162,32 @@ class FakeSupabase:
                 "cost_usd": 0.92,
                 "created_at": datetime(2026, 3, 22, 9, 0, tzinfo=UTC).isoformat(),
                 "completed_at": datetime(2026, 3, 22, 9, 9, tzinfo=UTC).isoformat(),
+            },
+        ]
+        self.qualifier_rows = [
+            {
+                "id": "qr-older",
+                "run_id": "run-older",
+                "user_id": "user-1",
+                "role_answer": "founder_ceo",
+                "use_case_answer": "message_validation",
+                "created_at": datetime(2026, 3, 20, 10, 1, tzinfo=UTC).isoformat(),
+            },
+            {
+                "id": "qr-new",
+                "run_id": "run-new",
+                "user_id": "user-3",
+                "role_answer": "growth_marketer",
+                "use_case_answer": "persona_research",
+                "created_at": datetime(2026, 3, 22, 9, 1, tzinfo=UTC).isoformat(),
+            },
+            {
+                "id": "qr-orphan",
+                "run_id": "run-missing",
+                "user_id": "user-missing",
+                "role_answer": "other",
+                "use_case_answer": "other",
+                "created_at": datetime(2026, 3, 23, 9, 1, tzinfo=UTC).isoformat(),
             },
         ]
 
@@ -285,3 +335,46 @@ def test_pagination_bounds_max_page_size_and_empty_page(monkeypatch):
     payload = response.json()
     assert payload["page"] == 3
     assert payload["items"] == []
+
+
+def test_list_qualifier_responses_requires_valid_bearer(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/v1/operator/qualifier-responses")
+    assert response.status_code == 403
+
+    response = client.get(
+        "/api/v1/operator/qualifier-responses",
+        headers={"Authorization": "Bearer wrong-key"},
+    )
+    assert response.status_code == 403
+
+
+def test_list_qualifier_responses_returns_desc_items_with_expected_fields(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get(
+        "/api/v1/operator/qualifier-responses?page=1&page_size=10",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["page"] == 1
+    assert payload["page_size"] == 10
+    assert payload["total"] == 2
+
+    items = payload["items"]
+    assert [item["user_email"] for item in items] == [
+        "csilla@example.com",
+        "anna@example.com",
+    ]
+    assert [item["created_at"] for item in items] == sorted(
+        [item["created_at"] for item in items], reverse=True
+    )
+    assert set(items[0].keys()) == {
+        "user_email",
+        "role_answer",
+        "use_case_answer",
+        "created_at",
+    }

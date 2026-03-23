@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+import hmac
+from datetime import datetime, timezone
 from typing import Any, Literal, cast
 
 from fastapi import APIRouter, HTTPException, Query, Security, status
@@ -10,6 +11,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.core.database import get_supabase_client
 from app.core.config import get_settings
 from app.models.operator import (
+    DEFAULT_ERROR_CODE_FAILED,
+    DEFAULT_ERROR_CODE_PARTIAL,
     OperatorRunRow,
     OperatorRunsResponse,
     SendFollowupsResponse,
@@ -24,59 +27,92 @@ _run_statuses = frozenset(
     {"queued", "running", "composing", "completed", "partial", "failed"}
 )
 
+# Input validation limits
+MAX_USER_IDS_PER_QUERY = 100
+MAX_TEXT_FIELD_LENGTH = 500
+
 
 def _require_valid_operator_credentials(
     credentials: HTTPAuthorizationCredentials | None,
 ) -> None:
+    """Validate operator API key using constant-time comparison to prevent timing attacks."""
     settings = get_settings()
-    if credentials is None or credentials.credentials != settings.operator_api_key:
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden",
+        )
+    # Use constant-time comparison to prevent timing attacks
+    if not hmac.compare_digest(credentials.credentials, settings.operator_api_key):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Forbidden",
         )
 
 
-def _coerce_int(value: Any) -> int:
-    if isinstance(value, (int, float)):
+def _coerce_int(value: Any, field_name: str = "value") -> int:
+    """Coerce value to int, rejecting invalid types to prevent silent data corruption."""
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
         return int(value)
-    return 0
+    raise ValueError(
+        f"Expected int or float for {field_name}, got {type(value).__name__}"
+    )
 
 
-def _coerce_float(value: Any) -> float:
+def _coerce_float(value: Any, field_name: str = "value") -> float:
+    """Coerce value to float, rejecting invalid types to prevent silent data corruption."""
     if isinstance(value, (int, float)):
         return float(value)
-    return 0.0
+    raise ValueError(
+        f"Expected numeric type for {field_name}, got {type(value).__name__}"
+    )
 
 
 def _extract_error_metadata(
     row: dict[str, Any],
     run_status: RunStatus,
 ) -> tuple[str | None, str | None]:
+    """Extract error metadata from database row with fallback defaults for failed/partial runs.
+
+    Searches multiple possible column names for error info to handle schema variations.
+    For failed/partial runs without error metadata, generates default error codes and
+    timestamps to ensure 100% coverage as required by AC3.
+    """
     error_code: str | None = None
     error_at: str | None = None
 
+    # Search for error code in various possible column names
     for key in ("error_code", "failure_code", "provider_error_code"):
         value = row.get(key)
-        if isinstance(value, str) and value:
-            error_code = value
+        if isinstance(value, str) and value.strip():
+            error_code = value.strip()
             break
 
+    # Search for error timestamp in various possible column names
     for key in ("error_at", "failed_at", "error_timestamp"):
         value = row.get(key)
-        if isinstance(value, str) and value:
-            error_at = value
+        if isinstance(value, str) and value.strip():
+            error_at = value.strip()
             break
 
+    # AC3: Ensure 100% error metadata coverage for failed/partial runs
     if run_status in {"failed", "partial"}:
         if error_code is None:
-            error_code = "RUN_FAILED" if run_status == "failed" else "RUN_PARTIAL"
+            error_code = (
+                DEFAULT_ERROR_CODE_FAILED
+                if run_status == "failed"
+                else DEFAULT_ERROR_CODE_PARTIAL
+            )
         if error_at is None:
+            # Fallback to completed_at or created_at for error timestamp
             completed_at = row.get("completed_at")
             created_at = row.get("created_at")
-            if isinstance(completed_at, str) and completed_at:
-                error_at = completed_at
-            elif isinstance(created_at, str) and created_at:
-                error_at = created_at
+            if isinstance(completed_at, str) and completed_at.strip():
+                error_at = completed_at.strip()
+            elif isinstance(created_at, str) and created_at.strip():
+                error_at = created_at.strip()
 
     return error_code, error_at
 
@@ -86,8 +122,16 @@ def _load_user_email_by_user_id(
     supabase: Any,
     user_ids: list[str],
 ) -> dict[str, str]:
+    """Load user emails by IDs with validation to prevent DoS via oversized queries."""
     if not user_ids:
         return {}
+
+    # Validate and limit user_ids to prevent DoS
+    if len(user_ids) > MAX_USER_IDS_PER_QUERY:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Too many user IDs requested. Maximum: {MAX_USER_IDS_PER_QUERY}",
+        )
 
     try:
         user_result = (
@@ -95,7 +139,8 @@ def _load_user_email_by_user_id(
         )
     except Exception as exc:
         raise HTTPException(
-            status_code=500, detail="Failed to load operator runs"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load operator runs",
         ) from exc
 
     user_rows = user_result.data or []
@@ -111,12 +156,43 @@ def _load_user_email_by_user_id(
 
 
 def _parse_iso_datetime(value: str | None) -> datetime | None:
+    """Parse ISO datetime string and ensure timezone-aware result.
+
+    Returns None for invalid formats. Assumes UTC if no timezone specified.
+    """
     if value is None:
         return None
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        # Ensure timezone-aware datetime (AC requirement: AwareDatetime)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
     except ValueError:
         return None
+
+
+def _is_schema_error(exc: Exception) -> bool:
+    """Check if exception is related to missing columns (schema mismatch)."""
+    error_str = str(exc).lower()
+    schema_error_indicators = [
+        "column",
+        "does not exist",
+        "unknown column",
+        "field",
+        "schema",
+    ]
+    return any(indicator in error_str for indicator in schema_error_indicators)
+
+
+def _validate_text_field(value: str, field_name: str) -> str:
+    """Validate text field length to prevent oversized payloads."""
+    if len(value) > MAX_TEXT_FIELD_LENGTH:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Field {field_name} exceeds maximum length",
+        )
+    return value
 
 
 @router.get("/runs", response_model=OperatorRunsResponse)
@@ -126,6 +202,11 @@ async def list_runs(
     page_size: int = Query(default=20, ge=1, le=100),
     credentials: HTTPAuthorizationCredentials | None = Security(_bearer),
 ) -> OperatorRunsResponse:
+    """List operator runs with pagination, filtering, and error metadata.
+
+    Returns paginated list of runs ordered by created_at descending.
+    Supports filtering by status. All failed/partial runs include error metadata.
+    """
     _require_valid_operator_credentials(credentials)
 
     supabase = get_supabase_client()
@@ -135,15 +216,23 @@ async def list_runs(
     base_columns = "id,user_id,topic,audience,status,persona_count,cost_usd,created_at,completed_at"
     query_columns = f"{base_columns},error_code,error_at"
 
-    query = cast(Any, supabase.table("runs")).select(query_columns, count="exact")
+    query = supabase.table("runs").select(query_columns, count=cast(Any, "exact"))
     if status_filter is not None:
         query = query.eq("status", status_filter)
 
     try:
         result = query.order("created_at", desc=True).range(offset, limit_end).execute()
-    except Exception:
-        fallback_query = cast(Any, supabase.table("runs")).select(
-            base_columns, count="exact"
+    except Exception as exc:
+        # Only fallback on schema errors (missing columns), not other failures
+        if not _is_schema_error(exc):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load operator runs",
+            ) from exc
+
+        # Fallback: query without error columns for backward compatibility
+        fallback_query = supabase.table("runs").select(
+            base_columns, count=cast(Any, "exact")
         )
         if status_filter is not None:
             fallback_query = fallback_query.eq("status", status_filter)
@@ -153,20 +242,22 @@ async def list_runs(
                 .range(offset, limit_end)
                 .execute()
             )
-        except Exception as exc:
+        except Exception as fallback_exc:
             raise HTTPException(
-                status_code=500, detail="Failed to load operator runs"
-            ) from exc
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load operator runs",
+            ) from fallback_exc
 
     rows = result.data or []
     total = int(result.count) if isinstance(result.count, int) else 0
 
-    user_ids = sorted(
-        [
-            row["user_id"]
+    # Deduplicate user_ids before querying to avoid redundant lookups
+    user_ids: list[str] = list(
+        dict.fromkeys(
+            cast(str, row["user_id"])
             for row in rows
             if isinstance(row, dict) and isinstance(row.get("user_id"), str)
-        ]
+        )
     )
     user_email_by_user_id = _load_user_email_by_user_id(
         supabase=supabase, user_ids=user_ids
@@ -181,7 +272,7 @@ async def list_runs(
         user_id = row.get("user_id")
         topic = row.get("topic")
         audience = row.get("audience")
-        run_status = row.get("status")
+        run_status_raw = row.get("status")
         created_at = row.get("created_at")
 
         if not (
@@ -189,11 +280,21 @@ async def list_runs(
             and isinstance(user_id, str)
             and isinstance(topic, str)
             and isinstance(audience, str)
-            and isinstance(run_status, str)
-            and run_status in _run_statuses
+            and isinstance(run_status_raw, str)
             and isinstance(created_at, str)
         ):
-            raise HTTPException(status_code=500, detail="Failed to load operator runs")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load operator runs",
+            )
+
+        # Normalize status to lowercase for case-insensitive comparison
+        run_status = run_status_raw.lower()
+        if run_status not in _run_statuses:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load operator runs",
+            )
 
         typed_status = cast(RunStatus, run_status)
         error_code, error_at = _extract_error_metadata(row, typed_status)
@@ -207,7 +308,24 @@ async def list_runs(
         )
         error_at_dt = _parse_iso_datetime(error_at)
         if created_at_dt is None:
-            raise HTTPException(status_code=500, detail="Failed to load operator runs")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load operator runs",
+            )
+
+        # Validate and coerce numeric fields with proper error handling
+        try:
+            persona_count = _coerce_int(row.get("persona_count"), "persona_count")
+            cost_usd = _coerce_float(row.get("cost_usd"), "cost_usd")
+        except ValueError as ve:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Data validation error: {ve}",
+            ) from ve
+
+        # Validate text fields
+        topic = _validate_text_field(topic, "topic")
+        audience = _validate_text_field(audience, "audience")
 
         item = OperatorRunRow(
             run_id=run_id,
@@ -215,8 +333,8 @@ async def list_runs(
             topic=topic,
             audience=audience,
             status=typed_status,
-            persona_count=_coerce_int(row.get("persona_count")),
-            cost_usd=_coerce_float(row.get("cost_usd")),
+            persona_count=persona_count,
+            cost_usd=cost_usd,
             created_at=created_at_dt,
             completed_at=completed_at_dt,
             error_code=error_code,
@@ -233,6 +351,7 @@ async def list_runs(
 async def send_followups(
     credentials: HTTPAuthorizationCredentials | None = Security(_bearer),
 ) -> SendFollowupsResponse:
+    """Dispatch follow-up emails for pending runs."""
     _require_valid_operator_credentials(credentials)
 
     sent = await asyncio.to_thread(dispatch_followup_sequence)

@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+
+# Error code constants for failed/partial runs (AC3 compliance)
+DEFAULT_ERROR_CODE_FAILED = "RUN_FAILED"
+DEFAULT_ERROR_CODE_PARTIAL = "RUN_PARTIAL"
 
 
 class SendFollowupsResponse(BaseModel):
@@ -16,11 +20,11 @@ class OperatorRunRow(BaseModel):
 
     run_id: str
     user_email: str
-    topic: str
-    audience: str
+    topic: str = Field(..., max_length=500)
+    audience: str = Field(..., max_length=500)
     status: Literal["queued", "running", "composing", "completed", "partial", "failed"]
-    persona_count: int
-    cost_usd: float
+    persona_count: int = Field(..., ge=0)
+    cost_usd: float = Field(..., ge=0)
     created_at: AwareDatetime
     completed_at: AwareDatetime | None = None
     error_code: str | None = None

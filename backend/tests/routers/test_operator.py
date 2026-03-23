@@ -568,24 +568,27 @@ def test_get_email_stats_requires_valid_bearer(monkeypatch):
 def test_get_email_stats_returns_stable_contract(monkeypatch):
     client = build_client(monkeypatch)
     import app.routers.operator as operator_router
+    from app.models.operator import OperatorEmailStatsResponse
+
+    expected = OperatorEmailStatsResponse(
+        window_days=7,
+        result_emails_sent=14,
+        result_delivery_rate=0.97,
+        result_open_rate=0.61,
+        magic_link_sent=20,
+        magic_link_delivery_rate=0.99,
+        followup_day1_sent=10,
+        followup_day3_sent=8,
+        followup_day7_sent=7,
+        followup_delivery_rate=0.96,
+        followup_open_rate=0.49,
+        overall_delivery_rate=0.97,
+    )
 
     monkeypatch.setattr(
         operator_router,
         "get_email_stats_summary",
-        lambda *, window_days: {
-            "window_days": window_days,
-            "result_emails_sent": 14,
-            "result_delivery_rate": 0.97,
-            "result_open_rate": 0.61,
-            "magic_link_sent": 20,
-            "magic_link_delivery_rate": 0.99,
-            "followup_day1_sent": 10,
-            "followup_day3_sent": 8,
-            "followup_day7_sent": 7,
-            "followup_delivery_rate": 0.96,
-            "followup_open_rate": 0.49,
-            "overall_delivery_rate": 0.97,
-        },
+        lambda *, window_days: expected,
     )
 
     response = client.get(
@@ -613,24 +616,27 @@ def test_get_email_stats_returns_stable_contract(monkeypatch):
 def test_get_email_stats_handles_empty_metrics(monkeypatch):
     client = build_client(monkeypatch)
     import app.routers.operator as operator_router
+    from app.models.operator import OperatorEmailStatsResponse
+
+    zeroed = OperatorEmailStatsResponse(
+        window_days=7,
+        result_emails_sent=0,
+        result_delivery_rate=0.0,
+        result_open_rate=0.0,
+        magic_link_sent=0,
+        magic_link_delivery_rate=0.0,
+        followup_day1_sent=0,
+        followup_day3_sent=0,
+        followup_day7_sent=0,
+        followup_delivery_rate=0.0,
+        followup_open_rate=0.0,
+        overall_delivery_rate=0.0,
+    )
 
     monkeypatch.setattr(
         operator_router,
         "get_email_stats_summary",
-        lambda *, window_days: {
-            "window_days": window_days,
-            "result_emails_sent": 0,
-            "result_delivery_rate": 0.0,
-            "result_open_rate": 0.0,
-            "magic_link_sent": 0,
-            "magic_link_delivery_rate": 0.0,
-            "followup_day1_sent": 0,
-            "followup_day3_sent": 0,
-            "followup_day7_sent": 0,
-            "followup_delivery_rate": 0.0,
-            "followup_open_rate": 0.0,
-            "overall_delivery_rate": 0.0,
-        },
+        lambda *, window_days: zeroed,
     )
 
     response = client.get(

@@ -220,3 +220,47 @@ def test_send_followup_email_uses_day_template_and_unsubscribe_link(
     assert "List-Unsubscribe-Post" in sent[0]["headers"]
     assert sent[0]["headers"]["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
     assert sent[0]["tags"] == [{"name": "email_type", "value": "followup_day3"}]
+
+
+def test_send_followup_day1_email_sets_correct_tag(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    from app.services.email_service import send_followup_email
+
+    sent: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "app.services.email_service._render_followup_email_via_frontend_api",
+        lambda *, day, props, frontend_origin: "<html><body>day1</body></html>",
+    )
+
+    with patch("resend.Emails.send", side_effect=lambda payload: sent.append(payload)):
+        send_followup_email(
+            recipient_email="user@example.com",
+            day="day1",
+            user_id="11111111-1111-4111-8111-111111111111",
+        )
+
+    assert len(sent) == 1
+    assert sent[0]["tags"] == [{"name": "email_type", "value": "followup_day1"}]
+
+
+def test_send_followup_day7_email_sets_correct_tag(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    from app.services.email_service import send_followup_email
+
+    sent: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "app.services.email_service._render_followup_email_via_frontend_api",
+        lambda *, day, props, frontend_origin: "<html><body>day7</body></html>",
+    )
+
+    with patch("resend.Emails.send", side_effect=lambda payload: sent.append(payload)):
+        send_followup_email(
+            recipient_email="user@example.com",
+            day="day7",
+            user_id="11111111-1111-4111-8111-111111111111",
+        )
+
+    assert len(sent) == 1
+    assert sent[0]["tags"] == [{"name": "email_type", "value": "followup_day7"}]

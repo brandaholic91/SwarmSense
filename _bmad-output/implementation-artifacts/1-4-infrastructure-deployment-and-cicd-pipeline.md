@@ -1,6 +1,6 @@
 # Story 1.4: Infrastructure Deployment & CI/CD Pipeline
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -47,10 +47,10 @@ so that every PR is validated and every merge to main is deployed without manual
   - [x] Add post-deploy HTTPS health check step against public API domain; fail workflow on non-200.
   - [x] Keep frontend deployment decoupled (Vercel auto-deploy remains source of truth for frontend).
 
-- [ ] Add operations and test coverage for infrastructure behavior (AC: 1-8)
+- [x] Add operations and test coverage for infrastructure behavior (AC: 1-8)
   - [x] Add backend test for health endpoint contract (HTTP 200 + expected response body fields if defined).
-  - [ ] Add workflow-level sanity checks where feasible (e.g., YAML lint or dry-run checks in CI).
-  - [ ] Document manual smoke-test runbook in `README.md` for first VPS bootstrap and rollback.
+  - [x] Add workflow-level sanity checks where feasible (e.g., YAML lint or dry-run checks in CI).
+  - [x] Document manual smoke-test runbook in `README.md` for first VPS bootstrap and rollback.
 
 ## Dev Notes
 
@@ -144,9 +144,13 @@ openai/gpt-5.3-codex
 - Scope decision recorded: keep `docker-compose.swarmsense-backend.yml` as current production compose file for now; postpone rename/standardization to `docker-compose.yml`.
 - Scope decision recorded: Caddyfile remains VPS-managed and is referenced via documentation only (no Caddyfile committed in repo).
 - Backend container hardening applied in `backend/Dockerfile`: non-root runtime user, deterministic dependency install layer, and explicit pip runtime guardrails.
+- CI workflow hardened with `workflow_sanity` job in `.github/workflows/ci.yml` to run `actionlint` and `docker compose ... config` before frontend/backend jobs.
+- Root `README.md` added with full project setup, CI/CD overview, and VPS bootstrap/smoke-test/rollback runbooks.
 
 ### File List
 
 - .github/workflows/deploy.yml
+- .github/workflows/ci.yml
 - backend/Dockerfile
+- README.md
 - _bmad-output/implementation-artifacts/1-4-infrastructure-deployment-and-cicd-pipeline.md

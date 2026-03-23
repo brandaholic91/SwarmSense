@@ -43,11 +43,11 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 1: Project Foundation & Core Infrastructure
-  epic-1: in-progress
+  epic-1: done
   1-1-monorepo-initialization-and-development-environment: done
   1-2-database-foundation-users-and-cost-tracking-schema: done
   1-3-fastapi-core-application-and-api-cost-enforcement-middleware: done
-  1-4-infrastructure-deployment-and-cicd-pipeline: ready-for-dev # deferred until after epic-5
+  1-4-infrastructure-deployment-and-cicd-pipeline: done
   1-5-frontend-base-configuration-and-monitoring-integration: done
   epic-1-retrospective: optional
 
@@ -86,7 +86,7 @@ development_status:
   epic-5-retrospective: optional
 
   # Epic 6: Operator Monitoring & Administration
-  epic-6: in-progress
+  epic-6: done
   6-1-operator-run-log-endpoint: done
   6-2-qualifier-response-log-endpoint: done
   6-3-api-cost-tracking-80-percent-alert-and-hard-cap-enforcement: done

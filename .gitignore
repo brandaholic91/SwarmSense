@@ -2,6 +2,8 @@
 /.claude
 /.cursor
 /.opencode
+/.agents
+/.agent
 .env
 .env.local
 .env.*
@@ -11,3 +13,4 @@ __pycache__/
 .ruff_cache/
 .next/
 node_modules/
+skills-lock.json

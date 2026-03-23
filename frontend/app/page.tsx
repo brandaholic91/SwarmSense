@@ -355,7 +355,7 @@ export default function Home() {
 
             <details className="sr-d2 mt-6 rounded-2xl border p-6" style={{ borderColor: outlineVariant, backgroundColor: surfaceContainerHigh }}>
               <summary className="cursor-pointer text-sm font-medium" style={{ ...headlineFont, color: onSurface }}>
-                Részletes minta megnyitása
+                Részletes eredmény megnyitása
               </summary>
 
               <div className="mt-6 rounded-2xl border p-6" style={{ backgroundColor: surfaceContainerHigh, borderColor: outlineVariant }}>

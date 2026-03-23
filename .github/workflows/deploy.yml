@@ -62,7 +62,6 @@ jobs:
           key: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
           port: ${{ secrets.HETZNER_SSH_PORT || '22' }}
           envs: DEPLOY_PATH,GHCR_USERNAME,GHCR_TOKEN
-          script_stop: true
           script: |
             set -euo pipefail
             cd "$DEPLOY_PATH"

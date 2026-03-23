@@ -25,6 +25,9 @@ jobs:
       - name: Validate GitHub workflows with actionlint
         run: ~/go/bin/actionlint
 
+      - name: Prepare backend env for compose validation
+        run: cp backend/.env.example backend/.env
+
       - name: Validate production compose syntax
         run: docker compose -f docker-compose.swarmsense-backend.yml config
 

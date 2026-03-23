@@ -6,8 +6,6 @@ import Link from "next/link";
 import { Loader2, Send, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
-import { isRedirectError } from "next/dist/client/components/redirect-error";
-
 import { submitRunAction } from "@/app/actions/submit-run";
 import { Input } from "@/components/ui/input";
 import { messages } from "@/lib/messages";
@@ -31,6 +29,14 @@ const focusLineStyle = {
 } as CSSProperties;
 
 export default function ResearchEmailPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <ResearchEmailContent />
+    </React.Suspense>
+  );
+}
+
+function ResearchEmailContent() {
   const { form } = messages.research;
   const copy = form.email;
   const searchParams = useSearchParams();
@@ -56,15 +62,15 @@ export default function ResearchEmailPage() {
     setError(undefined);
     startTransition(async () => {
       try {
-        await submitRunAction({
+        const result = await submitRunAction({
           email: trimmed,
           hasConsent: true,
           consentTimestamp: new Date().toISOString(),
           topic,
           audience,
         });
+        window.location.assign(result.redirectTo);
       } catch (err) {
-        if (isRedirectError(err)) throw err;
         setError(messages.genericError);
       }
     });

@@ -6,11 +6,20 @@ class ResizeObserverMock {
   disconnect() {}
 }
 
-class IntersectionObserverMock {
-  observe() {}
-  unobserve() {}
+class IntersectionObserverMock implements IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin = "0px";
+  readonly thresholds: ReadonlyArray<number> = [0];
+
+  constructor(
+    _callback: IntersectionObserverCallback,
+    _options?: IntersectionObserverInit
+  ) {}
+
+  observe(_target: Element) {}
+  unobserve(_target: Element) {}
   disconnect() {}
-  takeRecords() {
+  takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
 }

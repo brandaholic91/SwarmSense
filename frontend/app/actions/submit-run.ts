@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 type SubmitRunInput = {
   email: string;
@@ -17,13 +16,17 @@ type CheckEmailResponse =
 
 type MagicLinkResponse = { status: "sent" };
 
+export type SubmitRunResult = {
+  redirectTo: string;
+};
+
 export async function submitRunAction({
   email,
   hasConsent,
   consentTimestamp,
   topic,
   audience,
-}: SubmitRunInput): Promise<void> {
+}: SubmitRunInput): Promise<SubmitRunResult> {
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedTopic = topic.trim();
   const normalizedAudience = audience.trim();
@@ -56,8 +59,11 @@ export async function submitRunAction({
 
   const data = (await response.json()) as CheckEmailResponse;
   if (data.status === "returning") {
-    redirect(`/blocked?email=${encodeURIComponent(normalizedEmail)}`);
+    return { redirectTo: `/blocked?email=${encodeURIComponent(normalizedEmail)}` };
   }
+
+  const cookieDomain = process.env.COOKIE_DOMAIN;
+  const cookieDomainOption = cookieDomain ? { domain: cookieDomain } : {};
 
   const cookieStore = await cookies();
   cookieStore.set("swarmsense_result_email", normalizedEmail, {
@@ -66,6 +72,7 @@ export async function submitRunAction({
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60,
+    ...cookieDomainOption,
   });
 
   cookieStore.set(
@@ -80,6 +87,7 @@ export async function submitRunAction({
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 60 * 60,
+      ...cookieDomainOption,
     }
   );
 
@@ -105,5 +113,7 @@ export async function submitRunAction({
     throw new Error("Magic link generation failed");
   }
 
-  redirect(`/research/sent?email=${encodeURIComponent(normalizedEmail)}`);
+  return {
+    redirectTo: `/research/sent?email=${encodeURIComponent(normalizedEmail)}`,
+  };
 }

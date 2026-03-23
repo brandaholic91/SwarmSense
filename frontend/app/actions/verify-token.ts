@@ -65,6 +65,8 @@ export async function verifyTokenAction({
 
   if (response.ok) {
     const data = (await response.json()) as VerifyResponse;
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+    const cookieDomainOption = cookieDomain ? { domain: cookieDomain } : {};
     const cookieStore = await cookies();
     cookieStore.set("swarmsense_verified_user", data.user_id, {
       httpOnly: true,
@@ -72,6 +74,7 @@ export async function verifyTokenAction({
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 60 * 60,
+      ...cookieDomainOption,
     });
     return {
       ok: true,

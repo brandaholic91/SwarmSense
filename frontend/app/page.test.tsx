@@ -35,7 +35,12 @@ describe("Landing page", () => {
   it("renders three persona cards in the example result preview", () => {
     render(<Home />);
 
-    const cards = screen.getAllByRole("article");
+    const cards = messages.landing.preview.cards.map((card) =>
+      screen.getByLabelText(`${card.name} - ${card.stanceLabel} - ${card.role}`, {
+        selector: "article",
+      })
+    );
+
     expect(cards).toHaveLength(messages.landing.preview.cards.length);
   });
 });

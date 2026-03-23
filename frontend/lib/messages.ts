@@ -168,7 +168,7 @@ export const messages = {
       eyebrow: "Új kutatás",
       headline: "Mi a hipotézised?",
       subheadline:
-        "Írd le a kutatási kérdést és a célcsoportot. 90 másodperc múlva a postaládádban van az eredmény.",
+        "Írd le a kutatási kérdést és a célcsoportot. Pár perc múlva a postaládádban van az eredmény.",
       researchLabel: "Mit vizsgálsz?",
       audienceLabel: "Kinek szól?",
       researchExamples: [

@@ -6,8 +6,21 @@ class ResizeObserverMock {
   disconnect() {}
 }
 
+class IntersectionObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+
 if (!window.ResizeObserver) {
   window.ResizeObserver = ResizeObserverMock;
+}
+
+if (!window.IntersectionObserver) {
+  window.IntersectionObserver = IntersectionObserverMock;
 }
 
 if (!Element.prototype.scrollIntoView) {

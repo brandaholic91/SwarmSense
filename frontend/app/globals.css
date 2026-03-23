@@ -159,6 +159,11 @@
 /* Section immediately after hero — appears after CTA is visible */
 .after-hero { animation: swarm-fade-up 1.8s cubic-bezier(0.16, 1, 0.3, 1) 1.9s both; }
 
+.hero-h1  { animation-duration: 0.95s; animation-delay: 0.08s; }
+.hero-sub { animation-duration: 0.95s; animation-delay: 0.18s; }
+.hero-cta { animation-duration: 0.95s; animation-delay: 0.28s; }
+.after-hero { animation-duration: 0.8s; animation-delay: 0.34s; }
+
 /* Ambient blobs */
 .hero-blob {
   animation:
@@ -172,8 +177,8 @@
 .sr, .sr-d1, .sr-d2, .sr-d3 {
   opacity: 0;
   transform: translateY(14px);
-  transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .sr-d1 { transition-delay: 80ms; }
 .sr-d2 { transition-delay: 160ms; }
@@ -181,6 +186,15 @@
 .sr.sr-visible, .sr-d1.sr-visible, .sr-d2.sr-visible, .sr-d3.sr-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0);
+  background-size: 3px 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {

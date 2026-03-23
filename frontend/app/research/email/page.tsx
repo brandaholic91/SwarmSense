@@ -85,24 +85,31 @@ export default function ResearchEmailPage() {
       </header>
 
       <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-24">
-        <div className="w-full max-w-[600px]">
-          <section
-            className="w-full space-y-8 rounded-xl border p-8"
-            style={{ borderColor: outlineVariant, backgroundColor: surfaceContainerHigh }}
-          >
-            <div className="space-y-2">
+        <div className="w-full max-w-[600px] space-y-12">
+          <section className="space-y-8">
+            <div className="space-y-4">
+              <span
+                className="text-xs uppercase tracking-[0.3em]"
+                style={{ color: textSecondary, ...labelFont }}
+              >
+                {form.eyebrow}
+              </span>
               <h1
-                className="text-2xl font-semibold"
+                className="text-3xl font-semibold md:text-4xl"
                 style={{ ...headlineFont, color: onSurface }}
               >
                 {copy.heading}
               </h1>
-              <p className="text-sm" style={{ color: textSecondary }}>
+              <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
                 {copy.subheadline}
               </p>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form
+              className="space-y-6 rounded-lg px-5 py-8 md:px-6 md:py-10"
+              style={{ backgroundColor: surfaceContainerLow }}
+              onSubmit={handleSubmit}
+            >
               <div className="space-y-3">
                 <label
                   className="text-xs uppercase tracking-[0.2em]"
@@ -120,7 +127,7 @@ export default function ResearchEmailPage() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="w-full border-none bg-transparent p-5 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
-                    style={{ backgroundColor: surfaceContainerLow, color: onSurface }}
+                    style={{ backgroundColor: surfaceContainerHigh, color: onSurface }}
                   />
                   <div
                     className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-[var(--base-color)] opacity-20 transition-all duration-200 group-focus-within:bg-[var(--focus-color)] group-focus-within:opacity-100"
@@ -161,28 +168,27 @@ export default function ResearchEmailPage() {
                 </label>
               </div>
 
-              <div className="space-y-4">
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  aria-disabled={!canSubmit ? "true" : undefined}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
-                >
-                  {copy.cta}
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Send className="h-4 w-4" aria-hidden="true" />
-                  )}
-                </button>
-                <div
-                  className="flex items-center justify-center gap-2 text-[11px]"
-                  style={{ color: textSecondary, ...labelFont }}
-                >
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                  <span>{copy.privacyNote}</span>
-                </div>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                aria-disabled={!canSubmit ? "true" : undefined}
+                className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
+              >
+                {copy.cta}
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+
+              <div
+                className="flex items-center justify-center gap-2 text-[11px]"
+                style={{ color: textSecondary, ...labelFont }}
+              >
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                <span>{copy.privacyNote}</span>
               </div>
             </form>
           </section>

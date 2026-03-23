@@ -7,9 +7,31 @@ on:
       - main
 
 jobs:
+  workflow_sanity:
+    name: Workflow and compose sanity checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go (for actionlint)
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@latest
+
+      - name: Validate GitHub workflows with actionlint
+        run: ~/go/bin/actionlint
+
+      - name: Validate production compose syntax
+        run: docker compose -f docker-compose.swarmsense-backend.yml config
+
   frontend:
     name: Frontend lint/test/build
     runs-on: ubuntu-latest
+    needs: workflow_sanity
     defaults:
       run:
         working-directory: frontend
@@ -47,6 +69,7 @@ jobs:
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
+    needs: workflow_sanity
     defaults:
       run:
         working-directory: backend

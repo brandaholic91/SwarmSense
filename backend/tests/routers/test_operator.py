@@ -52,7 +52,22 @@ class FakeQuery:
         self._in_filters[field] = values
         return self
 
+    def limit(self, _n: int):
+        return self
+
     def execute(self):
+        if self._table_name == "cost_tracking" and self._operation == "select":
+            rows = [dict(row) for row in self._supabase.cost_rows]
+            for field, value in self._filters.items():
+                rows = [row for row in rows if row.get(field) == value]
+            if self._range_start is not None and self._range_end is not None:
+                rows = rows[self._range_start : self._range_end + 1]
+            fields = [field.strip() for field in self._select_fields.split(",")]
+            projected: list[dict[str, Any]] = []
+            for row in rows:
+                projected.append({field: row.get(field) for field in fields})
+            return FakeResponse(projected, count=len(projected))
+
         if self._table_name == "users" and self._operation == "select":
             ids = self._in_filters.get("id", [])
             rows = [
@@ -125,6 +140,8 @@ class FakeQuery:
 class FakeSupabase:
     def __init__(self, *, support_error_columns: bool = True):
         self.support_error_columns = support_error_columns
+        current_month = datetime.now(UTC).strftime("%Y-%m")
+        self.cost_rows = [{"month": current_month, "total_usd": "12.34"}]
         self.users_by_id = {
             "user-1": "anna@example.com",
             "user-2": "bela@example.com",
@@ -441,3 +458,57 @@ def test_list_qualifier_responses_skips_invalid_text_rows(monkeypatch):
     payload = response.json()
     assert payload["total"] == 1
     assert [item["user_email"] for item in payload["items"]] == ["anna@example.com"]
+
+
+def test_get_cost_requires_valid_bearer(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/v1/operator/cost")
+    assert response.status_code == 403
+
+    response = client.get(
+        "/api/v1/operator/cost",
+        headers={"Authorization": "Bearer wrong-key"},
+    )
+    assert response.status_code == 403
+
+
+def test_get_cost_returns_warning_payload_at_80_percent(monkeypatch):
+    fake_supabase = FakeSupabase()
+    current_month = datetime.now(UTC).strftime("%Y-%m")
+    fake_supabase.cost_rows = [{"month": current_month, "total_usd": "40.00"}]
+    client = build_client(monkeypatch, fake_supabase=fake_supabase)
+
+    response = client.get(
+        "/api/v1/operator/cost",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "month": current_month,
+        "total_usd": 40.0,
+        "cap_usd": 50.0,
+        "percentage": 80.0,
+        "status": "warning",
+    }
+
+
+def test_get_cost_returns_capped_payload_at_or_above_100_percent(monkeypatch):
+    fake_supabase = FakeSupabase()
+    current_month = datetime.now(UTC).strftime("%Y-%m")
+    fake_supabase.cost_rows = [{"month": current_month, "total_usd": "50.00"}]
+    client = build_client(monkeypatch, fake_supabase=fake_supabase)
+
+    response = client.get(
+        "/api/v1/operator/cost",
+        headers={"Authorization": "Bearer operator-key"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["month"] == current_month
+    assert payload["total_usd"] == 50.0
+    assert payload["cap_usd"] == 50.0
+    assert payload["percentage"] == 100.0
+    assert payload["status"] == "capped"

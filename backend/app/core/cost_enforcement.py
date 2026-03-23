@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import date
+from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
+from typing import Any, cast
 
 from fastapi import Request
 
@@ -21,11 +22,13 @@ def _normalize_total(value: object) -> Decimal:
     try:
         return Decimal(str(value))
     except (InvalidOperation, TypeError) as exc:
-        raise CostCheckError(f"Invalid total_usd value in cost_tracking: {value!r}") from exc
+        raise CostCheckError(
+            f"Invalid total_usd value in cost_tracking: {value!r}"
+        ) from exc
 
 
 def _current_month() -> str:
-    return date.today().strftime("%Y-%m")
+    return datetime.now(UTC).strftime("%Y-%m")
 
 
 async def _fetch_month_total_usd() -> Decimal:
@@ -42,7 +45,11 @@ async def _fetch_month_total_usd() -> Decimal:
         data = response.data or []
         if not data:
             return Decimal("0")
-        return _normalize_total(data[0].get("total_usd", 0))
+        row = data[0]
+        if not isinstance(row, dict):
+            raise CostCheckError("Invalid cost_tracking row payload")
+        row_payload = cast(dict[str, Any], row)
+        return _normalize_total(row_payload.get("total_usd", 0))
     except CostCheckError:
         raise
     except Exception as exc:

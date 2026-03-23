@@ -457,7 +457,10 @@ def test_process_run_logs_email_failure_and_preserves_partial_status(
         status_code = 503
 
     def _raise_send_error(
-        *, recipient_email: str, result_payload: dict[str, Any], user_id: str | None = None
+        *,
+        recipient_email: str,
+        result_payload: dict[str, Any],
+        user_id: str | None = None,
     ) -> None:
         _ = (recipient_email, result_payload, user_id)
         raise FakeResendError("provider unavailable")
@@ -585,6 +588,123 @@ def test_monthly_cost_tracking_creates_missing_month_row(monkeypatch) -> None:
     assert len(fake_supabase.cost_rows) == 1
     assert fake_supabase.cost_rows[0]["month"] == datetime.now(UTC).strftime("%Y-%m")
     assert fake_supabase.cost_rows[0]["total_usd"] == "0.42"
+
+
+def test_monthly_cost_threshold_alert_emits_once_per_month(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    fake_supabase = FakeSupabase("39.90")
+    fake_supabase.run_rows["run-2"] = {
+        "id": "run-2",
+        "status": "queued",
+        "cost_usd": None,
+        "persona_count": None,
+        "completed_at": None,
+    }
+
+    import app.services.run_processor as run_processor
+
+    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result(successful_count=15, total_personas=15, cost_usd=0.20),
+    )
+
+    warning_messages: list[tuple[str, str | None]] = []
+    monkeypatch.setattr(
+        run_processor,
+        "send_run_result_email",
+        lambda *, recipient_email, result_payload, user_id=None: None,
+    )
+    monkeypatch.setattr(
+        run_processor.sentry_sdk,
+        "capture_message",
+        lambda message, level=None: warning_messages.append((message, level)),
+    )
+
+    asyncio.run(
+        process_run(
+            run_id="run-1",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result(successful_count=15, total_personas=15, cost_usd=0.10),
+    )
+    asyncio.run(
+        process_run(
+            run_id="run-2",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    current_month = datetime.now(UTC).strftime("%Y-%m")
+    month_rows = [
+        row for row in fake_supabase.cost_rows if row.get("month") == current_month
+    ]
+    assert len(month_rows) == 1
+    assert month_rows[0]["total_usd"] == "40.20"
+    assert isinstance(month_rows[0].get("alert_80_sent_at"), str)
+    assert len(warning_messages) == 1
+    assert warning_messages[0][1] == "warning"
+
+
+def test_monthly_cost_threshold_alert_resets_with_new_month(monkeypatch) -> None:
+    _seed_env(monkeypatch)
+    fake_supabase = FakeSupabase(total_usd=None)
+    fake_supabase.cost_rows.append(
+        {
+            "month": "1900-01",
+            "total_usd": "45.00",
+            "alert_80_sent_at": "1900-01-15T10:00:00+00:00",
+        }
+    )
+
+    import app.services.run_processor as run_processor
+
+    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
+    _patch_fake_engine(
+        monkeypatch,
+        run_processor,
+        _build_result(successful_count=15, total_personas=15, cost_usd=40.00),
+    )
+
+    warning_messages: list[tuple[str, str | None]] = []
+    monkeypatch.setattr(
+        run_processor,
+        "send_run_result_email",
+        lambda *, recipient_email, result_payload, user_id=None: None,
+    )
+    monkeypatch.setattr(
+        run_processor.sentry_sdk,
+        "capture_message",
+        lambda message, level=None: warning_messages.append((message, level)),
+    )
+
+    asyncio.run(
+        process_run(
+            run_id="run-1",
+            user_id="user-1",
+            topic="Tema",
+            audience="Kozonseg",
+        )
+    )
+
+    current_month = datetime.now(UTC).strftime("%Y-%m")
+    current_rows = [
+        row for row in fake_supabase.cost_rows if row.get("month") == current_month
+    ]
+    assert len(current_rows) == 1
+    assert current_rows[0]["total_usd"] == "40.0"
+    assert isinstance(current_rows[0].get("alert_80_sent_at"), str)
+    assert len(warning_messages) == 1
 
 
 def test_runs_endpoint_dispatches_into_real_run_processor(monkeypatch) -> None:

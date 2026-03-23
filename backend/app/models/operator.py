@@ -56,3 +56,13 @@ class OperatorQualifierResponsesResponse(BaseModel):
     page_size: int
     total: int
     items: list[OperatorQualifierResponseRow]
+
+
+class OperatorCostResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    month: str
+    total_usd: float = Field(..., ge=0)
+    cap_usd: float = Field(..., ge=0)
+    percentage: float = Field(..., ge=0)
+    status: Literal["ok", "warning", "capped"]

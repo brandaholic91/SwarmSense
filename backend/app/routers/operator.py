@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
 from typing import Any, Literal, cast
 
@@ -15,6 +16,7 @@ from app.models.operator import (
     DEFAULT_ERROR_CODE_PARTIAL,
     OperatorQualifierResponseRow,
     OperatorQualifierResponsesResponse,
+    OperatorCostResponse,
     OperatorRunRow,
     OperatorRunsResponse,
     SendFollowupsResponse,
@@ -32,6 +34,8 @@ _run_statuses = frozenset(
 # Input validation limits
 MAX_USER_IDS_PER_QUERY = 100
 MAX_TEXT_FIELD_LENGTH = 500
+MONTHLY_API_CAP_USD = Decimal("50.00")
+WARNING_THRESHOLD_PERCENT = Decimal("80")
 
 
 def _require_valid_operator_credentials(
@@ -230,6 +234,79 @@ def _validate_text_field(value: str, field_name: str) -> str:
             detail=f"Field {field_name} exceeds maximum length",
         )
     return value
+
+
+def _normalize_operator_cost_total(value: Any) -> Decimal:
+    try:
+        normalized = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load operator cost",
+        ) from exc
+
+    if not normalized.is_finite() or normalized < 0:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load operator cost",
+        )
+    return normalized
+
+
+def _resolve_operator_cost_status(
+    *, percentage: Decimal
+) -> Literal["ok", "warning", "capped"]:
+    if percentage >= Decimal("100"):
+        return "capped"
+    if percentage >= WARNING_THRESHOLD_PERCENT:
+        return "warning"
+    return "ok"
+
+
+@router.get("/cost", response_model=OperatorCostResponse)
+async def get_cost(
+    credentials: HTTPAuthorizationCredentials | None = Security(_bearer),
+) -> OperatorCostResponse:
+    _require_valid_operator_credentials(credentials)
+
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    supabase = get_supabase_client()
+
+    try:
+        result = (
+            supabase.table("cost_tracking")
+            .select("month,total_usd")
+            .eq("month", month)
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load operator cost",
+        ) from exc
+
+    rows = result.data or []
+    total_usd = Decimal("0")
+    if rows:
+        row = rows[0]
+        if not isinstance(row, dict):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load operator cost",
+            )
+        total_usd = _normalize_operator_cost_total(row.get("total_usd", 0))
+
+    percentage = (total_usd / MONTHLY_API_CAP_USD) * Decimal("100")
+    status_value = _resolve_operator_cost_status(percentage=percentage)
+
+    return OperatorCostResponse(
+        month=month,
+        total_usd=float(total_usd),
+        cap_usd=float(MONTHLY_API_CAP_USD),
+        percentage=float(percentage),
+        status=status_value,
+    )
 
 
 @router.get("/qualifier-responses", response_model=OperatorQualifierResponsesResponse)

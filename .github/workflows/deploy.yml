@@ -27,7 +27,8 @@ jobs:
       - name: Normalize image name
         id: image
         run: |
-          echo "image_name=$(echo \"${IMAGE_NAME}\" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+          image_name=$(printf '%s' "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')
+          echo "image_name=${image_name}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

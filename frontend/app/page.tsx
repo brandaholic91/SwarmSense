@@ -133,45 +133,45 @@ export default function Home() {
             </div>
 
             <article
-              className="sr-d1 relative rounded-3xl border p-6 text-left md:-translate-y-2"
+              className="hero-card sr-d1 relative rounded-3xl border p-6 text-left"
               style={{ backgroundColor: surfaceContainerHigh, borderColor: outlineVariant }}
               aria-label="Gyors eredmény minta"
             >
               <span
-                className="text-[11px] uppercase tracking-[0.2em]"
+                className="hero-card-label text-[11px] uppercase tracking-[0.2em]"
                 style={{ color: accent, ...labelFont }}
               >
                 Gyors eredmény
               </span>
               <h2
-                className="mt-3 text-xl font-semibold leading-tight"
+                className="hero-card-title mt-3 text-xl font-semibold leading-tight"
                 style={{ ...headlineFont, color: onSurface }}
               >
                 {landing.preview.researchValue}
               </h2>
-              <p className="mt-3 text-sm" style={{ color: textSecondary }}>
+              <p className="hero-card-consensus mt-3 text-sm" style={{ color: textSecondary }}>
                 {landing.preview.consensusLabel}
               </p>
               <div
-                className="mt-4 flex h-2 w-full overflow-hidden rounded-full"
+                className="hero-card-consensus mt-4 flex h-2 w-full overflow-hidden rounded-full"
                 style={{ backgroundColor: surfaceContainerHighest }}
               >
                 <div
-                  className="h-full"
+                  className="hero-card-bar-support h-full"
                   style={{
                     backgroundColor: stanceSupport,
                     width: `${landing.preview.supportPercent}%`,
                   }}
                 />
                 <div
-                  className="h-full"
+                  className="hero-card-bar-reject h-full"
                   style={{
                     backgroundColor: errorDim,
                     width: `${landing.preview.rejectPercent}%`,
                   }}
                 />
               </div>
-              <div className="mt-5 space-y-2">
+              <div className="hero-card-text mt-5 space-y-2">
                 <p className="text-xs leading-relaxed" style={{ color: textSecondary }}>
                   {landing.preview.synthesis.recommendation}
                 </p>
@@ -184,9 +184,9 @@ export default function Home() {
         </header>
 
         <section className="px-6 py-20">
-          <div className="after-hero mx-auto flex w-full max-w-4xl flex-col items-center text-center">
+          <div className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
             <h2
-              className="text-2xl font-semibold md:text-3xl"
+              className="sr text-2xl font-semibold md:text-3xl"
               style={{ ...headlineFont, color: onSurface }}
             >
               {landing.painBridge.heading}
@@ -195,7 +195,7 @@ export default function Home() {
               {landing.painBridge.items.map((item, i) => (
                 <div
                   key={item.before}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border p-7 text-left transition-all duration-500 hover:-translate-y-2"
+                  className={`${(['sr', 'sr-d1', 'sr-d2'] as const)[i]} group relative flex flex-col overflow-hidden rounded-2xl border p-7 text-left transition-all duration-500 hover:-translate-y-2`}
                   style={{
                     backgroundColor: surfaceContainerHigh,
                     borderColor: outlineVariant,
@@ -249,7 +249,7 @@ export default function Home() {
               ))}
             </div>
             <p
-              className="mt-10 max-w-xl text-sm leading-relaxed"
+              className="sr-d3 mt-10 max-w-xl text-sm leading-relaxed"
               style={{ color: textSecondary }}
             >
               {landing.painBridge.closing}

@@ -139,7 +139,7 @@ export const messages = {
             "15-20 egyedi AI persona szimulálja a döntéshozatali folyamatot valós időben.",
         },
         {
-          title: "Email érkezik",
+          title: "E-mail érkezik",
           description:
             "Az eredményeket és a részletes elemzést azonnal megkapod a fiókodba.",
         },
@@ -149,7 +149,7 @@ export const messages = {
       items: [
         { value: "Ingyenes próba", label: "regisztráció nélkül" },
         { value: "90 másodperc", label: "átlagos várakozás" },
-        { value: "Strukturált elemzés", label: "emailben, azonnal" },
+        { value: "Strukturált elemzés", label: "e-mailben, azonnal" },
         { value: "15–20 persona", label: "különböző nézőpont" },
       ],
     },
@@ -184,22 +184,22 @@ export const messages = {
       piiWarning:
         "Ne adj meg személyes adatokat a kutatási témában",
       submitCta: "Tovább",
-      helper: "Egy ingyenes elemzés email-címenként.",
+      helper: "Egy ingyenes elemzés e-mail címenként.",
       errors: {
         researchTopic: "Add meg a kutatási témát.",
         audienceDescription: "Add meg a célközönség leírását.",
-        email: "Adj meg érvényes email-címet.",
+        email: "Adj meg érvényes e-mail címet.",
       },
       email: {
         heading: "Hova küldjük az eredményt?",
-        subheadline: "Az eredményed erre az emailre érkezik",
+        subheadline: "Az eredményed erre az e-mailre érkezik",
         successHeading: "Link elküldve",
         successEyebrow: "Következő lépés",
         successBodyPrefix:
-          "Elküldtük a kutatás indításához szükséges linket erre az email-címre:",
+          "Elküldtük a kutatás indításához szükséges linket erre az e-mail címre:",
         successHint:
-          "Nyisd meg az emailed, kattints a linkre, és a kutatás elindul.",
-        label: "Email cím",
+          "Nyisd meg az e-mailed, kattints a linkre, és a kutatás elindul.",
+        label: "E-mail cím",
         placeholder: "pelda@email.hu",
         cta: "Küldés",
         privacyNote: "Adataid biztonságban vannak.",
@@ -213,7 +213,7 @@ export const messages = {
   qualifier: {
     intro: "Mesélj egy kicsit magadról",
     form: {
-      roleLabel: "Mi jellemzi legjobban a szerepkörödet?",
+      roleLabel: "Mi jellemzi legjobban a munkakörödet?",
       rolePlaceholder: "Válassz szerepkört",
       companySizeLabel: "Hány fős cégnél dolgozol?",
       companySizePlaceholder: "Válassz cégméretet",
@@ -288,11 +288,11 @@ export const messages = {
   waiting: {
     eyebrow: "Futó elemzés",
     subheadline:
-      "A szintetikus personák a háttérben futnak. A kész összefoglalót a megadott emailre küldjük.",
+      "A szintetikus personák a háttérben futnak. A kész összefoglalót a megadott e-mailre küldjük.",
     personaSectionLabel: "Persona",
     progressAriaLabel: "Elemzés folyamata",
     completedStatusHint: "Minden persona lefutott",
-    partialStatusHint: "Részleges lefutás — részletek az emailben",
+    partialStatusHint: "Részleges lefutás — részletek az e-mailben",
     states: {
       queued: "Sorban...",
       generating: "Personák generálása...",
@@ -303,21 +303,21 @@ export const messages = {
       partial: "Részleges eredmény elkészült",
       failed: "Hiba történt a feldolgozás közben.",
     },
-    canCloseNotice: "Nem kell itt várnod, bezárhatod ezt az ablakot. Az eredmény emailben érkezik.",
+    canCloseNotice: "Nem kell itt várnod, bezárhatod ezt az ablakot. Az eredmény e-mailben érkezik.",
     /** Interpolate {email} before rendering. */
-    emailDeliveryNotice: "Az eredményed erre az emailre érkezik: {email}",
+    emailDeliveryNotice: "Az eredményed erre az e-mailre érkezik: {email}",
     delayedNotice:
       "A feldolgozás a szokásosnál tovább tart, még dolgozunk rajta.",
     retrySuggestion: "Próbáld újra egy új elemzés indításával.",
   },
   blockingScreen: {
-    heading: "Ez az email-cím már igénybe vette az ingyenes próbát",
-    body: "Ehhez az email-címhez már tartozik lezárt futás, ezért új ingyenes elemzést most nem tudunk indítani.",
+    heading: "Ez az e-mail cím már igénybe vette az ingyenes próbát",
+    body: "Ehhez az e-mail címhez már tartozik lezárt futás, ezért új ingyenes elemzést most nem tudunk indítani.",
     cta: "Iratkozz fel az értesítőre",
-    submitted: "Köszönjük! Felírtunk az értesítőre. A Pro hozzáférés indulása előtt emailben szólunk.",
+    submitted: "Köszönjük! Felírtunk az értesítőre. A Pro hozzáférés indulása előtt e-mailben szólunk.",
     invalidEmail:
-      "A várólista-feliratkozáshoz érvényes email átadása szükséges. Menj vissza a kutatási űrlapra, majd próbáld újra.",
-    emailPrefix: "Értesítést erre az emailre küldünk:",
+      "A várólista-feliratkozáshoz érvényes e-mail átadása szükséges. Menj vissza a kutatási űrlapra, majd próbáld újra.",
+    emailPrefix: "Értesítést erre az e-mailre küldünk:",
   },
   verify: {
     title: "A link nem használható",

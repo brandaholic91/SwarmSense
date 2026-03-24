@@ -37,11 +37,11 @@ def test_prompt_is_hungarian_and_market_contextual() -> None:
     )
 
     assert "Kutatási téma" in prompt
-    assert "Piaci keret" in prompt
-    assert HUNGARIAN_MARKET_CONTEXT in prompt
     assert "Magyar" in prompt or "magyar" in prompt
     assert "JSON objektummal" in prompt
+    assert HUNGARIAN_MARKET_CONTEXT in HUNGARIAN_SYSTEM_PROMPT
     assert "kizárólag" in HUNGARIAN_SYSTEM_PROMPT.lower()
+    assert "markdown" in HUNGARIAN_SYSTEM_PROMPT.lower()
 
 
 def test_normalize_persona_response_enforces_schema() -> None:

@@ -20,15 +20,18 @@ DEFAULT_PERSONA_COUNT = 18
 MIN_PERSONA_COUNT = 15
 MAX_PERSONA_COUNT = 20
 
-HUNGARIAN_SYSTEM_PROMPT = (
-    "Te egy magyar piacismerettel rendelkező stratégiai személyiség vagy. "
-    "Kizárólag magyar nyelven válaszolj. "
-    "A válasz legyen pontos JSON objektum a kért kulcsokkal, extra mezők nélkül."
-)
-
 HUNGARIAN_MARKET_CONTEXT = (
     "Fókuszálj magyarországi vállalati valóságra, helyi vásárlói viselkedésre, "
     "magyar piaci sajátosságokra, és magyar üzleti nyelvezetre."
+)
+
+HUNGARIAN_SYSTEM_PROMPT = (
+    "Te egy magyar piacismerettel rendelkező stratégiai üzleti elemző vagy. "
+    f"{HUNGARIAN_MARKET_CONTEXT} "
+    "Kizárólag magyar nyelven válaszolj. "
+    "A válasz legyen nyers JSON objektum a kért kulcsokkal, extra mezők nélkül. "
+    "Ne használj markdown formázást, kód-blokkot vagy ```json jelölést — "
+    "csak a nyers JSON objektumot add vissza."
 )
 
 PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
@@ -75,7 +78,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "decision_style": "biztonság-központú",
         "organizational_role": "technológiai kapuőr",
         "price_sensitivity": "alacsony",
-        "technology_adoption_curve": "késői alkalmazó",
+        "technology_adoption_curve": "késlekedő",
     },
     {
         "name": "Nagy Zsófia",
@@ -165,7 +168,7 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
         "decision_style": "likviditási fegyelem",
         "organizational_role": "kkv tulajdonos",
         "price_sensitivity": "nagyon magas",
-        "technology_adoption_curve": "késői alkalmazó",
+        "technology_adoption_curve": "késlekedő",
     },
     {
         "name": "Halász Szilvia",
@@ -232,7 +235,6 @@ def build_persona_user_prompt(
         f"- Döntési stílus: {persona.decision_style}\n"
         f"- Árérzékenység: {persona.price_sensitivity}\n"
         f"- Technológiai adoptáció: {persona.technology_adoption_curve}\n"
-        f"Piaci keret: {HUNGARIAN_MARKET_CONTEXT}\n"
         "Válaszolj JSON objektummal pontosan ezekkel a kulcsokkal:\n"
         "name, role, stance, primary_argument, change_condition, core_concern, buying_trigger\n"
         "A stance értéke kizárólag: support | reject | conditional\n"
@@ -240,7 +242,8 @@ def build_persona_user_prompt(
         "- primary_argument: az elsődleges érv, max 25 szó\n"
         "- change_condition: mi változtatná meg a véleményét, max 25 szó\n"
         "- core_concern: a mélyebb, mögöttes aggodalom, max 25 szó\n"
-        "- buying_trigger: konkrét trigger ami elfogadáshoz vezetne, max 25 szó"
+        "- buying_trigger: ha stance=support/conditional: mi erősítené meg az elfogadást; "
+        "ha stance=reject: az egyetlen feltétel ami megváltoztathatná az álláspontot, max 25 szó"
     )
 
 

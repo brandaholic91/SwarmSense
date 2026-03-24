@@ -8,7 +8,9 @@ from app.services.llm_client import LLMProviderError, OpenRouterClient
 BLUEPRINT_SYSTEM_PROMPT = (
     "Te egy tapasztalt kutatási szakértő vagy, aki szintetikus persona profilokat készít. "
     "Kizárólag magyar nyelven válaszolj. "
-    "A válasz legyen pontos JSON objektum a kért kulcsokkal, extra mezők nélkül."
+    "A válasz legyen nyers JSON objektum a kért kulcsokkal, extra mezők nélkül. "
+    "Ne használj markdown formázást, kód-blokkot vagy ```json jelölést — "
+    "csak a nyers JSON objektumot add vissza."
 )
 
 BLUEPRINT_TEMPERATURE = 0.7
@@ -34,7 +36,7 @@ def build_blueprint_user_prompt(*, topic: str, audience: str, count: int) -> str
         "- decision_style: döntési vagy gondolkodási stílus (max 6 szó)\n"
         "- organizational_role: funkció vagy pozíció a saját kontextusában (max 6 szó)\n"
         "- price_sensitivity: az egyik: nagyon alacsony | alacsony | közepes | közepesen magas | magas | nagyon magas\n"
-        "- technology_adoption_curve: az egyik: innovátor | korai alkalmazó | korai többség | késői többség | késői alkalmazó\n\n"
+        "- technology_adoption_curve: az egyik: innovátor | korai alkalmazó | korai többség | késői többség | késlekedő\n\n"
         "Fontos: a mezők értelmezése legyen a célközönség kontextusának megfelelő "
         "(pl. 'risk_appetite' egy vállalkozónál pénzügyi kockázatot, "
         "egy kutatónál intellektuális merészséget jelent)."

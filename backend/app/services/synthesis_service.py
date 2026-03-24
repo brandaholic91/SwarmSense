@@ -7,8 +7,10 @@ from app.services.llm_client import LLMProviderError, OpenRouterClient
 
 SYNTHESIS_SYSTEM_PROMPT = (
     "Te egy tapasztalt magyar üzleti stratega vagy. "
-    "Kizarólag magyar nyelven válaszolj. "
-    "A válasz legyen pontos JSON objektum a kért kulcsokkal, extra mezők nélkül."
+    "Kizárólag magyar nyelven válaszolj. "
+    "A válasz legyen nyers JSON objektum a kért kulcsokkal, extra mezők nélkül. "
+    "Ne használj markdown formázást, kód-blokkot vagy ```json jelölést — "
+    "csak a nyers JSON objektumot add vissza."
 )
 
 
@@ -28,12 +30,14 @@ def build_synthesis_user_prompt(
         f"Kutatási téma: {topic}\n"
         f"Célközönség: {audience}\n"
         f"Persona visszajelzések:\n{personas_summary}\n\n"
-        "Elemezd az összes persona visszajelzését és azonosítsd az ismétlődő mintákat. "
+        "Mielőtt JSON-t adsz vissza, azonosítsd: (1) hány persona támogat vs. elutasít, "
+        "(2) mi a leggyakoribb kifogás, (3) melyik persona típus a legreceptívebb. "
+        "Ezt az elemzést NE írd bele a JSON-ba. "
         "Válaszolj JSON objektummal pontosan ezekkel a kulcsokkal:\n"
         "summary, main_barriers, winning_conditions, best_target_segment, strategic_recommendation\n"
         "Szabályok:\n"
         "- summary: 2-3 mondatos összefoglalás a legfontosabb mintákról és jelzésekről\n"
-        "- main_barriers: pontosan 3 elemű lista, minden elem max 15 szó, teljes mondat\n"
+        "- main_barriers: 2-4 elemű lista, minden elem max 15 szó, teljes mondat\n"
         "- winning_conditions: 1 teljes mondat max 25 szó, mi kellene a széles elfogadáshoz\n"
         "- best_target_segment: 1 teljes mondat max 25 szó, melyik persona típus a legreceptívebb\n"
         "- strategic_recommendation: 1 teljes mondat max 25 szó, konkrét következő lépés javaslat"

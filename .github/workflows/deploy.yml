@@ -72,16 +72,20 @@ jobs:
           DEPLOY_PATH: ${{ secrets.HETZNER_DEPLOY_PATH }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          IMAGE_NAME: ${{ steps.image.outputs.image_name }}
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
           port: ${{ secrets.HETZNER_SSH_PORT || '22' }}
-          envs: DEPLOY_PATH,GHCR_USERNAME,GHCR_TOKEN
+          envs: DEPLOY_PATH,GHCR_USERNAME,GHCR_TOKEN,IMAGE_TAG,IMAGE_NAME
           script: |
             set -euo pipefail
             cd "$DEPLOY_PATH"
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            export BACKEND_IMAGE_REPO="$IMAGE_NAME"
+            export BACKEND_IMAGE_TAG="$IMAGE_TAG"
             if [ -f "docker-compose.yml" ]; then
               docker compose pull
               docker compose up -d

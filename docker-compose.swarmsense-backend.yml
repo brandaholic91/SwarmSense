@@ -1,8 +1,6 @@
 services:
   swarmsense-backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE_REPO:-ghcr.io/brandaholic91/swarmsense-backend}:${BACKEND_IMAGE_TAG:-latest}
     container_name: swarmsense-backend
     restart: unless-stopped
     env_file:

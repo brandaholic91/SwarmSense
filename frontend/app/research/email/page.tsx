@@ -70,7 +70,7 @@ function ResearchEmailContent() {
           audience,
         });
         window.location.assign(result.redirectTo);
-      } catch (err) {
+      } catch {
         setError(messages.genericError);
       }
     });

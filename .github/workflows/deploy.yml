@@ -81,4 +81,22 @@ jobs:
       - name: Post-deploy HTTPS health check
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --max-time 15 "${{ secrets.BACKEND_HEALTHCHECK_URL }}"
+          health_url="${{ secrets.BACKEND_HEALTHCHECK_URL }}"
+          max_attempts=6
+          sleep_seconds=10
+
+          for attempt in $(seq 1 "$max_attempts"); do
+            echo "Health check attempt ${attempt}/${max_attempts}: ${health_url}"
+            if curl --fail --silent --show-error --max-time 15 "$health_url"; then
+              echo "Health check passed."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              echo "Health check failed, retrying in ${sleep_seconds}s..."
+              sleep "$sleep_seconds"
+            fi
+          done
+
+          echo "Health check failed after ${max_attempts} attempts." >&2
+          exit 1

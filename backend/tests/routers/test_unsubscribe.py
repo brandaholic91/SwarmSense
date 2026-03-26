@@ -22,24 +22,75 @@ class FakeResponse:
 class FakeQuery:
     def __init__(self, supabase):
         self._supabase = supabase
+        self._table_name: str | None = None
+        self._select_columns: list[str] | None = None
         self._payload: dict[str, object] | None = None
         self._id_filter: str | None = None
         self._is_filters: dict[str, object] = {}
+        self._email_filter: str | None = None
+        self._mode: str = "update"
+
+    def select(self, columns: str):
+        self._mode = "select"
+        self._select_columns = [part.strip() for part in columns.split(",")]
+        return self
 
     def update(self, payload: dict[str, object]):
+        self._mode = "update"
         self._payload = payload
+        return self
+
+    def delete(self):
+        self._mode = "delete"
         return self
 
     def eq(self, field: str, value: object):
         if field == "id" and isinstance(value, str):
             self._id_filter = value
+        if field == "email" and isinstance(value, str):
+            self._email_filter = value
         return self
 
     def is_(self, field: str, value: object):
         self._is_filters[field] = value
         return self
 
+    def limit(self, _value: int):
+        return self
+
     def execute(self):
+        if self._mode == "select":
+            selected: list[dict[str, object]] = []
+            for row in self._supabase.users:
+                if self._id_filter is not None and row.get("id") != self._id_filter:
+                    continue
+                if self._select_columns is None:
+                    selected.append(dict(row))
+                else:
+                    selected.append(
+                        {
+                            key: row.get(key)
+                            for key in self._select_columns
+                            if key in ("id", "email", "unsubscribed_at")
+                        }
+                    )
+            return FakeResponse(selected)
+
+        if self._mode == "delete":
+            if self._email_filter is None:
+                return FakeResponse([])
+            deleted = [
+                dict(row)
+                for row in self._supabase.waitlist
+                if row.get("email") == self._email_filter
+            ]
+            self._supabase.waitlist = [
+                row
+                for row in self._supabase.waitlist
+                if row.get("email") != self._email_filter
+            ]
+            return FakeResponse(deleted)
+
         updated: list[dict[str, object]] = []
         for row in self._supabase.users:
             if self._id_filter is not None and row.get("id") != self._id_filter:
@@ -64,10 +115,13 @@ class FakeSupabase:
                 "unsubscribed_at": None,
             }
         ]
+        self.waitlist = [{"email": "user@example.com"}]
 
     def table(self, table_name: str):
-        assert table_name == "users"
-        return FakeQuery(self)
+        assert table_name in {"users", "waitlist"}
+        query = FakeQuery(self)
+        query._table_name = table_name
+        return query
 
 
 def build_client(monkeypatch, fake_supabase: FakeSupabase) -> TestClient:
@@ -91,9 +145,18 @@ def build_client(monkeypatch, fake_supabase: FakeSupabase) -> TestClient:
 
     importlib.reload(unsubscribe_router)
     importlib.reload(main)
-    monkeypatch.setattr(
-        unsubscribe_router, "get_supabase_client", lambda: fake_supabase
-    )
+    def _mark_user_unsubscribed(*, user_id: str) -> None:
+        for row in fake_supabase.users:
+            if row.get("id") == user_id and row.get("unsubscribed_at") is None:
+                row["unsubscribed_at"] = datetime.now(UTC).isoformat()
+        matched_emails = {
+            row["email"] for row in fake_supabase.users if row.get("id") == user_id
+        }
+        fake_supabase.waitlist = [
+            row for row in fake_supabase.waitlist if row.get("email") not in matched_emails
+        ]
+
+    monkeypatch.setattr(unsubscribe_router, "mark_user_unsubscribed", _mark_user_unsubscribed)
 
     return TestClient(main.app)
 
@@ -110,6 +173,7 @@ def test_unsubscribe_sets_unsubscribed_at(monkeypatch):
     assert response.status_code == 200
     assert response.json() == {"status": "unsubscribed"}
     assert fake_supabase.users[0]["unsubscribed_at"] is not None
+    assert fake_supabase.waitlist == []
 
 
 def test_unsubscribe_rejects_invalid_token(monkeypatch):
@@ -123,6 +187,7 @@ def test_unsubscribe_rejects_invalid_token(monkeypatch):
 
     assert response.status_code == 400
     assert fake_supabase.users[0]["unsubscribed_at"] is None
+    assert len(fake_supabase.waitlist) == 1
 
 
 def test_unsubscribe_is_idempotent(monkeypatch):

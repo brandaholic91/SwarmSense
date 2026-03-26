@@ -13,6 +13,7 @@ import sentry_sdk
 
 from app.core.config import get_settings
 from app.core.database import get_supabase_client
+from app.services.consent_service import is_marketing_email_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -260,6 +261,14 @@ def send_magic_link_email(recipient_email: str, verify_url: str) -> None:
 def send_run_result_email(
     *, recipient_email: str, result_payload: dict[str, Any], user_id: str | None = None
 ) -> None:
+    if user_id and not is_marketing_email_allowed(user_id=user_id):
+        logger.info(
+            "Result email skipped (unsubscribed): user_id=%s recipient_email=%s",
+            user_id,
+            recipient_email,
+        )
+        return
+
     settings = get_settings()
     resend.api_key = settings.resend_api_key
 

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     supabase_service_key: str = Field(...)
     kimi_api_key: str = Field(...)
     openrouter_api_key: str = Field(...)
-    openrouter_model: str = Field(default="moonshotai/kimi-k2")
+    openrouter_model: str = Field(default="google/gemini-3.1-flash-lite-preview")
     openrouter_base_url: AnyHttpUrl = Field(default="https://openrouter.ai/api/v1")
     operator_api_key: str = Field(...)
     internal_secret: str = Field(...)
@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     frontend_origin: AnyHttpUrl = Field(...)
     backend_origin: AnyHttpUrl = Field(...)
     resend_api_key: str = Field(...)
-    email_from: str = Field(default="SwarmSense <noreply@swarmsense.ai>")
-    email_reply_to: str = Field(default="support@swarmsense.ai")
+    email_from: str = Field(default="SwarmSense <noreply@em.swarmsense.hu>")
+    email_reply_to: str = Field(default="support@swarmsense.hu")
     disable_single_run_limit: bool = Field(default=False)
 
     @property

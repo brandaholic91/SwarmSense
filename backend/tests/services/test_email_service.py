@@ -264,3 +264,64 @@ def test_send_followup_day7_email_sets_correct_tag(monkeypatch) -> None:
 
     assert len(sent) == 1
     assert sent[0]["tags"] == [{"name": "email_type", "value": "followup_day7"}]
+
+
+class _FakeResponse:
+    def __init__(self, data: list[dict[str, Any]]):
+        self.data = data
+
+
+class _FakeUsersQuery:
+    def __init__(self, rows: list[dict[str, Any]]):
+        self._rows = rows
+        self._user_id: str | None = None
+
+    def select(self, _fields: str):
+        return self
+
+    def eq(self, field: str, value: str):
+        if field == "id":
+            self._user_id = value
+        return self
+
+    def limit(self, _value: int):
+        return self
+
+    def execute(self):
+        filtered = [
+            row
+            for row in self._rows
+            if self._user_id is None or str(row.get("id")) == self._user_id
+        ]
+        return _FakeResponse(filtered[:1])
+
+
+class _FakeSupabase:
+    def __init__(self, rows: list[dict[str, Any]]):
+        self._rows = rows
+
+    def table(self, table_name: str):
+        assert table_name == "users"
+        return _FakeUsersQuery(self._rows)
+
+
+def test_send_run_result_email_skips_unsubscribed_user(monkeypatch, mock_render_email) -> None:
+    _seed_env(monkeypatch)
+    from app.services.email_service import send_run_result_email
+
+    monkeypatch.setattr(
+        "app.services.consent_service.get_supabase_client",
+        lambda: _FakeSupabase(
+            [{"id": "u-1", "email": "user@example.com", "unsubscribed_at": "2026-03-26T10:00:00Z"}]
+        ),
+    )
+
+    sent: list[dict[str, Any]] = []
+    with patch("resend.Emails.send", side_effect=lambda payload: sent.append(payload)):
+        send_run_result_email(
+            recipient_email="user@example.com",
+            result_payload=TEST_RESULT_PAYLOAD,
+            user_id="u-1",
+        )
+
+    assert sent == []

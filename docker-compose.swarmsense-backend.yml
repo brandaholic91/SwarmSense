@@ -9,6 +9,8 @@ services:
       - ./backend/.env
     ports:
       - "8000:8000"
+    networks:
+      - shared_internal
     healthcheck:
       test:
         [
@@ -21,3 +23,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+
+networks:
+  shared_internal:
+    name: shared_internal
+    external: true

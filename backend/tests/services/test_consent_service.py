@@ -20,6 +20,7 @@ class FakeQuery:
         self._payload: dict[str, Any] | None = None
         self._select_fields: tuple[str, ...] | None = None
         self._ilike_filters: dict[str, str] = {}
+        self._limit: int | None = None
 
     def select(self, fields: str):
         self._mode = "select"
@@ -47,6 +48,7 @@ class FakeQuery:
         return self
 
     def limit(self, _value: int):
+        self._limit = _value
         return self
 
     def execute(self):
@@ -62,11 +64,15 @@ class FakeQuery:
                 for row in matched if str(row.get(field, "")).lower() == pattern.lower()
             ]
         if self._mode == "select":
+            if self._limit is not None:
+                selected_source = matched[: self._limit]
+            else:
+                selected_source = matched
             if self._select_fields is None:
-                return FakeResponse([dict(row) for row in matched[:1]])
+                return FakeResponse([dict(row) for row in selected_source])
             selected = [
                 {field: row.get(field) for field in self._select_fields if field}
-                for row in matched[:1]
+                for row in selected_source
             ]
             return FakeResponse(selected)
         if self._mode == "update":
@@ -118,6 +124,20 @@ def test_mark_user_unsubscribed_removes_case_variant_waitlist_email(monkeypatch)
     fake = FakeSupabase()
     fake.tables["users"][0]["email"] = "User@Example.com"
     fake.tables["waitlist"] = [{"email": "User@Example.com"}]
+    monkeypatch.setattr(consent_service, "get_supabase_client", lambda: fake)
+
+    consent_service.mark_user_unsubscribed(user_id="u-1")
+
+    assert fake.tables["users"][0]["unsubscribed_at"] is not None
+    assert fake.tables["waitlist"] == []
+
+
+def test_mark_user_unsubscribed_removes_legacy_whitespace_waitlist_email(
+    monkeypatch,
+) -> None:
+    fake = FakeSupabase()
+    fake.tables["users"][0]["email"] = "user@example.com"
+    fake.tables["waitlist"] = [{"email": "  User@Example.com  "}]
     monkeypatch.setattr(consent_service, "get_supabase_client", lambda: fake)
 
     consent_service.mark_user_unsubscribed(user_id="u-1")

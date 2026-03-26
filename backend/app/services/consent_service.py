@@ -43,18 +43,18 @@ def mark_user_unsubscribed(*, user_id: str) -> None:
     if isinstance(user_email, str) and user_email:
         normalized_email = _normalize_email(user_email)
         supabase.table("waitlist").delete().eq("email", normalized_email).execute()
-        # Backward-compatible cleanup for legacy/case-variant waitlist rows.
+        # Backward-compatible cleanup for legacy waitlist rows where normalization
+        # constraints may have been missing at creation time.
         try:
-            case_variants = (
-                supabase.table("waitlist")
-                .select("email")
-                .ilike("email", normalized_email)
-                .execute()
-            )
-            for row in case_variants.data or []:
+            waitlist_rows = supabase.table("waitlist").select("email").execute()
+            for row in waitlist_rows.data or []:
                 row_email = row.get("email") if isinstance(row, dict) else None
-                if isinstance(row_email, str) and row_email:
+                if (
+                    isinstance(row_email, str)
+                    and row_email
+                    and _normalize_email(row_email) == normalized_email
+                ):
                     supabase.table("waitlist").delete().eq("email", row_email).execute()
         except Exception:
-            # Keep unsubscribe flow resilient even if case-insensitive query is unsupported.
+            # Keep unsubscribe flow resilient even if legacy cleanup fails.
             pass

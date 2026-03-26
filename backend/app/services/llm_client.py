@@ -214,16 +214,32 @@ def _loads_content(content: str) -> dict[str, Any]:
     try:
         parsed = json.loads(content)
     except json.JSONDecodeError as exc:
-        raise LLMProviderError(
-            error_code="OPENROUTER_INVALID_JSON",
-            message="Provider content is not valid JSON.",
-        ) from exc
+        parsed = _extract_first_json_object(content)
+        if parsed is None:
+            raise LLMProviderError(
+                error_code="OPENROUTER_INVALID_JSON",
+                message="Provider content is not valid JSON.",
+            ) from exc
     if not isinstance(parsed, dict):
         raise LLMProviderError(
             error_code="OPENROUTER_INVALID_JSON",
             message="Provider content JSON must be an object.",
         )
     return parsed
+
+
+def _extract_first_json_object(content: str) -> dict[str, Any] | None:
+    decoder = json.JSONDecoder()
+    for idx, char in enumerate(content):
+        if char != "{":
+            continue
+        try:
+            parsed, _end = decoder.raw_decode(content[idx:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    return None
 
 
 def _is_retryable(status_code: int | None) -> bool:

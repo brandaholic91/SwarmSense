@@ -109,3 +109,35 @@ def test_terminal_failure_classification(monkeypatch) -> None:
         )
 
     assert exc_info.value.error_code == "OPENROUTER_REQUEST_FAILED"
+
+
+def test_extracts_json_object_from_mixed_content(monkeypatch) -> None:
+    _seed_openrouter_env(monkeypatch)
+
+    async def fake_transport(
+        _url: str, _headers: dict[str, str], _payload: dict[str, object]
+    ):
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            "Megjegyzes: az alabbi valasz JSON.\n"
+                            '{"name":"A","role":"B","stance":"support","primary_argument":"C","change_condition":"D"}\n'
+                            "Utolso sor: kesz."
+                        )
+                    }
+                }
+            ]
+        }
+
+    client = OpenRouterClient(transport=fake_transport)
+    response = asyncio.run(
+        client.generate_persona_response(
+            system_prompt="system",
+            user_prompt="user",
+        )
+    )
+
+    assert response["name"] == "A"
+    assert response["stance"] == "support"

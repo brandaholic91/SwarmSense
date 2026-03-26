@@ -5,6 +5,10 @@ from datetime import UTC, datetime
 from app.core.database import get_supabase_client
 
 
+def _normalize_email(email: str) -> str:
+    return email.lower().strip()
+
+
 def is_marketing_email_allowed(*, user_id: str) -> bool:
     supabase = get_supabase_client()
     result = (
@@ -37,4 +41,20 @@ def mark_user_unsubscribed(*, user_id: str) -> None:
     rows = user_result.data or []
     user_email = rows[0].get("email") if rows and isinstance(rows[0], dict) else None
     if isinstance(user_email, str) and user_email:
-        supabase.table("waitlist").delete().eq("email", user_email).execute()
+        normalized_email = _normalize_email(user_email)
+        supabase.table("waitlist").delete().eq("email", normalized_email).execute()
+        # Backward-compatible cleanup for legacy/case-variant waitlist rows.
+        try:
+            case_variants = (
+                supabase.table("waitlist")
+                .select("email")
+                .ilike("email", normalized_email)
+                .execute()
+            )
+            for row in case_variants.data or []:
+                row_email = row.get("email") if isinstance(row, dict) else None
+                if isinstance(row_email, str) and row_email:
+                    supabase.table("waitlist").delete().eq("email", row_email).execute()
+        except Exception:
+            # Keep unsubscribe flow resilient even if case-insensitive query is unsupported.
+            pass

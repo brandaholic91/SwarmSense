@@ -21,11 +21,10 @@ def settings_env(monkeypatch):
     monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", "test-internal-secret")
     monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "http://localhost:3000")
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
+    monkeypatch.setenv("SWARMSENSE_LLM_API_KEY", "test-llm-key")
     # átmeneti, a 4. feladat törli
     monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "http://supabase.test")
     monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "test-supabase-key")
-    monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "test-kimi-key")
-    monkeypatch.setenv("SWARMSENSE_OPENROUTER_API_KEY", "test-openrouter-key")
     monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "test-operator-key")
     monkeypatch.setenv("SWARMSENSE_BACKEND_ORIGIN", "http://localhost:8000")
     monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "test-resend-key")

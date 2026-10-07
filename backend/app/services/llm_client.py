@@ -2,12 +2,27 @@ from __future__ import annotations
 
 import asyncio
 import json
-from decimal import Decimal, InvalidOperation
+from dataclasses import dataclass
 from typing import Any, Awaitable, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from app.core.config import get_settings
+
+
+USER_AGENT = "swarmsense/0.1"
+
+
+@dataclass(frozen=True)
+class TokenUsage:
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+    def __add__(self, other: TokenUsage) -> TokenUsage:
+        return TokenUsage(
+            input_tokens=self.input_tokens + other.input_tokens,
+            output_tokens=self.output_tokens + other.output_tokens,
+        )
 
 
 class LLMProviderError(Exception):
@@ -29,10 +44,11 @@ TransportFn = Callable[
 ]
 
 
-class OpenRouterClient:
+class LLMClient:
     def __init__(
         self,
         *,
+        session_id: str,
         transport: TransportFn | None = None,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         max_attempts: int = 3,
@@ -41,38 +57,27 @@ class OpenRouterClient:
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1.")
         self._settings = get_settings()
+        self._session_id = session_id
         self._transport = transport or _post_json
         self._sleep = sleep
         self._max_attempts = max_attempts
         self._base_backoff_seconds = base_backoff_seconds
 
-    async def generate_persona_response(
-        self,
-        *,
-        system_prompt: str,
-        user_prompt: str,
-    ) -> dict[str, Any]:
-        response, _ = await self.generate_persona_response_with_meta(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-        )
-        return response
-
-    async def generate_persona_response_with_meta(
+    async def generate_json(
         self,
         *,
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.3,
-    ) -> tuple[dict[str, Any], float]:
-        if not self._settings.openrouter_api_key:
+    ) -> tuple[dict[str, Any], TokenUsage]:
+        if not self._settings.llm_api_key:
             raise LLMProviderError(
-                error_code="OPENROUTER_MISSING_API_KEY",
-                message="OpenRouter API key is not configured.",
+                error_code="MISSING_API_KEY",
+                message="LLM API key is not configured.",
             )
 
         payload = {
-            "model": self._settings.openrouter_model,
+            "model": self._settings.llm_model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -81,17 +86,19 @@ class OpenRouterClient:
             "response_format": {"type": "json_object"},
         }
         headers = {
-            "Authorization": f"Bearer {self._settings.openrouter_api_key}",
+            "Authorization": f"Bearer {self._settings.llm_api_key}",
             "Content-Type": "application/json",
+            "x-opencode-session": self._session_id,
+            "User-Agent": USER_AGENT,
         }
         endpoint = (
-            f"{str(self._settings.openrouter_base_url).rstrip('/')}/chat/completions"
+            f"{str(self._settings.llm_base_url).rstrip('/')}/chat/completions"
         )
 
         raw = await self._request_with_retry(
             endpoint=endpoint, headers=headers, payload=payload
         )
-        return _extract_json_content(raw), _extract_cost_usd(raw)
+        return _extract_json_content(raw), _extract_usage(raw)
 
     async def _request_with_retry(
         self,
@@ -114,7 +121,7 @@ class OpenRouterClient:
 
         if last_error is None:
             raise LLMProviderError(
-                error_code="OPENROUTER_REQUEST_FAILED",
+                error_code="REQUEST_FAILED",
                 message="No transport attempts were made.",
             )
         raise LLMProviderError(
@@ -167,22 +174,22 @@ def _extract_json_content(payload: dict[str, Any]) -> dict[str, Any]:
     choices = payload.get("choices")
     if not isinstance(choices, list) or not choices:
         raise LLMProviderError(
-            error_code="OPENROUTER_INVALID_RESPONSE",
-            message="OpenRouter response does not contain choices.",
+            error_code="INVALID_RESPONSE",
+            message="LLM response does not contain choices.",
         )
 
     first_choice = choices[0]
     if not isinstance(first_choice, dict):
         raise LLMProviderError(
-            error_code="OPENROUTER_INVALID_RESPONSE",
-            message="OpenRouter response contains invalid choice payload.",
+            error_code="INVALID_RESPONSE",
+            message="LLM response contains invalid choice payload.",
         )
 
     message = first_choice.get("message")
     if not isinstance(message, dict):
         raise LLMProviderError(
-            error_code="OPENROUTER_INVALID_RESPONSE",
-            message="OpenRouter response does not contain message payload.",
+            error_code="INVALID_RESPONSE",
+            message="LLM response does not contain message payload.",
         )
 
     content = message.get("content")
@@ -195,8 +202,8 @@ def _extract_json_content(payload: dict[str, Any]) -> dict[str, Any]:
         return _loads_content(content)
 
     raise LLMProviderError(
-        error_code="OPENROUTER_INVALID_RESPONSE",
-        message="OpenRouter response content is missing.",
+        error_code="INVALID_RESPONSE",
+        message="LLM response content is missing.",
     )
 
 
@@ -217,12 +224,12 @@ def _loads_content(content: str) -> dict[str, Any]:
         parsed = _extract_first_json_object(content)
         if parsed is None:
             raise LLMProviderError(
-                error_code="OPENROUTER_INVALID_JSON",
+                error_code="INVALID_JSON",
                 message="Provider content is not valid JSON.",
             ) from exc
     if not isinstance(parsed, dict):
         raise LLMProviderError(
-            error_code="OPENROUTER_INVALID_JSON",
+            error_code="INVALID_JSON",
             message="Provider content JSON must be an object.",
         )
     return parsed
@@ -252,12 +259,12 @@ def _is_retryable(status_code: int | None) -> bool:
 
 def _classify_error_code(status_code: int | None) -> str:
     if status_code == 429:
-        return "OPENROUTER_RATE_LIMIT"
+        return "RATE_LIMITED"
     if status_code is None:
-        return "OPENROUTER_NETWORK_ERROR"
+        return "NETWORK_ERROR"
     if 500 <= status_code < 600:
-        return "OPENROUTER_UPSTREAM_ERROR"
-    return "OPENROUTER_REQUEST_FAILED"
+        return "UPSTREAM_ERROR"
+    return "REQUEST_FAILED"
 
 
 def _build_provider_error_message(error: TransportError) -> str:
@@ -266,25 +273,22 @@ def _build_provider_error_message(error: TransportError) -> str:
         if isinstance(detail, str) and detail.strip():
             return detail
     if error.status_code is not None:
-        return f"OpenRouter request failed with status {error.status_code}."
-    return "OpenRouter request failed because of a network error."
+        return f"LLM request failed with status {error.status_code}."
+    return "LLM request failed because of a network error."
 
 
-def _extract_cost_usd(payload: dict[str, Any]) -> float:
+def _extract_usage(payload: dict[str, Any]) -> TokenUsage:
     usage = payload.get("usage")
     if not isinstance(usage, dict):
-        return 0.0
+        return TokenUsage()
+    return TokenUsage(
+        input_tokens=_token_count(usage.get("prompt_tokens")),
+        output_tokens=_token_count(usage.get("completion_tokens")),
+    )
 
-    for key in ("cost", "total_cost", "cost_usd"):
-        value = usage.get(key)
-        if value is None:
-            continue
-        try:
-            normalized = Decimal(str(value))
-        except (InvalidOperation, TypeError, ValueError):
-            continue
-        if not normalized.is_finite() or normalized < 0:  # P5: continue on negative; P6: reject infinity
-            continue
-        return float(normalized)
 
-    return 0.0
+def _token_count(value: Any) -> int:
+    # bool az int alosztálya, de nem token-szám
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return 0
+    return value

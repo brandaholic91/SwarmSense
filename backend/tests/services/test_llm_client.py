@@ -4,139 +4,112 @@ import asyncio
 
 import pytest
 
-from app.core.config import get_settings
-from app.services.llm_client import LLMProviderError, OpenRouterClient, TransportError
+from app.services.llm_client import (
+    LLMClient,
+    LLMProviderError,
+    TokenUsage,
+    TransportError,
+)
+
+PERSONA_JSON = '{"name":"A","role":"B","stance":"support","primary_argument":"C","change_condition":"D"}'
 
 
-def _seed_openrouter_env(monkeypatch) -> None:
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "https://example.supabase.co")
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
-    monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
-    monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
-    monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", "test-internal-secret")
-    monkeypatch.setenv("SWARMSENSE_BACKEND_ORIGIN", "https://api.swarmsense.ai")
-    monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
-    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
-    monkeypatch.setenv("SWARMSENSE_OPENROUTER_API_KEY", "or_test")
-    monkeypatch.setenv("SWARMSENSE_OPENROUTER_MODEL", "moonshotai/kimi-k2")
-    monkeypatch.setenv("SWARMSENSE_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-    get_settings.cache_clear()
+def test_request_shape():
+    seen = {}
 
-
-def test_openrouter_request_shape(monkeypatch) -> None:
-    _seed_openrouter_env(monkeypatch)
-    captured: dict[str, object] = {}
-
-    async def fake_transport(
-        url: str, headers: dict[str, str], payload: dict[str, object]
-    ):
-        captured["url"] = url
-        captured["headers"] = headers
-        captured["payload"] = payload
+    async def fake_transport(url, headers, payload):
+        seen.update(url=url, headers=headers, payload=payload)
         return {
-            "choices": [
-                {
-                    "message": {
-                        "content": '{"name":"A","role":"B","stance":"support","primary_argument":"C","change_condition":"D"}'
-                    }
-                }
-            ]
+            "choices": [{"message": {"content": '{"ok": true}', "reasoning_content": "..."}}],
+            "usage": {"prompt_tokens": 79, "completion_tokens": 74, "total_tokens": 153},
         }
 
-    client = OpenRouterClient(transport=fake_transport)
-    response = asyncio.run(
-        client.generate_persona_response(
-            system_prompt="system",
-            user_prompt="user",
-        )
-    )
+    client = LLMClient(session_id="swarmsense-run-1", transport=fake_transport)
+    data, usage = asyncio.run(client.generate_json(system_prompt="s", user_prompt="u"))
 
-    assert response["stance"] == "support"
-    assert str(captured["url"]).endswith("/chat/completions")
-    headers = captured["headers"]
-    assert isinstance(headers, dict)
-    assert headers["Authorization"].startswith("Bearer ")
-    payload = captured["payload"]
-    assert isinstance(payload, dict)
-    assert payload["model"] == "moonshotai/kimi-k2"
+    assert seen["url"] == "https://opencode.ai/zen/go/v1/chat/completions"
+    assert seen["headers"]["x-opencode-session"] == "swarmsense-run-1"
+    assert seen["headers"]["User-Agent"] == "swarmsense/0.1"
+    assert seen["headers"]["Authorization"] == "Bearer test-llm-key"
+    assert seen["payload"]["model"] == "deepseek-v4.1-flash"
+    assert seen["payload"]["response_format"] == {"type": "json_object"}
+    assert data == {"ok": True}
+    assert usage == TokenUsage(input_tokens=79, output_tokens=74)
 
 
-def test_retries_rate_limit_three_attempts(monkeypatch) -> None:
-    _seed_openrouter_env(monkeypatch)
+@pytest.mark.parametrize("usage", [None, {}, {"prompt_tokens": None}, {"prompt_tokens": "x"}, "nem objektum"])
+def test_missing_or_malformed_usage_gives_zero_tokens(usage):
+    async def fake_transport(url, headers, payload):
+        body = {"choices": [{"message": {"content": '{"ok": true}'}}]}
+        if usage is not None:
+            body["usage"] = usage
+        return body
+
+    client = LLMClient(session_id="s", transport=fake_transport)
+    _, tokens = asyncio.run(client.generate_json(system_prompt="s", user_prompt="u"))
+    assert tokens == TokenUsage(0, 0)
+
+
+def test_token_usage_adds():
+    assert TokenUsage(1, 2) + TokenUsage(10, 20) == TokenUsage(11, 22)
+
+
+def test_retries_rate_limit_three_attempts() -> None:
     attempts = {"count": 0}
     sleeps: list[float] = []
 
-    async def fake_transport(
-        _url: str, _headers: dict[str, str], _payload: dict[str, object]
-    ):
+    async def fake_transport(_url, _headers, _payload):
         attempts["count"] += 1
         raise TransportError(status_code=429, body={"detail": "too many requests"})
 
     async def fake_sleep(seconds: float) -> None:
         sleeps.append(seconds)
 
-    client = OpenRouterClient(transport=fake_transport, sleep=fake_sleep)
+    client = LLMClient(session_id="s", transport=fake_transport, sleep=fake_sleep)
 
     with pytest.raises(LLMProviderError) as exc_info:
-        asyncio.run(
-            client.generate_persona_response(
-                system_prompt="system",
-                user_prompt="user",
-            )
-        )
+        asyncio.run(client.generate_json(system_prompt="system", user_prompt="user"))
 
     assert attempts["count"] == 3
     assert sleeps == [0.5, 1.0]
-    assert exc_info.value.error_code == "OPENROUTER_RATE_LIMIT"
+    assert exc_info.value.error_code == "RATE_LIMITED"
 
 
-def test_terminal_failure_classification(monkeypatch) -> None:
-    _seed_openrouter_env(monkeypatch)
+def test_terminal_failure_classification() -> None:
+    attempts = {"count": 0}
 
-    async def fake_transport(
-        _url: str, _headers: dict[str, str], _payload: dict[str, object]
-    ):
+    async def fake_transport(_url, _headers, _payload):
+        attempts["count"] += 1
         raise TransportError(status_code=400, body={"detail": "bad request"})
 
-    client = OpenRouterClient(transport=fake_transport)
+    client = LLMClient(session_id="s", transport=fake_transport)
 
     with pytest.raises(LLMProviderError) as exc_info:
-        asyncio.run(
-            client.generate_persona_response(
-                system_prompt="system",
-                user_prompt="user",
-            )
-        )
+        asyncio.run(client.generate_json(system_prompt="system", user_prompt="user"))
 
-    assert exc_info.value.error_code == "OPENROUTER_REQUEST_FAILED"
+    assert attempts["count"] == 1
+    assert exc_info.value.error_code == "REQUEST_FAILED"
 
 
-def test_extracts_json_object_from_mixed_content(monkeypatch) -> None:
-    _seed_openrouter_env(monkeypatch)
-
-    async def fake_transport(
-        _url: str, _headers: dict[str, str], _payload: dict[str, object]
-    ):
+def test_extracts_json_object_from_mixed_content() -> None:
+    async def fake_transport(_url, _headers, _payload):
         return {
             "choices": [
                 {
                     "message": {
                         "content": (
                             "Megjegyzes: az alabbi valasz JSON.\n"
-                            '{"name":"A","role":"B","stance":"support","primary_argument":"C","change_condition":"D"}\n'
-                            "Utolso sor: kesz."
+                            + PERSONA_JSON
+                            + "\nUtolso sor: kesz."
                         )
                     }
                 }
             ]
         }
 
-    client = OpenRouterClient(transport=fake_transport)
-    response = asyncio.run(
-        client.generate_persona_response(
-            system_prompt="system",
-            user_prompt="user",
-        )
+    client = LLMClient(session_id="s", transport=fake_transport)
+    response, _ = asyncio.run(
+        client.generate_json(system_prompt="system", user_prompt="user")
     )
 
     assert response["name"] == "A"

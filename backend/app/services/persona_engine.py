@@ -14,7 +14,7 @@ from app.models.persona import (
     SynthesisResult,
 )
 from app.services.blueprint_generator import generate_persona_blueprints
-from app.services.llm_client import LLMProviderError, OpenRouterClient
+from app.services.llm_client import LLMClient, LLMProviderError, TokenUsage
 
 DEFAULT_PERSONA_COUNT = 18
 MIN_PERSONA_COUNT = 15
@@ -260,37 +260,38 @@ async def execute_persona_engine(
     *,
     topic: str,
     audience: str,
-    llm_client: OpenRouterClient | None = None,
+    llm_client: LLMClient,
     concurrency_limit: int = 5,
     total_personas: int = DEFAULT_PERSONA_COUNT,
     blueprints: list[PersonaBlueprint] | None = None,
     on_persona_completed: Callable[[int, int], None] | None = None,
 ) -> PersonaRunResult:
-    client = llm_client or OpenRouterClient()
+    total_usage = TokenUsage()
     if blueprints is not None:
         personas = blueprints
     else:
-        personas = await generate_persona_blueprints(
+        personas, blueprint_usage = await generate_persona_blueprints(
             topic=topic,
             audience=audience,
             count=total_personas,
-            llm_client=client,
+            llm_client=llm_client,
         )
+        total_usage += blueprint_usage
     semaphore = asyncio.Semaphore(concurrency_limit)
 
     async def _run_persona(
         persona: PersonaBlueprint,
-    ) -> tuple[PersonaBlueprint, PersonaResponse | PersonaFailure, float]:
+    ) -> tuple[PersonaBlueprint, PersonaResponse | PersonaFailure, TokenUsage]:
         async with semaphore:
             prompt = build_persona_user_prompt(
                 persona=persona, topic=topic, audience=audience
             )
             try:
-                raw, cost_usd = await client.generate_persona_response_with_meta(
+                raw, usage = await llm_client.generate_json(
                     system_prompt=HUNGARIAN_SYSTEM_PROMPT,
                     user_prompt=prompt,
                 )
-                return persona, normalize_persona_response(raw), cost_usd
+                return persona, normalize_persona_response(raw), usage
             except LLMProviderError as exc:
                 return (
                     persona,
@@ -299,7 +300,7 @@ async def execute_persona_engine(
                         error_code=exc.error_code,
                         error_message=str(exc),
                     ),
-                    0.0,
+                    TokenUsage(),
                 )
             except ValueError as exc:
                 return (
@@ -309,7 +310,7 @@ async def execute_persona_engine(
                         error_code="MALFORMED_PROVIDER_OUTPUT",
                         error_message=str(exc),
                     ),
-                    0.0,
+                    TokenUsage(),
                 )
 
     tasks = [asyncio.create_task(_run_persona(persona)) for persona in personas]
@@ -317,7 +318,6 @@ async def execute_persona_engine(
     responses: list[PersonaResponse] = []
     failures: list[PersonaFailure] = []
     handoff_pairs: list[tuple[PersonaResponse, dict[str, str]]] = []
-    total_cost_usd = 0.0
 
     processed_count = 0
     try:
@@ -330,22 +330,22 @@ async def execute_persona_engine(
 
             persona_blueprint: PersonaBlueprint | None = None
             if isinstance(item, tuple) and len(item) == 3:
-                persona_blueprint, result_item, cost_usd = item
+                persona_blueprint, result_item, usage = item
                 if isinstance(result_item, PersonaResponse):
                     persona_name = result_item.name
                 elif isinstance(result_item, PersonaFailure):
                     persona_name = result_item.persona_name
             else:
-                result_item, cost_usd = (
+                result_item, usage = (
                     PersonaFailure(
                         persona_name=persona_name,
                         error_code="UNEXPECTED_ENGINE_ERROR",
                         error_message=str(item),
                     ),
-                    0.0,
+                    TokenUsage(),
                 )
 
-            total_cost_usd += max(cost_usd, 0.0)
+            total_usage += usage
 
             if isinstance(result_item, PersonaResponse):
                 responses.append(result_item)
@@ -389,5 +389,6 @@ async def execute_persona_engine(
         responses=responses,
         failures=failures,
         handoff_payload=handoff_payload,
-        cost_usd=total_cost_usd,
+        input_tokens=total_usage.input_tokens,
+        output_tokens=total_usage.output_tokens,
     )

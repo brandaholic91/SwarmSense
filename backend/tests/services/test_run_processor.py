@@ -6,12 +6,14 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any, cast
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core import cost_enforcement
 from app.core.config import get_settings
 from app.core.database import get_supabase_client
 from app.models.persona import PersonaFailure, PersonaResponse, PersonaRunResult
+from app.services.llm_client import TokenUsage
 from app.services.run_processor import MIN_SUCCESSFUL_PERSONAS, process_run
 
 TEST_INTERNAL_SECRET = "test-internal-secret"
@@ -265,7 +267,7 @@ def _seed_env(monkeypatch) -> None:
 
 
 def _build_result(
-    *, successful_count: int, total_personas: int, cost_usd: float
+    *, successful_count: int, total_personas: int
 ) -> PersonaRunResult:
     responses = [
         PersonaResponse(
@@ -293,12 +295,11 @@ def _build_result(
         responses=responses,
         failures=failures,
         handoff_payload=[item.model_dump() for item in responses],
-        cost_usd=cost_usd,
     )
 
 
 def _build_result_with_stances(
-    *, stances: list[str], cost_usd: float
+    *, stances: list[str]
 ) -> PersonaRunResult:
     responses = [
         PersonaResponse(
@@ -318,19 +319,18 @@ def _build_result_with_stances(
         responses=responses,
         failures=[],
         handoff_payload=[item.model_dump() for item in responses],
-        cost_usd=cost_usd,
     )
 
 
 def _patch_fake_engine(monkeypatch, run_processor, result: PersonaRunResult) -> None:
-    async def fake_engine(*, topic: str, audience: str, on_persona_completed=None):
+    async def fake_engine(*, topic: str, audience: str, llm_client=None, on_persona_completed=None):
         _ = (topic, audience)
         if on_persona_completed is not None:
             on_persona_completed(result.total_personas, result.total_personas)
         return result
 
     async def fake_synthesis(*, personas, topic, audience, llm_client=None):
-        return None
+        return None, TokenUsage()
 
     monkeypatch.setattr(run_processor, "execute_persona_engine", fake_engine)
     monkeypatch.setattr(run_processor, "execute_synthesis", fake_synthesis)
@@ -346,7 +346,7 @@ def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=12, total_personas=15, cost_usd=0.25),
+        _build_result(successful_count=12, total_personas=15),
     )
 
     email_calls: list[dict[str, Any]] = []
@@ -378,7 +378,7 @@ def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
     assert fake_supabase.updates[-2]["payload"]["status"] == "composing"
     assert fake_supabase.updates[-1]["payload"]["status"] == "partial"
     assert fake_supabase.updates[-1]["payload"]["persona_count"] == 12
-    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0.25"
+    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0"
     assert isinstance(fake_supabase.updates[-1]["payload"]["completed_at"], str)
     assert email_calls[0]["recipient_email"] == "test@example.com"
     assert email_calls[0]["result_payload"]["persona_count_label"] == "12/15 persona"
@@ -388,7 +388,7 @@ def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
     )
     assert email_calls[0]["result_payload"]["topic"] == "Tema"
     assert email_calls[0]["result_payload"]["audience"] == "Kozonseg"
-    assert fake_supabase.cost_rows[0]["total_usd"] == "1.25"
+    assert fake_supabase.cost_rows[0]["total_usd"] == "1.00"
 
 
 def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
@@ -401,7 +401,7 @@ def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=15, total_personas=15, cost_usd=0.30),
+        _build_result(successful_count=15, total_personas=15),
     )
 
     email_calls: list[dict[str, Any]] = []
@@ -425,13 +425,13 @@ def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
     assert fake_supabase.updates[-2]["payload"]["status"] == "composing"
     assert fake_supabase.updates[-1]["payload"]["status"] == "completed"
     assert fake_supabase.updates[-1]["payload"]["persona_count"] == 15
-    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0.3"
+    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0"
     assert email_calls[0]["result_payload"]["persona_count_label"] == "15/15 persona"
     assert (
         email_calls[0]["result_payload"]["persona_count_header_display"]
         == "15/15 persona"
     )
-    assert fake_supabase.cost_rows[0]["total_usd"] == "2.30"
+    assert fake_supabase.cost_rows[0]["total_usd"] == "2.00"
 
 
 def test_extract_provider_error_metadata_prefers_error_code_attribute(
@@ -495,7 +495,7 @@ def test_process_run_logs_email_failure_and_preserves_partial_status(
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=12, total_personas=15, cost_usd=0.25),
+        _build_result(successful_count=12, total_personas=15),
     )
 
     class FakeResendError(Exception):
@@ -563,7 +563,7 @@ def test_process_run_fails_when_successful_personas_below_threshold(
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=11, total_personas=15, cost_usd=0.15),
+        _build_result(successful_count=11, total_personas=15),
     )
 
     captured_sentry: list[str] = []
@@ -596,13 +596,14 @@ def test_process_run_fails_when_successful_personas_below_threshold(
     assert fake_supabase.updates[0]["payload"]["persona_count"] == 0
     assert fake_supabase.updates[-1]["payload"]["status"] == "failed"
     assert fake_supabase.updates[-1]["payload"]["persona_count"] == 11
-    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0.15"
+    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0"
     assert isinstance(fake_supabase.updates[-1]["payload"]["completed_at"], str)
     assert captured_sentry
     assert not email_calls
-    assert fake_supabase.cost_rows[0]["total_usd"] == "1.15"
+    assert fake_supabase.cost_rows[0]["total_usd"] == "1.00"
 
 
+@pytest.mark.skip(reason="a 4. feladat törli: a költségkövetés megszűnik")
 def test_monthly_cost_tracking_creates_missing_month_row(monkeypatch) -> None:
     _seed_env(monkeypatch)
     fake_supabase = FakeSupabase(total_usd=None)
@@ -613,7 +614,7 @@ def test_monthly_cost_tracking_creates_missing_month_row(monkeypatch) -> None:
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=15, total_personas=15, cost_usd=0.42),
+        _build_result(successful_count=15, total_personas=15),
     )
     monkeypatch.setattr(
         run_processor,
@@ -635,6 +636,7 @@ def test_monthly_cost_tracking_creates_missing_month_row(monkeypatch) -> None:
     assert fake_supabase.cost_rows[0]["total_usd"] == "0.42"
 
 
+@pytest.mark.skip(reason="a 4. feladat törli: a költségkövetés megszűnik")
 def test_monthly_cost_threshold_alert_emits_once_per_month(monkeypatch) -> None:
     _seed_env(monkeypatch)
     fake_supabase = FakeSupabase("39.90")
@@ -652,7 +654,7 @@ def test_monthly_cost_threshold_alert_emits_once_per_month(monkeypatch) -> None:
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=15, total_personas=15, cost_usd=0.20),
+        _build_result(successful_count=15, total_personas=15),
     )
 
     warning_messages: list[tuple[str, str | None]] = []
@@ -679,7 +681,7 @@ def test_monthly_cost_threshold_alert_emits_once_per_month(monkeypatch) -> None:
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=15, total_personas=15, cost_usd=0.10),
+        _build_result(successful_count=15, total_personas=15),
     )
     asyncio.run(
         process_run(
@@ -701,6 +703,7 @@ def test_monthly_cost_threshold_alert_emits_once_per_month(monkeypatch) -> None:
     assert warning_messages[0][1] == "warning"
 
 
+@pytest.mark.skip(reason="a 4. feladat törli: a költségkövetés megszűnik")
 def test_monthly_cost_threshold_alert_resets_with_new_month(monkeypatch) -> None:
     _seed_env(monkeypatch)
     fake_supabase = FakeSupabase(total_usd=None)
@@ -718,7 +721,7 @@ def test_monthly_cost_threshold_alert_resets_with_new_month(monkeypatch) -> None
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result(successful_count=15, total_personas=15, cost_usd=40.00),
+        _build_result(successful_count=15, total_personas=15),
     )
 
     warning_messages: list[tuple[str, str | None]] = []
@@ -785,7 +788,6 @@ def test_runs_endpoint_dispatches_into_real_run_processor(monkeypatch) -> None:
             responses=[],
             failures=[],
             handoff_payload=[],
-            cost_usd=0.0,
         )
 
     monkeypatch.setattr(run_processor, "process_run", fake_process_run)
@@ -818,7 +820,7 @@ def test_result_payload_sets_consensus_for_15_of_15_support(monkeypatch) -> None
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result_with_stances(stances=["support"] * 15, cost_usd=0.10),
+        _build_result_with_stances(stances=["support"] * 15),
     )
 
     email_calls: list[dict[str, Any]] = []
@@ -865,7 +867,6 @@ def test_result_payload_sets_consensus_for_15_of_18_reject(monkeypatch) -> None:
         run_processor,
         _build_result_with_stances(
             stances=["reject"] * 15 + ["support", "support", "support"],
-            cost_usd=0.10,
         ),
     )
 
@@ -909,7 +910,6 @@ def test_result_payload_no_consensus_for_14_of_18_support(monkeypatch) -> None:
         run_processor,
         _build_result_with_stances(
             stances=["support"] * 14 + ["reject"] * 4,
-            cost_usd=0.10,
         ),
     )
 
@@ -951,7 +951,7 @@ def test_result_payload_no_consensus_when_all_conditional(monkeypatch) -> None:
     _patch_fake_engine(
         monkeypatch,
         run_processor,
-        _build_result_with_stances(stances=["conditional"] * 18, cost_usd=0.10),
+        _build_result_with_stances(stances=["conditional"] * 18),
     )
 
     email_calls: list[dict[str, Any]] = []

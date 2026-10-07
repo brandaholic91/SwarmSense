@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from app.services.llm_client import LLMProviderError
+from app.services.llm_client import LLMProviderError, TokenUsage
 from app.services.persona_engine import (
     HUNGARIAN_MARKET_CONTEXT,
     HUNGARIAN_SYSTEM_PROMPT,
@@ -78,7 +78,7 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
     current_inflight = 0
 
     class FakeClient:
-        async def generate_persona_response_with_meta(
+        async def generate_json(
             self, *, system_prompt: str, user_prompt: str, temperature: float = 0.3
         ):
             nonlocal max_inflight
@@ -101,7 +101,7 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
                     "core_concern": "Aggodalom",
                     "buying_trigger": "Trigger",
                 },
-                0.0,
+                TokenUsage(10, 5),
             )
 
     result = asyncio.run(
@@ -110,22 +110,24 @@ def test_execute_persona_engine_uses_parallel_dispatch_and_semaphore() -> None:
             audience="Kozonseg",
             llm_client=FakeClient(),
             concurrency_limit=3,
-            blueprints=build_persona_blueprints(total_personas=15),
+            blueprints=build_persona_blueprints(total_personas=18),
         )
     )
 
-    assert result.successful_count == 15
+    assert result.successful_count == 18
     assert len(result.failures) == 0
     assert max_inflight <= 3
+    assert result.input_tokens == 180
+    assert result.output_tokens == 90
 
 
 def test_execute_persona_engine_collects_provider_failures() -> None:
     class FailingClient:
-        async def generate_persona_response_with_meta(
+        async def generate_json(
             self, *, system_prompt: str, user_prompt: str, temperature: float = 0.3
         ):
             raise LLMProviderError(
-                error_code="OPENROUTER_RATE_LIMIT",
+                error_code="RATE_LIMITED",
                 message="rate limited",
             )
 
@@ -140,4 +142,4 @@ def test_execute_persona_engine_collects_provider_failures() -> None:
 
     assert result.successful_count == 0
     assert len(result.failures) == 15
-    assert all(item.error_code == "OPENROUTER_RATE_LIMIT" for item in result.failures)
+    assert all(item.error_code == "RATE_LIMITED" for item in result.failures)

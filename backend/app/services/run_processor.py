@@ -11,6 +11,7 @@ from app.core.cost_enforcement import MONTHLY_CAP_USD, WARNING_THRESHOLD_USD
 from app.core.database import get_supabase_client
 from app.models.persona import SynthesisResult
 from app.services.email_service import send_run_result_email
+from app.services.llm_client import LLMClient
 from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 from app.services.synthesis_service import execute_synthesis
 
@@ -35,10 +36,13 @@ async def process_run(
             payload={"status": "running", "persona_count": processed_count},
         )
 
+    llm_client = LLMClient(session_id=f"swarmsense-{run_id}")
+
     try:
         result = await execute_persona_engine(
             topic=topic,
             audience=audience,
+            llm_client=llm_client,
             on_persona_completed=on_persona_completed,
         )
     except Exception as exc:
@@ -67,7 +71,7 @@ async def process_run(
             sentry_sdk.capture_exception(exc)
         raise
 
-    final_cost = _normalize_cost(result.cost_usd)
+    final_cost = Decimal("0")  # átmeneti: a 4. feladat átírja tokenszámra
     completed_timestamp = datetime.now(UTC).isoformat()
 
     if result.successful_count < MIN_SUCCESSFUL_PERSONAS:
@@ -105,10 +109,11 @@ async def process_run(
 
     synthesis: SynthesisResult | None = None
     try:
-        synthesis = await execute_synthesis(
+        synthesis, _ = await execute_synthesis(
             personas=result.responses,
             topic=topic,
             audience=audience,
+            llm_client=llm_client,
         )
     except Exception as exc:
         with sentry_sdk.push_scope() as scope:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import ValidationError
 
 from app.models.persona import PersonaResponse, SynthesisResult
-from app.services.llm_client import LLMProviderError, OpenRouterClient
+from app.services.llm_client import LLMClient, TokenUsage
 
 SYNTHESIS_SYSTEM_PROMPT = (
     "Te egy tapasztalt magyar üzleti stratega vagy. "
@@ -49,16 +49,15 @@ async def execute_synthesis(
     personas: list[PersonaResponse],
     topic: str,
     audience: str,
-    llm_client: OpenRouterClient | None = None,
-) -> SynthesisResult:
-    client = llm_client or OpenRouterClient()
+    llm_client: LLMClient,
+) -> tuple[SynthesisResult, TokenUsage]:
     prompt = build_synthesis_user_prompt(personas=personas, topic=topic, audience=audience)
-    raw, _ = await client.generate_persona_response_with_meta(
+    raw, usage = await llm_client.generate_json(
         system_prompt=SYNTHESIS_SYSTEM_PROMPT,
         user_prompt=prompt,
     )
     try:
-        return SynthesisResult.model_validate(raw)
+        return SynthesisResult.model_validate(raw), usage
     except ValidationError as exc:
         raise ValueError(
             "A szintézis válasz nem felel meg az elvárásoknak."

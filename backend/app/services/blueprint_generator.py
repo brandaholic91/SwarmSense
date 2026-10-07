@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import ValidationError
 
 from app.models.persona import PersonaBlueprint
-from app.services.llm_client import LLMProviderError, OpenRouterClient
+from app.services.llm_client import LLMClient, TokenUsage
 
 BLUEPRINT_SYSTEM_PROMPT = (
     "Te egy tapasztalt kutatási szakértő vagy, aki szintetikus persona profilokat készít. "
@@ -48,11 +48,10 @@ async def generate_persona_blueprints(
     topic: str,
     audience: str,
     count: int,
-    llm_client: OpenRouterClient | None = None,
-) -> list[PersonaBlueprint]:
-    client = llm_client or OpenRouterClient()
+    llm_client: LLMClient,
+) -> tuple[list[PersonaBlueprint], TokenUsage]:
     prompt = build_blueprint_user_prompt(topic=topic, audience=audience, count=count)
-    raw, _ = await client.generate_persona_response_with_meta(
+    raw, usage = await llm_client.generate_json(
         system_prompt=BLUEPRINT_SYSTEM_PROMPT,
         user_prompt=prompt,
         temperature=BLUEPRINT_TEMPERATURE,
@@ -67,8 +66,9 @@ async def generate_persona_blueprints(
         raise ValueError("A blueprint generátor üres persona listát adott vissza.")
 
     try:
-        return [PersonaBlueprint.model_validate(item) for item in personas_raw]
+        blueprints = [PersonaBlueprint.model_validate(item) for item in personas_raw]
     except ValidationError as exc:
         raise ValueError(
             "A generált persona blueprint nem felel meg az elvárásoknak."
         ) from exc
+    return blueprints, usage

@@ -19,7 +19,7 @@ describe("Privacy page", () => {
   it("states the facts of the demo", async () => {
     const text = await pageText(PrivacyPage);
 
-    for (const phrase of ["14 nap", "DeepSeek", "Resend", "IP-cím", "HMAC", "Discord", "NAIH"]) {
+    for (const phrase of ["14 nap", "DeepSeek", "Resend", "IP-cím", "HMAC", "Discord", "Cloudflare", "NAIH"]) {
       expect(text).toContain(phrase);
     }
   });

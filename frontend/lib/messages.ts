@@ -308,7 +308,7 @@ export const messages = {
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",
     termsTitle: "Felhasználási feltételek",
-    effectiveDate: "Hatálybalépés: 2026. október 7. · Verzió: 2.1",
+    effectiveDate: "Hatálybalépés: 2026. október 7. · Verzió: 2.2",
     contactFallback: `Kapcsolat: a repo issue-követőjén. ${linkWarning}`,
     linkWarning,
     contactLabel: "Kapcsolat",
@@ -415,19 +415,20 @@ export const messages = {
     cookiesBody: "Az oldal nem használ sütit és webanalitikát, és regisztrációt sem kér.",
     visibilityTitle: "4. A futás szövege és láthatósága",
     visibilityBody:
-      "A kérdés és a célközönség szövege, valamint a futás eredménye korlátlan ideig megmarad. A futás linkjének birtokában bárki láthatja őket, ezért a linket kezeld úgy, mintha nyilvános lenne. Ne írj a mezőkbe személyes adatot vagy üzleti titkot.",
+      "A kérdés és a célközönség szövege, valamint a futás eredménye a demó működésének idejéig megmarad, hacsak törlést nem kérsz. A futás linkjének birtokában bárki láthatja őket, ezért a linket kezeld úgy, mintha nyilvános lenne. Ne írj a mezőkbe személyes adatot vagy üzleti titkot.",
     processorsTitle: "5. Külső szolgáltatók",
     processorsItems: [
-      "A kérdés és a célközönség szövegét DeepSeek nyelvi modell dolgozza fel, az opencode szolgáltatáson keresztül (Anomaly Innovations, Inc., Egyesült Államok). Az opencode közzétett feltételei szerint a szöveget nem őrzik meg, és modell tanítására nem használják. Azt, hogy a modell melyik országban fut, a szolgáltató nem teszi közzé, ezért a feldolgozás az Európai Gazdasági Térségen kívül történik. Az IP-címed és az e-mail-címed nem kerül a modellhez.",
+      "A kérdés és a célközönség szövegét DeepSeek nyelvi modell dolgozza fel, az opencode szolgáltatáson keresztül (Anomaly Innovations, Inc., Egyesült Államok). Az opencode közzétett feltételei szerint a szöveget nem őrzik meg, és modell tanítására nem használják. Azt, hogy a modell melyik országban fut, a szolgáltató nem teszi közzé, ezért azzal kell számolni, hogy a feldolgozás az Európai Gazdasági Térségen kívül történik. Az IP-címed és az e-mail-címed nem kerül a modellhez.",
       "Ha a PDF-et levélben kéred, a levelet a Resend küldi (Resend, Inc., Egyesült Államok). Kérésenként egy levél megy, a címet 14 nap után töröljük az adatbázisunkból. A Resend saját naplója ettől független, arra a törlésünk nem terjed ki.",
-      "Ha egy futás hibával leáll, egy zárt Discord-csatornára (Discord Inc., Egyesült Államok) értesítés megy a futás azonosítójával, linkjével és a hibakóddal. A kérdés szövege és az e-mail-cím nem kerül bele.",
+      "Ha egy futás hibával leáll, egy zárt Discord-csatornára (Discord Inc., Egyesült Államok) értesítés megy a futás azonosítójával, linkjével és a hibakóddal. A kérdés szövege és az e-mail-cím nem kerül bele. A napi futáskeret betelésekor is megy értesítés, ebben csak a keret mérete szerepel.",
+      "Az oldal teljes forgalma a Cloudflare hálózatán halad át (Cloudflare, Inc., Egyesült Államok), amely a túlterheléstől védi az oldalt. A Cloudflare ehhez látja az IP-címedet és a kérések tartalmát.",
     ],
     legalBasisTitle: "6. Jogalap",
     legalBasisBody:
       "A futás adatainak és az IP-cím lenyomatának kezelése a GDPR 6. cikk (1) bekezdés f) pontja szerinti jogos érdeken alapul: ez a demó működtetése és a visszaélések korlátozása. Az e-mail-cím kezelésének jogalapja a b) pont: a kért levél elküldése. Automatizált döntéshozatal és profilalkotás nincs.",
     retentionTitle: "7. Megőrzési idő",
     retentionItems: [
-      "A kérdés, a célközönség és az eredmény korlátlan ideig megmarad, amíg törlést nem kérsz.",
+      "A kérdés, a célközönség és az eredmény a demó működésének idejéig megmarad, vagy amíg törlést nem kérsz.",
       "Az IP-cím lenyomata 24 óra után törlődik.",
       "Az e-mail-cím 14 nap után törlődik az adatbázisból.",
     ],

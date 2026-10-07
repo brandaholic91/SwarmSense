@@ -10,8 +10,6 @@ from collections import Counter
 
 from app import db
 
-REQUIRED_EVENTS = ("persona_retry", "persona_failed")
-
 
 def main(argv: list[str]) -> int:
     if len(argv) != 1:
@@ -24,14 +22,16 @@ def main(argv: list[str]) -> int:
         print(f"Nincs ilyen futás: {run_id}", file=sys.stderr)
         return 1
 
-    counts = Counter(event["type"] for event in db.list_events(run_id))
-    missing = [name for name in REQUIRED_EVENTS if counts[name] == 0]
-    if missing:
+    # A minta a teljes terméket mutatja: csak befejezett, összefoglalóval záruló futás jó.
+    run = db.get_run(run_id)
+    if run is None or run["status"] != "completed":
         print(
-            f"A futás nem használható mintának, hiányzó esemény: {', '.join(missing)}",
+            "A futás nem használható mintának: nem 'completed' állapotú.",
             file=sys.stderr,
         )
         return 1
+
+    counts = Counter(event["type"] for event in db.list_events(run_id))
 
     db.SEED_PATH.parent.mkdir(parents=True, exist_ok=True)
     db.SEED_PATH.write_text(sql_text, encoding="utf-8")

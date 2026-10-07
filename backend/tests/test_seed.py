@@ -253,13 +253,13 @@ def test_export_script_writes_file_and_prints_summary(clean_db, tmp_path, monkey
     assert written.startswith('with "ins" as (\ninsert into "runs"')
 
 
-def test_export_script_refuses_run_without_failed_persona(
+def test_export_script_refuses_run_that_is_not_completed(
     clean_db, tmp_path, monkeypatch, capsys
 ):
     run = db.create_run(topic="a", audience="b")
+    db.update_run(run["id"], status="partial")
     db.insert_event(run["id"], "run_started")
-    db.insert_event(run["id"], "persona_retry", persona_index=0, attempt=2)
     code = _run_script(monkeypatch, tmp_path, run["id"])
     assert code not in (0, None)
     assert not (tmp_path / "out" / "sample_run.sql").exists()
-    assert "persona_failed" in capsys.readouterr().err
+    assert "completed" in capsys.readouterr().err

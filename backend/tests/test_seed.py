@@ -166,6 +166,16 @@ def test_seed_does_not_touch_existing_run_with_same_id(clean_db):
         assert conn.execute("select count(*) as n from runs").fetchone()["n"] == 1
 
 
+def test_seed_reports_false_when_nothing_was_inserted(clean_db, tmp_path, monkeypatch):
+    # a seed azonosítója közönséges futásként már megvan: a fájl lefut, de nem
+    # kerül be minta, ezért a visszatérési érték (és a napló) ne állítsa, hogy betöltött
+    run_id = _make_recorded_run()
+    monkeypatch.setattr(db, "SEED_PATH", _write_seed(tmp_path, run_id))
+
+    assert db.seed_sample_if_missing() is False
+    assert db.get_sample_run_id() is None
+
+
 def test_seed_text_executed_twice_inserts_events_once(clean_db):
     run_id = _make_recorded_run()
     before = _snapshot(run_id)

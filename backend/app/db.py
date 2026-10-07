@@ -324,12 +324,15 @@ def get_sample_run_id() -> str | None:
 
 
 def seed_sample_if_missing() -> bool:
-    """Ha nincs minta és van seed fájl, lefuttatja. Igaz, ha betöltött."""
+    """Ha nincs minta és van seed fájl, lefuttatja. Igaz, ha ettől lett minta.
+
+    A fájl lefutása önmagában nem elég: ha a seed azonosítója közönséges futásként
+    már megvan, a seed semmit nem ír, és ilyenkor az eredmény hamis."""
     if not SEED_PATH.is_file() or get_sample_run_id() is not None:
         return False
     with connect() as conn:
         conn.execute(SEED_PATH.read_text(encoding="utf-8"))
-    return True
+    return get_sample_run_id() is not None
 
 
 def export_sample_sql(run_id: str) -> str:

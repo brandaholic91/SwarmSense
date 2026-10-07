@@ -137,17 +137,31 @@ def update_run(run_id: str, **fields: Any) -> None:
         conn.execute(query, [*values, uuid.UUID(run_id)])
 
 
-def finalize_run(run_id: str, **fields: Any) -> bool:
-    """Mint az `update_run`, de csak `running` vagy `composing` sorra ír (egy
-    közben lezárt futást nem éleszt újra). Igaz, ha írt."""
+def transition_run(
+    run_id: str, *, from_statuses: tuple[str, ...], **fields: Any
+) -> bool:
+    """Mint az `update_run`, de csak akkor ír, ha a sor státusza a `from_statuses`
+    egyike (egy közben lezárt futást nem éleszt újra). Igaz, ha írt."""
     assignments, values = _run_assignments(fields)
     if not fields:
         return False
-    query = sql.SQL(
-        "update runs set {} where id = %s and status in ('running', 'composing')"
-    ).format(assignments)
+    query = sql.SQL("update runs set {} where id = %s and status = any(%s)").format(
+        assignments
+    )
     with connect() as conn:
-        return conn.execute(query, [*values, uuid.UUID(run_id)]).rowcount > 0
+        return (
+            conn.execute(
+                query, [*values, uuid.UUID(run_id), list(from_statuses)]
+            ).rowcount
+            > 0
+        )
+
+
+def finalize_run(run_id: str, **fields: Any) -> bool:
+    """Végső írás: csak `running` vagy `composing` sorra."""
+    return transition_run(
+        run_id, from_statuses=("running", "composing"), **fields
+    )
 
 
 def delete_old_email_requests(*, days: int = 14) -> int:

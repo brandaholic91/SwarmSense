@@ -183,3 +183,17 @@ def test_finalize_run_rejects_unknown_columns(clean_db):
     run = db.create_run(topic="a", audience="b")
     with pytest.raises(ValueError):
         db.finalize_run(run["id"], nincs_ilyen=1)
+
+
+def test_transition_run_writes_only_from_the_given_statuses(clean_db):
+    run = db.create_run(topic="a", audience="b")
+    assert db.transition_run(run["id"], from_statuses=("running",), status="composing") is False
+    assert db.get_run(run["id"])["status"] == "queued"
+    assert db.transition_run(run["id"], from_statuses=("queued",), status="running") is True
+    assert db.get_run(run["id"])["status"] == "running"
+
+
+def test_transition_run_rejects_unknown_columns(clean_db):
+    run = db.create_run(topic="a", audience="b")
+    with pytest.raises(ValueError):
+        db.transition_run(run["id"], from_statuses=("queued",), nincs_ilyen=1)

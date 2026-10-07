@@ -17,8 +17,12 @@ def run_cleanup_once() -> dict[str, int]:
     deleted_emails = db.delete_old_email_requests()
     stuck = db.fail_stuck_runs()
     for run_id in stuck:
-        db.insert_event(run_id, "run_failed", error_code=RUN_TIMED_OUT)
-        notifier.notify_run_failed(run_id, RUN_TIMED_OUT)
+        # egy futás hibája ne hagyja ki a többit (a lezárásuk már lefutott)
+        try:
+            db.insert_event(run_id, "run_failed", error_code=RUN_TIMED_OUT)
+            notifier.notify_run_failed(run_id, RUN_TIMED_OUT)
+        except Exception as exc:
+            logger.error("cleanup of run %s failed: %s", run_id, type(exc).__name__)
     return {"deleted_emails": deleted_emails, "failed_runs": len(stuck)}
 
 

@@ -75,15 +75,55 @@ async def _fake_pdf(run: dict[str, Any]) -> bytes:
     return b"%PDF-fake"
 
 
-def test_late_finish_does_not_revive_timed_out_run(clean_db, monkeypatch):
+def _process(llm_client=None) -> str:
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    asyncio.run(
+        run_processor.process_run(
+            run_id=row["id"],
+            topic=TOPIC,
+            audience=AUDIENCE,
+            llm_client=llm_client or make_fake_llm(),
+        )
+    )
+    return row["id"]
+
+
+def _types(run_id: str) -> list[str]:
+    return [e["type"] for e in db.list_events(run_id)]
+
+
+def _time_out_during(monkeypatch, name: str) -> None:
+    """A `run_processor.<name>` hívása előtt a takarító lezárja a futást."""
+    real = getattr(run_processor, name)
+
+    async def wrapper(*args: Any, **kwargs: Any):
+        db.fail_stuck_runs(minutes=0)
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr(run_processor, name, wrapper)
+
+
+def test_timeout_during_synthesis_leaves_run_failed(clean_db, monkeypatch):
     monkeypatch.setattr(pdf_service, "generate_pdf", _fake_pdf)
-    real_synthesis = run_processor.execute_synthesis
+    _time_out_during(monkeypatch, "execute_synthesis")
 
-    async def synthesis_during_timeout(**kwargs: Any):
-        db.fail_stuck_runs(minutes=0)  # a takarító épp most végez a futással
-        return await real_synthesis(**kwargs)
+    run_id = _process()
 
-    monkeypatch.setattr(run_processor, "execute_synthesis", synthesis_during_timeout)
+    run = db.get_run(run_id)
+    assert run["status"] == "failed"
+    assert run["result"] is None
+    assert db.get_pdf(run_id) is None
+    assert db.count_events(run_id, "run_completed") == 0
+
+
+def test_timeout_between_result_and_final_status_does_not_revive_run(
+    clean_db, monkeypatch
+):
+    async def timing_out_pdf(run: dict[str, Any]) -> bytes:
+        db.fail_stuck_runs(minutes=0)
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", timing_out_pdf)
     finalized: list[bool] = []
     real_finalize = db.finalize_run
 
@@ -94,19 +134,132 @@ def test_late_finish_does_not_revive_timed_out_run(clean_db, monkeypatch):
 
     monkeypatch.setattr(db, "finalize_run", spying_finalize)
 
+    run_id = _process()
+
+    assert finalized == [False]
+    assert db.get_run(run_id)["status"] == "failed"
+    assert db.count_events(run_id, "run_completed") == 0
+
+
+def test_timeout_during_persona_engine_leaves_run_failed(
+    clean_db, monkeypatch, failed_notices
+):
+    monkeypatch.setattr(pdf_service, "generate_pdf", _fake_pdf)
+    _time_out_during(monkeypatch, "execute_persona_engine")
     row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    asyncio.run(
+        run_processor.process_run(
+            run_id=row["id"], topic=TOPIC, audience=AUDIENCE, llm_client=make_fake_llm()
+        )
+    )
+    # a takarító dolgát a run_cleanup_once végzi: itt a processzor viselkedése számít
+    assert db.get_run(row["id"])["status"] == "failed"
+    types = _types(row["id"])
+    assert "run_completed" not in types
+    assert "synthesis_started" not in types
+    assert failed_notices == []
+
+
+def test_cleanup_then_processor_gives_exactly_one_failure_event_and_notice(
+    clean_db, monkeypatch, failed_notices
+):
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    real_engine = run_processor.execute_persona_engine
+
+    async def engine_after_cleanup(**kwargs: Any):
+        cleanup.run_cleanup_once()  # a takarító előbb végez
+        return await real_engine(**kwargs)
+
+    monkeypatch.setattr(run_processor, "execute_persona_engine", engine_after_cleanup)
+    # a takarítónak 0 perces küszöb kell: a futás épp most indult
+    real_fail_stuck = db.fail_stuck_runs
+    monkeypatch.setattr(
+        db, "fail_stuck_runs", lambda **kw: real_fail_stuck(minutes=0)
+    )
     asyncio.run(
         run_processor.process_run(
             run_id=row["id"],
             topic=TOPIC,
             audience=AUDIENCE,
-            llm_client=make_fake_llm(),
+            llm_client=make_fake_llm(blueprint_fails=True),
         )
     )
 
-    assert finalized == [False]
+    completed_at = db.get_run(row["id"])["completed_at"]
     assert db.get_run(row["id"])["status"] == "failed"
-    assert db.count_events(row["id"], "run_completed") == 0
+    assert _types(row["id"]).count("run_failed") == 1
+    assert failed_notices == [(row["id"], "RUN_TIMED_OUT")]
+    # a processzor saját bukása nem írta felül a `completed_at`-et
+    assert completed_at is not None
+
+
+def test_processor_failure_after_cleanup_keeps_completed_at(
+    clean_db, monkeypatch, failed_notices
+):
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    seen: dict[str, Any] = {}
+    real_engine = run_processor.execute_persona_engine
+
+    async def engine_after_timeout(**kwargs: Any):
+        db.fail_stuck_runs(minutes=0)
+        seen["completed_at"] = db.get_run(row["id"])["completed_at"]
+        return await real_engine(**kwargs)
+
+    monkeypatch.setattr(run_processor, "execute_persona_engine", engine_after_timeout)
+    asyncio.run(
+        run_processor.process_run(
+            run_id=row["id"],
+            topic=TOPIC,
+            audience=AUDIENCE,
+            llm_client=make_fake_llm(blueprint_fails=True),
+        )
+    )
+
+    assert db.get_run(row["id"])["completed_at"] == seen["completed_at"]
+    assert "run_failed" not in _types(row["id"])
+    assert failed_notices == []
+
+
+def test_run_failed_while_queued_is_not_started(clean_db, failed_notices):
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    db.fail_stuck_runs(minutes=0)
+
+    result = asyncio.run(
+        run_processor.process_run(
+            run_id=row["id"], topic=TOPIC, audience=AUDIENCE, llm_client=make_fake_llm()
+        )
+    )
+
+    assert result is None
+    assert db.get_run(row["id"])["status"] == "failed"
+    assert db.list_events(row["id"]) == []
+    assert failed_notices == []
+
+
+def test_one_failing_run_does_not_skip_the_others(
+    clean_db, monkeypatch, failed_notices
+):
+    first = db.create_run(topic="a", audience="b")
+    second = db.create_run(topic="a", audience="b")
+    for run in (first, second):
+        db.update_run(run["id"], status="running")
+        _age("runs", run["id"], "11 minutes")
+    real_insert = db.insert_event
+
+    def flaky_insert(run_id: str, type: str, **fields: Any) -> int:
+        if run_id == first["id"]:
+            raise RuntimeError("nyers")
+        return real_insert(run_id, type, **fields)
+
+    monkeypatch.setattr(db, "insert_event", flaky_insert)
+    monkeypatch.setattr(
+        db, "fail_stuck_runs", lambda **kw: [first["id"], second["id"]]
+    )
+
+    cleanup.run_cleanup_once()
+
+    assert _types(second["id"]) == ["run_failed"]
+    assert (second["id"], "RUN_TIMED_OUT") in failed_notices
 
 
 def test_cleanup_loop_survives_a_failing_round(monkeypatch, caplog):

@@ -94,14 +94,19 @@ async def _fail_run(
     }
     if persona_count is not None:
         fields["persona_count"] = persona_count
+    wrote = True
     try:
-        db.update_run(run_id, **fields)
+        wrote = db.transition_run(
+            run_id, from_statuses=("queued", "running", "composing"), **fields
+        )
     except Exception as update_exc:
         logger.error(
             "run %s could not be marked failed: %s", run_id, _describe(update_exc)
         )
-    await safe_emit(sink, "run_failed", error_code=error_code)
-    await asyncio.to_thread(notifier.notify_run_failed, run_id, error_code)
+    # ha a takarító már lezárta a futást, ő írta az eseményt és küldte az értesítést
+    if wrote:
+        await safe_emit(sink, "run_failed", error_code=error_code)
+        await asyncio.to_thread(notifier.notify_run_failed, run_id, error_code)
     _log_summary(
         run_id=run_id, status="failed", started=started, usage=usage, dropped=dropped
     )
@@ -142,8 +147,9 @@ async def _process_run(
     llm_client: LLMClient | None,
     started: float,
     sink: EventSink,
-) -> PersonaRunResult:
-    db.update_run(run_id, status="running")
+) -> PersonaRunResult | None:
+    if not db.transition_run(run_id, from_statuses=("queued",), status="running"):
+        return _stop_closed(run_id)
     await safe_emit(sink, "run_started")
 
     if llm_client is None:
@@ -169,7 +175,13 @@ async def _process_run(
         )
         return result
 
-    db.update_run(run_id, status="composing", persona_count=result.successful_count)
+    if not db.transition_run(
+        run_id,
+        from_statuses=("running",),
+        status="composing",
+        persona_count=result.successful_count,
+    ):
+        return _stop_closed(run_id)
 
     synthesis: SynthesisResult | None = None
     synthesis_started = time.monotonic()
@@ -207,7 +219,7 @@ async def _process_run(
         )
 
     final_status = _resolve_final_status(result=result, synthesis=synthesis)
-    _store_result(
+    stored = _store_result(
         run_id=run_id,
         final_status=final_status,
         result=result,
@@ -216,6 +228,8 @@ async def _process_run(
         topic=topic,
         audience=audience,
     )
+    if not stored:
+        return _stop_closed(run_id)
     # eredmény mentve → PDF → végső státusz → run_completed (a státusz addig `composing`)
     await _store_pdf(run_id)
     completed = _complete_run(
@@ -243,8 +257,9 @@ def _store_result(
     usage: TokenUsage,
     topic: str,
     audience: str,
-) -> None:
-    """1. lépés: eredmény, számlálók, szintézis-oszlopok, tokenek; a státusz marad."""
+) -> bool:
+    """1. lépés: eredmény, számlálók, szintézis-oszlopok, tokenek; a státusz marad.
+    Hamis, ha a futást közben lezárták (ilyenkor nem ír)."""
     fields: dict[str, Any] = {
         "persona_count": result.successful_count,
         "input_tokens": usage.input_tokens,
@@ -271,7 +286,13 @@ def _store_result(
             synthesis_best_target_segment=synthesis.best_target_segment,
             synthesis_strategic_recommendation=synthesis.strategic_recommendation,
         )
-    db.update_run(run_id, **fields)
+    return db.transition_run(run_id, from_statuses=("composing",), **fields)
+
+
+def _stop_closed(run_id: str) -> None:
+    """A futást közben lezárták (pl. a takarító): nincs több írás, esemény, értesítés."""
+    logger.warning("run %s was closed meanwhile, stopping", run_id)
+    return None
 
 
 async def _store_pdf(run_id: str) -> None:

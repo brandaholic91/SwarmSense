@@ -23,10 +23,10 @@ def check_run_limits(ip_hash: str | None) -> ErrorCode | None:
         return ErrorCode.BUSY
     if (
         ip_hash is not None
-        and db.count_runs_since(hours=24, ip_hash=ip_hash)
+        and db.count_runs_since(ip_hash=ip_hash)
         >= settings.runs_per_ip_per_day
     ):
         return ErrorCode.IP_LIMIT_REACHED
-    if db.count_runs_since(hours=24) >= settings.runs_per_day:
+    if db.count_runs_since() >= settings.runs_per_day:
         return ErrorCode.DAILY_LIMIT_REACHED
     return None

@@ -87,7 +87,13 @@ def count_active_runs() -> int:
         ).fetchone()["n"]
 
 
-def count_runs_since(*, hours: int = 24, ip_hash: str | None = None) -> int:
+# A futáskeretek gördülő ablaka. Az IP-lenyomat csak eddig kell, utána törlődik.
+RUN_WINDOW_HOURS = 24
+
+
+def count_runs_since(
+    *, hours: int = RUN_WINDOW_HOURS, ip_hash: str | None = None
+) -> int:
     query = (
         "select count(*) as n from runs "
         "where created_at > now() - make_interval(hours => %s) and not is_sample"
@@ -170,6 +176,17 @@ def delete_old_email_requests(*, days: int = 14) -> int:
             "delete from email_requests "
             "where created_at < now() - make_interval(days => %s)",
             (days,),
+        ).rowcount
+
+
+def clear_old_ip_hashes(*, hours: int = RUN_WINDOW_HOURS) -> int:
+    """A keret ablakánál régebbi futásokról leveszi az IP-lenyomatot."""
+    with connect() as conn:
+        return conn.execute(
+            "update runs set ip_hash = null "
+            "where ip_hash is not null "
+            "and created_at < now() - make_interval(hours => %s)",
+            (hours,),
         ).rowcount
 
 

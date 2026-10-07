@@ -1,4 +1,5 @@
-"""Takarítás: beragadt futások lezárása (percenként), lejárt e-mail-kérések törlése (óránként)."""
+"""Takarítás: beragadt futások lezárása (percenként), lejárt e-mail-kérések és
+régi IP-lenyomatok törlése (óránként)."""
 
 from __future__ import annotations
 
@@ -18,6 +19,10 @@ def delete_old_emails_once() -> int:
     return db.delete_old_email_requests()
 
 
+def clear_old_ip_hashes_once() -> int:
+    return db.clear_old_ip_hashes()
+
+
 def fail_stuck_runs_once() -> int:
     stuck = db.fail_stuck_runs()
     for run_id in stuck:
@@ -33,6 +38,7 @@ def fail_stuck_runs_once() -> int:
 def run_cleanup_once() -> dict[str, int]:
     return {
         "deleted_emails": delete_old_emails_once(),
+        "cleared_ip_hashes": clear_old_ip_hashes_once(),
         "failed_runs": fail_stuck_runs_once(),
     }
 
@@ -52,9 +58,11 @@ async def _repeat(name: str, job: Callable[[], int], interval_seconds: float) ->
 async def cleanup_loop(
     *, interval_seconds: float = 3600, stuck_interval_seconds: float = 60
 ) -> None:
-    """A beragadt futásokat percenként, a lejárt e-mail-kéréseket óránként
-    takarítja; a két feladat egymástól függetlenül fut és bukik."""
+    """A beragadt futásokat percenként, a lejárt e-mail-kéréseket és a régi
+    IP-lenyomatokat óránként takarítja; a feladatok egymástól függetlenül futnak
+    és buknak."""
     await asyncio.gather(
         _repeat("stuck runs", lambda: fail_stuck_runs_once(), stuck_interval_seconds),
         _repeat("old emails", lambda: delete_old_emails_once(), interval_seconds),
+        _repeat("old ip hashes", lambda: clear_old_ip_hashes_once(), interval_seconds),
     )

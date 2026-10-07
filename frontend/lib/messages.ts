@@ -308,7 +308,7 @@ export const messages = {
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",
     termsTitle: "Felhasználási feltételek",
-    effectiveDate: "Hatálybalépés: 2026. október 7. · Verzió: 2.0",
+    effectiveDate: "Hatálybalépés: 2026. október 7. · Verzió: 2.1",
     contactFallback: `Kapcsolat: a repo issue-követőjén. ${linkWarning}`,
     linkWarning,
     contactLabel: "Kapcsolat",
@@ -320,7 +320,7 @@ export const messages = {
         title: "1. Hatály és szolgáltató",
         paragraphs: [
           "A Feltételek mindenkire vonatkoznak, aki a SwarmSense webes felületét használja.",
-          "Szolgáltató: a SwarmSense demó üzemeltetője.",
+          "Szolgáltató: Holik Balázs, a SwarmSense demó készítője és üzemeltetője.",
         ],
         contact: true,
       },
@@ -345,7 +345,8 @@ export const messages = {
       {
         title: "4. Szellemi alkotások és a megadott szövegek",
         paragraphs: [
-          "A SwarmSense megjelenése, szövegei és szoftverkomponensei a szolgáltató vagy partnerei tulajdonában vannak. A jogszabály által megengedett szűk kör kivételével nem másolhatod, nem terjesztheted és nem módosíthatod őket.",
+          "A SwarmSense forráskódja nyilvános, és MIT licenc alatt használható fel; a feltételeit a repóban található LICENSE fájl tartalmazza. A SwarmSense név és az oldal szövegei a szolgáltatóhoz tartoznak.",
+          "A futás eredményét egy nyelvi modell állítja elő. Szabadon felhasználhatod, de a tartalmáért a szolgáltató nem felel.",
           "A kérdésért és a célközönség leírásáért te felelsz. A szolgáltatónak nem kizárólagos felhasználási jogot adsz arra, hogy ezeket a demó működtetéséhez feldolgozza, tárolja, és az eredményt előállítsa és megjelenítse.",
         ],
       },
@@ -379,7 +380,7 @@ export const messages = {
       {
         title: "9. Panasz, vitarendezés",
         paragraphs: [
-          "Panaszodat a kapcsolattartási elérhetőségen jelezheted. Fogyasztói jogvita esetén élni lehet a lakóhely szerinti békéltető testület eljárásának kezdeményezésével, valamint az online vitarendezési platform (ODR) lehetőségével, ha alkalmazható.",
+          "Panaszodat a kapcsolattartási elérhetőségen jelezheted. Fogyasztói jogvita esetén a lakóhelyed szerinti békéltető testülethez fordulhatsz.",
         ],
         contact: true,
       },
@@ -402,12 +403,12 @@ export const messages = {
       "Személyes adataidat az Európai Parlament és a Tanács (EU) 2016/679 rendelete (GDPR), valamint az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvény (Infotv.) előírásai szerint kezeljük.",
     ],
     controllerTitle: "1. Adatkezelő és elérhetőség",
-    controllerBody: "Adatkezelő: a SwarmSense demó üzemeltetője.",
+    controllerBody: "Adatkezelő: Holik Balázs, a SwarmSense demó készítője és üzemeltetője.",
     processedDataTitle: "2. Kezelt adatok",
     processedDataItems: [
       "a kérdés és a célközönség szövege, valamint a futás eredménye (a personák válaszai, az összefoglaló és a PDF);",
       "a futás állapota, időbélyegei, tokenszámai és hibakódja;",
-      "az IP-címed kulcsolt lenyomata (HMAC), a visszaélések korlátozásához. Az IP-cím nyersen nem tárolódik;",
+      "az IP-címed kulcsolt lenyomata (HMAC), a visszaélések korlátozásához. Az IP-cím nyersen nem kerül az adatbázisba;",
       "az e-mail-cím, de csak akkor, ha a PDF-et levélben kéred.",
     ],
     cookiesTitle: "3. Sütik és webanalitika",
@@ -417,30 +418,30 @@ export const messages = {
       "A kérdés és a célközönség szövege, valamint a futás eredménye korlátlan ideig megmarad. A futás linkjének birtokában bárki láthatja őket, ezért a linket kezeld úgy, mintha nyilvános lenne. Ne írj a mezőkbe személyes adatot vagy üzleti titkot.",
     processorsTitle: "5. Külső szolgáltatók",
     processorsItems: [
-      "A kérdés és a célközönség szövege az opencode szolgáltatáson keresztül a DeepSeek nyelvi modelljéhez kerül feldolgozásra. A feldolgozás az Európai Gazdasági Térségen kívül is történhet.",
-      "Ha a PDF-et levélben kéred, a levelet a Resend küldi. Egyetlen levél megy, a címet 14 nap után töröljük az adatbázisunkból. A Resend saját naplója ettől független, arra a törlésünk nem terjed ki.",
-      "Ha egy futás hibával leáll, egy Discord-csatornára értesítés megy a futás azonosítójával és a hibakóddal. A kérdés szövege és az e-mail-cím nem kerül bele.",
+      "A kérdés és a célközönség szövegét DeepSeek nyelvi modell dolgozza fel, az opencode szolgáltatáson keresztül (Anomaly Innovations, Inc., Egyesült Államok). Az opencode közzétett feltételei szerint a szöveget nem őrzik meg, és modell tanítására nem használják. Azt, hogy a modell melyik országban fut, a szolgáltató nem teszi közzé, ezért a feldolgozás az Európai Gazdasági Térségen kívül történik. Az IP-címed és az e-mail-címed nem kerül a modellhez.",
+      "Ha a PDF-et levélben kéred, a levelet a Resend küldi (Resend, Inc., Egyesült Államok). Kérésenként egy levél megy, a címet 14 nap után töröljük az adatbázisunkból. A Resend saját naplója ettől független, arra a törlésünk nem terjed ki.",
+      "Ha egy futás hibával leáll, egy zárt Discord-csatornára (Discord Inc., Egyesült Államok) értesítés megy a futás azonosítójával, linkjével és a hibakóddal. A kérdés szövege és az e-mail-cím nem kerül bele.",
     ],
     legalBasisTitle: "6. Jogalap",
     legalBasisBody:
-      "A futás adatainak és az IP-cím lenyomatának kezelése a GDPR 6. cikk (1) bekezdés f) pontja szerinti jogos érdeken alapul: ez a demó működtetése és a visszaélések korlátozása. Az e-mail-cím kezelésének jogalapja a b) pont: a kért levél elküldése.",
+      "A futás adatainak és az IP-cím lenyomatának kezelése a GDPR 6. cikk (1) bekezdés f) pontja szerinti jogos érdeken alapul: ez a demó működtetése és a visszaélések korlátozása. Az e-mail-cím kezelésének jogalapja a b) pont: a kért levél elküldése. Automatizált döntéshozatal és profilalkotás nincs.",
     retentionTitle: "7. Megőrzési idő",
     retentionItems: [
       "A kérdés, a célközönség és az eredmény korlátlan ideig megmarad, amíg törlést nem kérsz.",
-      "Az IP-cím lenyomata a futás mellett marad.",
+      "Az IP-cím lenyomata 24 óra után törlődik.",
       "Az e-mail-cím 14 nap után törlődik az adatbázisból.",
     ],
     userRightsTitle: "8. Érintetti jogok és felügyeleti hatóság",
     userRightsBody:
-      "Tájékoztatást kérhetsz az általunk kezelt adataidról, kérheted azok helyesbítését, törlését és az adatkezelés korlátozását, illetve tiltakozhatsz az adatkezelés ellen. A kérelmeket a kapcsolattartási elérhetőségen fogadjuk.",
+      "Tájékoztatást és másolatot kérhetsz az általunk kezelt adataidról, kérheted azok helyesbítését, törlését és az adatkezelés korlátozását, illetve tiltakozhatsz a jogos érdeken alapuló adatkezelés ellen. A kérelmeket a kapcsolattartási elérhetőségen fogadjuk, és egy hónapon belül válaszolunk. Mivel fiók nincs, egy futást a linkje alapján tudunk azonosítani.",
     userRightsSupervisoryBody:
-      "Panaszoddal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH) fordulhatsz:",
+      "Panaszoddal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH) vagy bírósághoz fordulhatsz:",
     userRightsSupervisoryLinkLabel: "www.naih.hu",
     userRightsSupervisoryHref: "https://www.naih.hu/",
     deletionTitle: "9. Törlési kérelem (GDPR 17. cikk)",
-    deletionBodyNoAddress: `Egy futás törléséhez nyiss bejelentést a repo issue-követőjén. ${linkWarning} A futás szövegét és eredményét töröljük az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.`,
+    deletionBodyNoAddress: `Egy futás törléséhez nyiss bejelentést a repo issue-követőjén. ${linkWarning} A törlést kézzel végezzük: a futás szövege, eredménye és PDF-je kerül ki az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.`,
     deletionBody:
-      "Egy futás törléséhez küldd el a futás linkjét a kapcsolattartási címre. A futás szövegét és eredményét töröljük az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.",
+      "Egy futás törléséhez küldd el a futás linkjét a kapcsolattartási címre. A törlést kézzel végezzük: a futás szövege, eredménye és PDF-je kerül ki az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.",
     updatesTitle: "10. A tájékoztató módosítása",
     updatesBody:
       "A tájékoztatót a demó vagy a jogszabályi környezet változásakor frissíthetjük. A hatályos verzió mindig ezen az oldalon érhető el.",

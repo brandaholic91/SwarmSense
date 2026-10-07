@@ -55,7 +55,7 @@ Egy futás 20 LLM-hívás: egy a personák megtervezéséhez, 18 a véleményekh
 ## Adatkezelés
 
 - A futás és a PDF megmarad, az e-mail-cím 14 nap után törlődik.
-- Nyers IP-cím nem tárolódik, csak kulcsolt lenyomat (HMAC), amely a keretek számolásához kell.
+- Nyers IP-cím nem tárolódik, csak kulcsolt lenyomat (HMAC), amely a keretek számolásához kell, és 24 óra után törlődik.
 - Nincs felhasználói fiók, hibakövető szolgáltatás és webanalitika.
 
 ## Korlátok

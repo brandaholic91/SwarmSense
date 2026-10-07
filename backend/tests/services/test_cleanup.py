@@ -41,6 +41,20 @@ def test_old_email_requests_are_deleted_and_recent_ones_stay(clean_db):
     assert [row["id"] for row in left] == [recent]
 
 
+def test_old_ip_hashes_are_cleared_and_recent_ones_stay(clean_db):
+    old = db.create_run(topic="a", audience="b", ip_hash="regi")
+    recent = db.create_run(topic="a", audience="b", ip_hash="friss")
+    _age("runs", old["id"], "25 hours")
+    _age("runs", recent["id"], "23 hours")
+
+    assert cleanup.run_cleanup_once()["cleared_ip_hashes"] == 1
+
+    assert db.get_run(old["id"])["ip_hash"] is None
+    assert db.get_run(recent["id"])["ip_hash"] == "friss"
+    # a futás maga megmarad, és a keret a friss futást továbbra is számolja
+    assert db.count_runs_since(ip_hash="friss") == 1
+
+
 def test_stuck_run_is_failed_and_others_are_untouched(clean_db, failed_notices):
     stuck = db.create_run(topic="a", audience="b")
     fresh = db.create_run(topic="a", audience="b")
@@ -275,6 +289,7 @@ def test_stuck_sweep_runs_often_and_email_deletion_rarely(monkeypatch):
     emails: list[int] = []
     monkeypatch.setattr(cleanup, "fail_stuck_runs_once", lambda: stuck.append(1) or 0)
     monkeypatch.setattr(cleanup, "delete_old_emails_once", lambda: emails.append(1) or 0)
+    monkeypatch.setattr(cleanup, "clear_old_ip_hashes_once", lambda: 0)
 
     asyncio.run(
         _run_loop_for(0.3, interval_seconds=3600, stuck_interval_seconds=0.02)
@@ -291,6 +306,7 @@ def test_failing_stuck_sweep_does_not_stop_email_deletion(monkeypatch, caplog):
         raise RuntimeError("nyers")
 
     monkeypatch.setattr(cleanup, "fail_stuck_runs_once", broken)
+    monkeypatch.setattr(cleanup, "clear_old_ip_hashes_once", lambda: 0)
     monkeypatch.setattr(cleanup, "delete_old_emails_once", lambda: emails.append(1) or 0)
 
     with caplog.at_level("INFO", logger="swarmsense.cleanup"):
@@ -311,6 +327,7 @@ def test_failing_email_deletion_does_not_stop_stuck_sweep(monkeypatch, caplog):
 
     monkeypatch.setattr(cleanup, "fail_stuck_runs_once", lambda: stuck.append(1) or 0)
     monkeypatch.setattr(cleanup, "delete_old_emails_once", broken)
+    monkeypatch.setattr(cleanup, "clear_old_ip_hashes_once", lambda: 0)
 
     with caplog.at_level("INFO", logger="swarmsense.cleanup"):
         asyncio.run(

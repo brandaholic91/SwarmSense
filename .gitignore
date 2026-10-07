@@ -16,3 +16,10 @@ __pycache__/
 .next/
 node_modules/
 skills-lock.json
+.pytest_cache/
+.superpowers/
+*.tsbuildinfo
+CLAUDE.md
+AGENTS.md
+TRACKING.md
+/docs/superpowers/

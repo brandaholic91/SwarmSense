@@ -67,7 +67,8 @@ describe("Landing page", () => {
     const { container } = render(<Home />);
     const text = (container.textContent ?? "").toLowerCase();
 
-    const required = ["18", "portfólió", "másfél perc", "regisztráció nélkül", "pdf"];
+    // a futásidő mért tartománya 86–126 mp: a szöveg „másfél-két percet” ígér
+    const required = ["18", "portfólió", "másfél-két perc", "regisztráció nélkül", "pdf"];
     const missing = required.filter((phrase) => !text.includes(phrase));
 
     expect(missing).toEqual([]);

@@ -27,7 +27,7 @@ export const messages = {
       highlight: "pár perc",
       headlineSuffix: "alatt.",
       subheadline:
-        "Írd le a kérdésed és a célközönséged: 18 szintetikus persona válaszol rá, nagyjából másfél perc alatt, regisztráció nélkül. A futást élőben követheted, az eredményt PDF-ben letöltheted.",
+        "Írd le a kérdésed és a célközönséged: 18 szintetikus persona válaszol rá, nagyjából másfél-két perc alatt, regisztráció nélkül. A futást élőben követheted, az eredményt PDF-ben letöltheted.",
       cta: "Ingyen kipróbálom",
       sampleCta: "Minta megtekintése",
       cardLabel: "Illusztráció",
@@ -170,7 +170,7 @@ export const messages = {
     stats: {
       items: [
         { value: "18 persona", label: "nyelvi modell által generált" },
-        { value: "Másfél perc", label: "egy futás nagyjából" },
+        { value: "Másfél-két perc", label: "egy futás nagyjából" },
         { value: "Regisztráció nélkül", label: "két mezős űrlap" },
         { value: "PDF", label: "letölthető eredmény" },
       ],
@@ -191,7 +191,7 @@ export const messages = {
       eyebrow: "Új kutatás",
       headline: "Mi a hipotézised?",
       subheadline:
-        "Írd le a kutatási kérdést és a célcsoportot. Az elemzés nagyjából másfél perc alatt lefut.",
+        "Írd le a kutatási kérdést és a célcsoportot. Az elemzés nagyjából másfél-két perc alatt lefut.",
       researchLabel: "Mit vizsgálsz?",
       audienceLabel: "Kinek szól?",
       researchExamples: [
@@ -457,7 +457,7 @@ export const messages = {
           "Egy utolsó hívás szintézist ír a válaszokból.",
         ],
         after:
-          "Ez összesen 20 hívás. A DeepSeek flash modelljét használjuk, az opencode szolgáltatáson keresztül. Egy futás nagyjából másfél percig tart, de ez a modell terhelésétől függ.",
+          "Ez összesen 20 hívás. A DeepSeek flash modelljét használjuk, az opencode szolgáltatáson keresztül. Egy futás nagyjából másfél-két percig tart, de ez a modell terhelésétől függ.",
       },
       {
         title: "Mi történik, ha valami nem sikerül",

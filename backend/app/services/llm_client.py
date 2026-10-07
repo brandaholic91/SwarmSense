@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import http.client
 import json
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable
@@ -166,6 +167,12 @@ def _post_json_sync(
     except URLError as exc:
         raise TransportError(
             status_code=None, body={"detail": str(exc.reason)}
+        ) from exc
+    except (OSError, http.client.HTTPException, json.JSONDecodeError) as exc:
+        # timeout, kapcsolat-megszakadás, félbemaradt vagy nem JSON válasz:
+        # a nyers kivételszöveg nem kerül a body-ba, csak a típus neve
+        raise TransportError(
+            status_code=None, body={"detail": type(exc).__name__}
         ) from exc
 
 

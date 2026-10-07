@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import asyncio
+import http.client
+import io
+from urllib.error import HTTPError
 
 import pytest
 
+from app.services import llm_client
 from app.services.llm_client import (
     LLMClient,
     LLMProviderError,
     TokenUsage,
     TransportError,
 )
+
+# az autouse no_real_llm fixture lecseréli a modul attribútumát; az eredetit
+# importáláskor rögzítjük, hogy a valódi leképezést tesztelhessük
+from app.services.llm_client import _post_json_sync as real_post_json_sync
 
 PERSONA_JSON = '{"name":"A","role":"B","stance":"support","primary_argument":"C","change_condition":"D"}'
 
@@ -153,3 +161,60 @@ def test_extracts_json_object_from_mixed_content() -> None:
 
     assert response["name"] == "A"
     assert response["stance"] == "support"
+
+
+class _FakeResponse:
+    def __init__(self, body: bytes) -> None:
+        self._body = body
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def _raiser(exc: BaseException):
+    def fake_urlopen(*args, **kwargs):
+        raise exc
+
+    return fake_urlopen
+
+
+@pytest.mark.parametrize(
+    "fake_urlopen",
+    [
+        _raiser(TimeoutError("timed out")),
+        _raiser(ConnectionResetError("reset by peer")),
+        _raiser(http.client.RemoteDisconnected("Remote end closed connection")),
+        lambda *a, **k: _FakeResponse(b"<html>"),
+    ],
+    ids=["timeout", "connection-reset", "remote-disconnected", "non-json-body"],
+)
+def test_real_transport_maps_low_level_failures_to_network_error(
+    monkeypatch, fake_urlopen
+):
+    monkeypatch.setattr(llm_client, "urlopen", fake_urlopen)
+
+    with pytest.raises(TransportError) as excinfo:
+        real_post_json_sync("https://example.invalid/x", {}, {})
+
+    assert excinfo.value.status_code is None
+    # a nyers kivételszöveg nem kerülhet a body-ba
+    assert "timed out" not in str(excinfo.value.body)
+    assert "reset by peer" not in str(excinfo.value.body)
+
+
+def test_real_transport_keeps_http_status_code(monkeypatch):
+    error = HTTPError(
+        "https://example.invalid/x", 429, "Too Many Requests", {}, io.BytesIO(b"{}")
+    )
+    monkeypatch.setattr(llm_client, "urlopen", _raiser(error))
+
+    with pytest.raises(TransportError) as excinfo:
+        real_post_json_sync("https://example.invalid/x", {}, {})
+
+    assert excinfo.value.status_code == 429

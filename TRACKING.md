@@ -2,15 +2,15 @@
 
 A cél és a teljesítési kritériumok a `CLAUDE.md`-ben, a részletek a `docs/superpowers/specs/2026-10-07-swarmsense-portfolio-design.md` specben vannak. Ez a fájl csak azt rögzíti, hol tartunk.
 
-**Most:** a spec jóváhagyva (2026-10-07). A 0. lépés mérései megvannak (két nyitott ponttal, lásd lent), az A terv megírva, jóváhagyásra vár. A kódhoz még nem nyúltunk.
+**Most:** az A terv (új alap) kész (2026-10-07). A B terv megírása következik. Az A terv végén egy valódi futás helyben: 18/18 persona, `completed`, 86,5 mp, 16 134 bemeneti és 36 335 kimeneti token.
 
 ## Lépések
 
 | Terv | # | Lépés | Állapot |
 |---|---|---|---|
 | nincs terv | 0 | Hol fut most élesben; kimérő futás az opencode Go-n | kész, két nyitott ponttal |
-| A: Új alap | 1 | Törlés | nincs elkezdve |
-| | 2 | Postgres, `db.py`, LLM-kliens, tesztek | nincs elkezdve |
+| A: Új alap | 1 | Törlés | kész |
+| | 2 | Postgres, `db.py`, LLM-kliens, tesztek | kész |
 | B: A darab | 3 | Események, trace képernyő, keretek | nincs elkezdve |
 | | 4 | Eredmény tárolása, eredményoldal, PDF | nincs elkezdve |
 | | 5 | E-mail, takarítás, Discord, adatkezelés, módszertan | nincs elkezdve |
@@ -24,7 +24,7 @@ A cél és a teljesítési kritériumok a `CLAUDE.md`-ben, a részletek a `docs/
 
 | Terv | Fájl | Állapot |
 |---|---|---|
-| A | `docs/superpowers/plans/2026-10-07-swarmsense-a-uj-alap.md` | megírva, jóváhagyásra vár |
+| A | `docs/superpowers/plans/2026-10-07-swarmsense-a-uj-alap.md` | kész |
 | B | még nincs megírva | az A terv után |
 | C | még nincs megírva | a B terv után |
 
@@ -47,3 +47,8 @@ Ha építés közben valami másképp alakul, mint a specben, ide kerül egy sor
 |---|---|---|
 | 2026-10-07 | A spec 6. szakaszába bekerült a kötelező saját `User-Agent` fejléc és a `reasoning_content` | A 0. lépés mérése: az alapértelmezett Python `User-Agent`-re 403 (Cloudflare 1010) jön |
 | 2026-10-07 | A spec 11. szakaszába bekerült a Plausible és a `supabase-migrations-draft.yml` törlése | Balázs döntése (Plausible); a workflow a `supabase/` mappával együtt értelmét veszti |
+| 2026-10-07 | A `docker-compose.dev.yml`-nek rögzített projektneve van: `swarmsense-dev` | A mappanévtől függő név ütközött volna más projektek konténereivel |
+| 2026-10-07 | Annak a persona-hívásnak a tokenjei is beleszámítanak, amely válaszolt, de a séma szerint érvénytelen volt; az érvénytelen blueprint és szintézis válaszának tokenjei nem | A persona-hívás költsége valós, a másik kettőnél a hibás válasz nem jut tovább, és nem vesz részt az összesítésben |
+| 2026-10-07 | A futásnapló nem tartalmaz kivételszöveget vagy tracebacket, csak futásazonosítót, kivételtípust és hibakódot | Egy láncolt validációs hiba kiírta az LLM kimenetét a naplóba |
+| 2026-10-07 | Az adatkezelési és a felhasználási feltételek szövege még a régi e-mailes folyamatot írja le, a nyitóoldali statisztika még „90 másodperc”; a B tervben íródik újra | Az A terv csak az alapot cseréli; a szövegek a B terv 5. lépéséhez tartoznak |
+| 2026-10-07 | A backend INFO szintű naplója (a futásonkénti összefoglaló sor) uvicorn alatt nem látszik, mert nincs naplózási beállítás | A valódi futásnál derült ki; nyitott, a B terv elején vagy az 5. lépésben javítandó |

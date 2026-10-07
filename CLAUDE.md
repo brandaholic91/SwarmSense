@@ -8,7 +8,7 @@ A repo átalakítás alatt áll: a freemium funnelből portfóliódarab lesz. **
 
 - **Részletes design:** `docs/superpowers/specs/2026-10-07-swarmsense-portfolio-design.md`. Ha ez a fájl és a spec eltér, a spec az irányadó.
 - **Aktuális állás:** `TRACKING.md`. Munka előtt olvasd el, lépés lezárásakor frissítsd.
-- A `README.md`, a `_bmad*` mappák és a `docs/` régi fájljai a régi terméket írják le; ne ezekből dolgozz.
+- A `README.md` és a `_bmad*` mappák a régi terméket írják le; ne ezekből dolgozz. A követett régi `docs/` fájlok és a `_bmad-output` már törölve van.
 
 ## Célállapot
 
@@ -37,11 +37,11 @@ Böngésző → Next.js frontend (egyedül ez nyilvános) → FastAPI backend �
 
 **A terv: Új alap** (1–2. lépés)
 
-- [ ] A spec 11. szakaszában felsorolt kód, oldalak és tesztek törölve.
-- [ ] A backend kódjában nincs `supabase`, `sentry`, `openrouter` hivatkozás.
-- [ ] `POST /api/v1/runs` futást indít Postgresen és opencode Go-n, a státusz lekérdezhető.
-- [ ] A backend tesztek valódi Postgres ellen futnak, és zöldek; valódi LLM-hívás nincs bennük.
-- [ ] A frontend lint, típusellenőrzés, teszt és build zöld.
+- [x] A spec 11. szakaszában felsorolt kód, oldalak és tesztek törölve.
+- [x] A backend kódjában nincs `supabase`, `sentry`, `openrouter` hivatkozás.
+- [x] `POST /api/v1/runs` futást indít Postgresen és opencode Go-n, a státusz lekérdezhető.
+- [x] A backend tesztek valódi Postgres ellen futnak, és zöldek; valódi LLM-hívás nincs bennük.
+- [x] A frontend lint, típusellenőrzés, teszt és build zöld.
 
 **B terv: A darab** (3–6. lépés)
 

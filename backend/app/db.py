@@ -299,17 +299,20 @@ _SAMPLE_RUN_COLUMNS = (
     "created_at",
     "completed_at",
 )
-_SAMPLE_EVENT_COLUMNS = (
-    "type",
-    "persona_index",
-    "persona_name",
-    "attempt",
-    "error_code",
-    "duration_ms",
-    "input_tokens",
-    "output_tokens",
-    "created_at",
-)
+# oszlopnév → Postgres-típus; a típus a seed `values` listájának oszlopait rögzíti
+# (egy csupa-NULL oszlop különben `text` lenne)
+_SAMPLE_EVENT_COLUMN_TYPES = {
+    "type": "text",
+    "persona_index": "integer",
+    "persona_name": "text",
+    "attempt": "integer",
+    "error_code": "text",
+    "duration_ms": "integer",
+    "input_tokens": "integer",
+    "output_tokens": "integer",
+    "created_at": "timestamptz",
+}
+_SAMPLE_EVENT_COLUMNS = tuple(_SAMPLE_EVENT_COLUMN_TYPES)
 
 
 def get_sample_run_id() -> str | None:
@@ -329,24 +332,12 @@ def seed_sample_if_missing() -> bool:
     return True
 
 
-def _insert_statement(
-    table: str,
-    columns: tuple[str, ...],
-    values: list[Any],
-    suffix: str,
-    conn: psycopg.Connection,
-) -> str:
-    query = sql.SQL("insert into {} ({}) values ({}){}").format(
-        sql.Identifier(table),
-        sql.SQL(", ").join(sql.Identifier(c) for c in columns),
-        sql.SQL(", ").join(sql.Literal(v) for v in values),
-        sql.SQL(suffix),
-    )
-    return query.as_string(conn)
-
-
 def export_sample_sql(run_id: str) -> str:
-    """A futás és eseményei beszúró SQL-ként, mintának jelölve, `ip_hash` és PDF nélkül."""
+    """A futás és eseményei beszúró SQL-ként, mintának jelölve, `ip_hash` és PDF nélkül.
+
+    Egyetlen utasítás: az események csak akkor kerülnek be, ha a futás sorát ez a
+    végrehajtás szúrta be. Ha az azonosító már létezik (pl. a forrásfutás közönséges
+    sorként), a seed semmit nem ír."""
     parsed = uuid.UUID(run_id)
     columns = sql.SQL(", ").join(sql.Identifier(c) for c in _SAMPLE_RUN_COLUMNS)
     event_columns = sql.SQL(", ").join(sql.Identifier(c) for c in _SAMPLE_EVENT_COLUMNS)
@@ -367,24 +358,51 @@ def export_sample_sql(run_id: str) -> str:
             Jsonb(run[c]) if c == "result" and run[c] is not None else run[c]
             for c in _SAMPLE_RUN_COLUMNS
         ]
-        # a kapcsolat csak a literálok formázásához kell
-        statements = [
-            _insert_statement(
-                "runs",
-                (*_SAMPLE_RUN_COLUMNS, "is_sample", "ip_hash"),
-                [*run_values, True, None],
-                " on conflict (id) do nothing",
-                conn,
-            )
-        ]
-        for event in events:
-            statements.append(
-                _insert_statement(
-                    "run_events",
-                    ("run_id", *_SAMPLE_EVENT_COLUMNS),
-                    [parsed, *(event[c] for c in _SAMPLE_EVENT_COLUMNS)],
-                    "",
-                    conn,
+        insert_run = sql.SQL(
+            "insert into {} ({}) values ({}) on conflict ({}) do nothing"
+        ).format(
+            sql.Identifier("runs"),
+            sql.SQL(", ").join(
+                sql.Identifier(c) for c in (*_SAMPLE_RUN_COLUMNS, "is_sample", "ip_hash")
+            ),
+            sql.SQL(", ").join(sql.Literal(v) for v in [*run_values, True, None]),
+            sql.Identifier("id"),
+        )
+        if not events:
+            query = insert_run
+        else:
+            # az `n` sorszám őrzi meg az események eredeti sorrendjét
+            rows = sql.SQL(",\n").join(
+                sql.SQL("({})").format(
+                    sql.SQL(", ").join(
+                        sql.Literal(v)
+                        for v in (n, *(event[c] for c in _SAMPLE_EVENT_COLUMNS))
+                    )
                 )
+                for n, event in enumerate(events, start=1)
             )
-    return ";\n".join(statements) + ";\n"
+            query = sql.SQL(
+                "with {ins} as (\n{insert_run} returning {id}\n)\n"
+                "insert into {events} ({run_id}, {columns})\n"
+                "select {ins}.{id}, {typed}\n"
+                "from {ins} cross join (values\n{rows}\n) as {e} ({n}, {columns})\n"
+                "order by {e}.{n}"
+            ).format(
+                ins=sql.Identifier("ins"),
+                insert_run=insert_run,
+                id=sql.Identifier("id"),
+                events=sql.Identifier("run_events"),
+                run_id=sql.Identifier("run_id"),
+                columns=event_columns,
+                typed=sql.SQL(", ").join(
+                    sql.SQL("{}.{}::{}").format(
+                        sql.Identifier("e"), sql.Identifier(c), sql.SQL(pg_type)
+                    )
+                    for c, pg_type in _SAMPLE_EVENT_COLUMN_TYPES.items()
+                ),
+                rows=rows,
+                e=sql.Identifier("e"),
+                n=sql.Identifier("n"),
+            )
+        # a kapcsolat csak a literálok formázásához kell
+        return query.as_string(conn) + ";\n"

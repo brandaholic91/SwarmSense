@@ -148,6 +148,48 @@ def test_seed_is_idempotent(clean_db, tmp_path, monkeypatch):
     assert n == 1 and events == 5
 
 
+def test_seed_does_not_touch_existing_run_with_same_id(clean_db):
+    # a forrásfutás közönséges (nem minta) sorként már megvan: a seed se eseményt
+    # nem fűz hozzá, se mintává nem teszi — akárhányszor fut le
+    run_id = _make_recorded_run()
+    before = _snapshot(run_id)
+    sql_text = db.export_sample_sql(run_id)
+
+    with db.connect() as conn:
+        conn.execute(sql_text)
+    with db.connect() as conn:
+        conn.execute(sql_text)
+
+    assert _snapshot(run_id) == before
+    assert db.get_sample_run_id() is None
+    with db.connect() as conn:
+        assert conn.execute("select count(*) as n from runs").fetchone()["n"] == 1
+
+
+def test_seed_text_executed_twice_inserts_events_once(clean_db):
+    run_id = _make_recorded_run()
+    before = _snapshot(run_id)
+    sql_text = db.export_sample_sql(run_id)
+    _truncate()
+
+    with db.connect() as conn:
+        conn.execute(sql_text)
+    with db.connect() as conn:
+        conn.execute(sql_text)
+
+    assert _snapshot(run_id) == before
+
+
+def test_export_run_without_events_roundtrips(clean_db):
+    run_id = db.create_run(topic="a", audience="b")["id"]
+    sql_text = db.export_sample_sql(run_id)
+    _truncate()
+    with db.connect() as conn:
+        conn.execute(sql_text)
+    assert db.get_sample_run_id() == run_id
+    assert db.list_events(run_id) == []
+
+
 def test_get_sample_run_id_returns_latest(clean_db):
     first = db.create_run(topic="a", audience="b")["id"]
     second = db.create_run(topic="a", audience="b")["id"]
@@ -198,7 +240,7 @@ def test_export_script_writes_file_and_prints_summary(clean_db, tmp_path, monkey
     out = capsys.readouterr().out
     assert "persona_retry: 1" in out and "persona_failed: 1" in out
     written = (tmp_path / "out" / "sample_run.sql").read_text(encoding="utf-8")
-    assert written.startswith('insert into "runs"')
+    assert written.startswith('with "ins" as (\ninsert into "runs"')
 
 
 def test_export_script_refuses_run_without_failed_persona(

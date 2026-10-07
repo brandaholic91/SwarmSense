@@ -50,6 +50,13 @@ def clean_db(settings_env, _schema):
 
 
 @pytest.fixture(autouse=True)
+def no_real_seed(monkeypatch, tmp_path):
+    # az app indulása ne töltse be a repó valódi mintáját a teszt-adatbázisba;
+    # a seedet vizsgáló tesztek a saját fájljukra állítják át
+    monkeypatch.setattr(db, "SEED_PATH", tmp_path / "no-seed" / "sample_run.sql")
+
+
+@pytest.fixture(autouse=True)
 def no_real_llm(monkeypatch):
     def _blocked(*args, **kwargs):
         raise AssertionError("valódi hálózati hívás tesztben")

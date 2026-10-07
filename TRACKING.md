@@ -13,7 +13,7 @@ A cél és a teljesítési kritériumok a `CLAUDE.md`-ben, a részletek a `docs/
 | | 2 | Postgres, `db.py`, LLM-kliens, tesztek | kész |
 | B: A darab | 3 | Események, trace képernyő, keretek | nincs elkezdve |
 | | 4 | Eredmény tárolása, eredményoldal, PDF | nincs elkezdve |
-| | 5 | E-mail, takarítás, Discord, adatkezelés, módszertan | nincs elkezdve |
+| | 5 | E-mail, takarítás, Discord, adatkezelés, módszertan, landing oldal | nincs elkezdve |
 | | 6 | Mintafutás, visszajátszás, seed | nincs elkezdve |
 | C: Kiadás | 7 | Deploy, régi lekapcsolása | nincs elkezdve |
 | | 8 | Publikálás | nincs elkezdve |
@@ -52,6 +52,7 @@ Ha építés közben valami másképp alakul, mint a specben, ide kerül egy sor
 | 2026-10-07 | A futásnapló nem tartalmaz kivételszöveget vagy tracebacket, csak futásazonosítót, kivételtípust és hibakódot (spec 10. szakasz, frissítve) | Egy láncolt validációs hiba kiírta az LLM kimenetét a naplóba |
 | 2026-10-07 | Az adatkezelési és a felhasználási feltételek szövege még a régi e-mailes folyamatot írja le, a nyitóoldali statisztika még „90 másodperc”; a B tervben íródik újra | Az A terv csak az alapot cseréli; a szövegek a B terv 5. lépéséhez tartoznak |
 | 2026-10-07 | A `swarmsense` logger minimális beállítást kapott az `app/main.py`-ban (INFO, egy `StreamHandler`), így a futásonkénti összefoglaló sor uvicorn alatt is látszik (spec 10. szakasz, frissítve) | A valódi futásnál derült ki, hogy nincs naplózási beállítás, ezért az INFO sorok elvesztek; javítva, a javítás utáni láthatóságot egy próbasorral ellenőriztük, valódi futással nem |
+| 2026-10-07 | A landing oldal újraírása bekerült a B terv 5. lépésébe (spec 14. szakasz, frissítve) | Balázs döntése; a spec eddig egyik lépéshez sem rendelte, a mostani szövegben hamis állítások vannak („90 másodperc", „15-20 persona") |
 
 ## Megfigyelések a valódi futásból
 

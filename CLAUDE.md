@@ -53,6 +53,7 @@ Böngésző → Next.js frontend (egyedül ez nyilvános) → FastAPI backend �
 - [ ] A `/minta` valódi futást játszik vissza, amelyben van retry és kiesett persona; üres adatbázisra a seed betölti.
 - [ ] Az eredményoldalról a futás visszajátszható.
 - [ ] Az adatkezelési és a módszertani oldal a spec szerinti tartalommal él.
+- [ ] A landing oldal szövege az új folyamatot írja le; nincs rajta olyan állítás, ami a darabra nem igaz.
 
 **C terv: Kiadás** (7–8. lépés)
 

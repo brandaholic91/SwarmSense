@@ -250,7 +250,7 @@ Nyolc lépés, három implementációs tervben. Egyszerre mindig csak a követke
 | | 2 | Postgres, `db.py`, LLM-kliens átállítása, tesztek valódi Postgresen |
 | **B: A darab** | 3 | Események, trace képernyő, keretek |
 | | 4 | Eredmény tárolása, eredményoldal, PDF |
-| | 5 | E-mail, takarító feladat, Discord, adatkezelési szöveg, módszertani oldal |
+| | 5 | E-mail, takarító feladat, Discord, adatkezelési szöveg, módszertani oldal, a landing oldal újraírása |
 | | 6 | Mintafutás, visszajátszás, seed |
 | **C: Kiadás** | 7 | Deploy, régi lekapcsolása |
 | | 8 | Publikálás |

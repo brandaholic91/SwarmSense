@@ -7,8 +7,6 @@ from app.core.errors import ErrorCode, error_response
 
 INTERNAL_ONLY_ENDPOINTS = {
     ("POST", "/api/v1/runs"),
-    ("POST", "/api/v1/qualifier-responses"),
-    ("POST", "/api/v1/run-sessions"),
 }
 
 

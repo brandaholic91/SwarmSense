@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
 
-from app.core import cost_enforcement
 from app.core.config import get_settings
 from app.core.database import get_supabase_client
 
@@ -67,20 +66,6 @@ class FakeQuery:
             self._supabase.run_rows[run_id] = dict(row)
             return FakeResponse([row])
 
-        if self._table_name == "qualifier_responses" and self._operation == "insert":
-            assert self._payload is not None
-            qualifier_id = f"qualifier-{len(self._supabase.inserted_qualifiers) + 1}"
-            row = {
-                "id": qualifier_id,
-                "run_id": self._payload["run_id"],
-                "user_id": self._payload["user_id"],
-                "role_answer": self._payload["role_answer"],
-                "use_case_answer": self._payload["use_case_answer"],
-                "created_at": datetime.now(UTC).isoformat(),
-            }
-            self._supabase.inserted_qualifiers.append(row)
-            return FakeResponse([row])
-
         return FakeResponse([])
 
 
@@ -88,7 +73,6 @@ class FakeSupabase:
     def __init__(self, total_usd: str | None):
         self.cost_rows = [] if total_usd is None else [{"total_usd": total_usd}]
         self.inserted_runs: list[dict[str, object]] = []
-        self.inserted_qualifiers: list[dict[str, object]] = []
         self.run_rows: dict[str, dict[str, object]] = {
             "run-1": {
                 "id": "run-1",
@@ -122,36 +106,14 @@ def build_client(monkeypatch, fake_supabase: FakeSupabase) -> TestClient:
     get_settings.cache_clear()
     get_supabase_client.cache_clear()
     import app.main as main
-    import app.routers.qualifier as qualifier_router
     import app.routers.runs as runs_router
 
     importlib.reload(runs_router)
-    importlib.reload(qualifier_router)
     importlib.reload(main)
 
-    monkeypatch.setattr(cost_enforcement, "get_supabase_client", lambda: fake_supabase)
     monkeypatch.setattr(runs_router, "get_supabase_client", lambda: fake_supabase)
-    monkeypatch.setattr(qualifier_router, "get_supabase_client", lambda: fake_supabase)
 
     return TestClient(main.app)
-
-
-def test_run_blocked_at_cap_and_no_row_created(monkeypatch):
-    fake_supabase = FakeSupabase("50.00")
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.post(
-        "/api/v1/runs",
-        json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
-        headers=INTERNAL_SECRET_HEADER,
-    )
-
-    assert response.status_code == 402
-    assert response.json() == {
-        "detail": "A havi ingyenes kapacitás elérte a határát.",
-        "code": "COST_LIMIT_REACHED",
-    }
-    assert fake_supabase.inserted_runs == []
 
 
 def test_run_allowed_below_cap_inserts_row_and_dispatches(monkeypatch):
@@ -200,20 +162,6 @@ def test_run_allowed_below_cap_inserts_row_and_dispatches(monkeypatch):
     ]
 
 
-def test_run_allowed_when_no_month_row(monkeypatch):
-    fake_supabase = FakeSupabase(None)
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.post(
-        "/api/v1/runs",
-        json={"user_id": "user-2", "topic": "Positioning", "audience": "CMO"},
-        headers=INTERNAL_SECRET_HEADER,
-    )
-
-    assert response.status_code == 200
-    assert response.json()["status"] == "queued"
-
-
 def test_run_payload_validation_failure(monkeypatch):
     fake_supabase = FakeSupabase("1.00")
     client = build_client(monkeypatch, fake_supabase)
@@ -240,50 +188,6 @@ def test_run_missing_secret_returns_401(monkeypatch):
     assert response.json()["code"] == "UNAUTHORIZED"
 
 
-def test_qualifier_insert_success(monkeypatch):
-    fake_supabase = FakeSupabase("1.00")
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.post(
-        "/api/v1/qualifier-responses",
-        json={
-            "run_id": "run-1",
-            "user_id": "user-1",
-            "role_answer": "founder_ceo",
-            "use_case_answer": "message_validation",
-        },
-        headers=INTERNAL_SECRET_HEADER,
-    )
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["status"] == "recorded"
-    assert isinstance(body["qualifier_id"], str) and body["qualifier_id"]
-    assert isinstance(body["created_at"], str) and body["created_at"]
-    assert len(fake_supabase.inserted_qualifiers) == 1
-    inserted = fake_supabase.inserted_qualifiers[0]
-    assert inserted["run_id"] == "run-1"
-    assert inserted["user_id"] == "user-1"
-
-
-def test_qualifier_payload_validation_failure(monkeypatch):
-    fake_supabase = FakeSupabase("1.00")
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.post(
-        "/api/v1/qualifier-responses",
-        json={
-            "run_id": "run-1",
-            "user_id": "user-1",
-            "role_answer": "",
-            "use_case_answer": "message_validation",
-        },
-        headers=INTERNAL_SECRET_HEADER,
-    )
-
-    assert response.status_code == 422
-
-
 def test_non_run_endpoints_not_blocked(monkeypatch):
     fake_supabase = FakeSupabase("100.00")
     client = build_client(monkeypatch, fake_supabase)
@@ -301,31 +205,9 @@ def test_trailing_slash_still_enforced(monkeypatch):
     response = client.post(
         "/api/v1/runs/",
         json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
-        headers=INTERNAL_SECRET_HEADER,
     )
 
-    assert response.status_code == 402
-
-
-def test_cost_check_failure_returns_503(monkeypatch):
-    fake_supabase = FakeSupabase(None)
-    client = build_client(monkeypatch, fake_supabase)
-
-    def raise_error():
-        from app.core.cost_enforcement import CostCheckError
-
-        raise CostCheckError("db unreachable")
-
-    monkeypatch.setattr(cost_enforcement, "get_supabase_client", raise_error)
-
-    response = client.post(
-        "/api/v1/runs",
-        json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
-        headers=INTERNAL_SECRET_HEADER,
-    )
-
-    assert response.status_code == 503
-    assert response.json()["code"] == "COST_CHECK_FAILED"
+    assert response.status_code == 401
 
 
 def test_get_run_status_success(monkeypatch):

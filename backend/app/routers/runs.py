@@ -22,8 +22,9 @@ def create_run(
 ) -> RunCreateResponse | JSONResponse:
     try:
         row = db.create_run(topic=payload.topic, audience=payload.audience)
-    except Exception:
-        logger.exception("run creation failed")
+    except Exception as exc:
+        # csak a kivétel típusa kerül a naplóba: a szöveg titkot (pl. DSN) hordozhat
+        logger.error("run creation failed: %s", type(exc).__name__)
         return error_response(
             status_code=500,
             detail="Failed to create run",

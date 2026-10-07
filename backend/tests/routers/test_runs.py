@@ -95,7 +95,7 @@ def test_create_run_accepts_exactly_500_chars(client, dispatched):
 
 
 def test_create_run_db_failure_returns_code_and_does_not_dispatch(
-    client, dispatched, monkeypatch
+    client, dispatched, monkeypatch, caplog
 ):
     def boom(**_):
         raise RuntimeError("connection refused: postgres://user:titok@host")
@@ -108,6 +108,10 @@ def test_create_run_db_failure_returns_code_and_does_not_dispatch(
     assert r.json()["code"] == "RUN_START_FAILED"
     assert "titok" not in r.text
     assert dispatched == []
+    # a napló sem tartalmazhat kivételszöveget vagy tracebacket
+    assert "run creation failed: RuntimeError" in caplog.text
+    assert "titok" not in caplog.text
+    assert "Traceback" not in caplog.text
 
 
 def test_get_status_returns_progress(client):

@@ -201,6 +201,42 @@ def test_partial_when_synthesis_fails(clean_db):
     assert run["support_count"] == 10
 
 
+def test_completed_run_stores_result_payload(clean_db):
+    run = _run(clean_db)
+    result = run["result"]
+    assert result is not None
+    assert result["stance_counts"] == {"support": 10, "reject": 5, "conditional": 3}
+    assert len(result["personas"]) == 18
+    assert result["synthesis"]["summary"] == "Összefoglaló."
+    assert result["failed_personas"] == []
+
+
+def test_partial_run_result_lists_failed_personas(clean_db):
+    run = _run(
+        clean_db, failing_personas=frozenset({"Persona 1", "Persona 2"})
+    )
+    result = run["result"]
+    assert run["status"] == "partial"
+    assert len(result["failed_personas"]) == 2
+    for item in result["failed_personas"]:
+        assert set(item) == {"name", "error_code"}
+    assert {i["name"] for i in result["failed_personas"]} == {"Persona 1", "Persona 2"}
+    assert MARKER not in json.dumps(result)
+
+
+def test_synthesis_failure_result_has_null_synthesis(clean_db):
+    run = _run(clean_db, synthesis_fails=True)
+    assert run["status"] == "partial"
+    assert run["result"] is not None
+    assert run["result"]["synthesis"] is None
+
+
+def test_failed_run_has_no_result(clean_db):
+    failing = frozenset(f"Persona {i}" for i in range(1, 8))
+    assert _run(clean_db, failing_personas=failing)["result"] is None
+    assert _run(clean_db, blueprint_fails=True)["result"] is None
+
+
 def test_failed_when_persona_generation_fails(clean_db):
     row = db.create_run(topic=TOPIC, audience=AUDIENCE)
     result = asyncio.run(  # nem dobhat, és nem ad eredményt

@@ -10,6 +10,7 @@ from typing import Any
 import psycopg
 from psycopg import sql
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
 from app.core.config import get_settings
 
@@ -30,6 +31,7 @@ UPDATABLE_RUN_COLUMNS = frozenset(
         "input_tokens",
         "output_tokens",
         "completed_at",
+        "result",
     }
 )
 
@@ -124,8 +126,10 @@ def update_run(run_id: str, **fields: Any) -> None:
         sql.SQL("{} = %s").format(sql.Identifier(name)) for name in fields
     )
     query = sql.SQL("update runs set {} where id = %s").format(assignments)
+    values = [Jsonb(v) if name == "result" and v is not None else v
+              for name, v in fields.items()]
     with connect() as conn:
-        conn.execute(query, [*fields.values(), uuid.UUID(run_id)])
+        conn.execute(query, [*values, uuid.UUID(run_id)])
 
 
 def insert_event(run_id: str, type: str, **fields: Any) -> int:
@@ -154,3 +158,15 @@ def list_events(run_id: str, *, after: int = 0) -> list[dict[str, Any]]:
             "from run_events where run_id = %s and id > %s order by id",
             (parsed, after),
         ).fetchall()
+
+
+def count_events(run_id: str, type: str) -> int:
+    try:
+        parsed = uuid.UUID(run_id)
+    except (ValueError, AttributeError, TypeError):
+        return 0
+    with connect() as conn:
+        return conn.execute(
+            "select count(*) as n from run_events where run_id = %s and type = %s",
+            (parsed, type),
+        ).fetchone()["n"]

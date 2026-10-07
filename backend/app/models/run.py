@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, StringConstraints
 
@@ -54,3 +54,19 @@ class RunEventsResponse(BaseModel):
     created_at: AwareDatetime
     price: PriceInfo
     events: list[RunEvent]
+
+
+class RunDetailResponse(BaseModel):
+    run_id: str
+    status: RunStatus
+    is_sample: bool
+    topic: str
+    audience: str
+    created_at: AwareDatetime
+    completed_at: AwareDatetime | None
+    duration_ms: int | None
+    input_tokens: int
+    output_tokens: int
+    retry_count: int
+    price: PriceInfo
+    result: dict[str, Any] | None

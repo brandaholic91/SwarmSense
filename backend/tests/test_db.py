@@ -81,6 +81,24 @@ def test_update_run_writes_listed_columns(clean_db):
     assert row["completed_at"] == now
 
 
+def test_update_run_stores_json_result(clean_db):
+    created = db.create_run(topic="t", audience="a")
+    db.update_run(created["id"], result={"á": [1, 2]})
+    assert db.get_run(created["id"])["result"] == {"á": [1, 2]}
+
+
+def test_count_events_counts_by_type(clean_db):
+    run = db.create_run(topic="t", audience="a")
+    other = db.create_run(topic="t", audience="a")
+    db.insert_event(run["id"], "persona_retry")
+    db.insert_event(run["id"], "persona_retry")
+    db.insert_event(run["id"], "run_started")
+    db.insert_event(other["id"], "persona_retry")
+    assert db.count_events(run["id"], "persona_retry") == 2
+    assert db.count_events(run["id"], "run_failed") == 0
+    assert db.count_events("nem-uuid", "persona_retry") == 0
+
+
 def test_update_run_rejects_unknown_column(clean_db):
     created = db.create_run(topic="Árazás", audience="KKV vezetők")
     with pytest.raises(ValueError):

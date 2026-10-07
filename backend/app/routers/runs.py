@@ -12,6 +12,7 @@ from app.models.run import (
     PriceInfo,
     RunCreateRequest,
     RunCreateResponse,
+    RunDetailResponse,
     RunEvent,
     RunEventsResponse,
 )
@@ -56,6 +57,49 @@ def create_run(
     )
     return RunCreateResponse(
         run_id=row["id"], status=row["status"], created_at=row["created_at"]
+    )
+
+
+@router.get("/{run_id}", response_model=RunDetailResponse)
+def get_run_detail(run_id: str) -> RunDetailResponse | JSONResponse:
+    try:
+        run = db.get_run(run_id)
+        retry_count = (
+            db.count_events(run_id, "persona_retry") if run is not None else 0
+        )
+    except Exception as exc:
+        # csak a kivétel típusa kerül a naplóba: a szöveg titkot (pl. DSN) hordozhat
+        logger.error("run detail failed: %s", type(exc).__name__)
+        return error_response(
+            status_code=503,
+            detail="Service unavailable",
+            code=ErrorCode.SERVICE_UNAVAILABLE,
+        )
+    if run is None:
+        return error_response(
+            status_code=404, detail="Run not found", code=ErrorCode.RUN_NOT_FOUND
+        )
+    completed_at = run["completed_at"]
+    duration_ms = (
+        int((completed_at - run["created_at"]).total_seconds() * 1000)
+        if completed_at is not None
+        else None
+    )
+    has_result = run["status"] in ("completed", "partial")
+    return RunDetailResponse(
+        run_id=run["id"],
+        status=run["status"],
+        is_sample=run["is_sample"],
+        topic=run["topic"],
+        audience=run["audience"],
+        created_at=run["created_at"],
+        completed_at=completed_at,
+        duration_ms=duration_ms,
+        input_tokens=run["input_tokens"],
+        output_tokens=run["output_tokens"],
+        retry_count=retry_count,
+        price=PriceInfo(**pricing.price_payload()),
+        result=run["result"] if has_result else None,
     )
 
 

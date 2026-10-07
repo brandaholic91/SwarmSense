@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -271,6 +272,82 @@ def test_events_db_failure_is_503_with_code(client, monkeypatch, caplog):
     assert "RuntimeError" in caplog.text
     assert "titok" not in caplog.text
     assert "Traceback" not in caplog.text
+
+
+def test_get_run_returns_detail(client):
+    row = db.create_run(topic="Árazás", audience="KKV")
+    db.insert_event(row["id"], "persona_retry", persona_index=1, attempt=2)
+    db.insert_event(row["id"], "persona_retry", persona_index=2, attempt=2)
+    db.insert_event(row["id"], "run_started")
+    result = {"stance_counts": {"support": 1}, "synthesis": None, "failed_personas": []}
+    created_at = db.get_run(row["id"])["created_at"]
+    completed_at = created_at + timedelta(milliseconds=86500)
+    db.update_run(
+        row["id"],
+        status="partial",
+        result=result,
+        input_tokens=100,
+        output_tokens=50,
+        completed_at=completed_at,
+    )
+    r = client.get(f"/api/v1/runs/{row['id']}")
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) == {
+        "run_id", "status", "is_sample", "topic", "audience", "created_at",
+        "completed_at", "duration_ms", "input_tokens", "output_tokens",
+        "retry_count", "price", "result",
+    }
+    assert body["run_id"] == row["id"]
+    assert body["status"] == "partial"
+    assert body["retry_count"] == 2
+    assert body["duration_ms"] == 86500
+    assert body["result"] == result
+    assert (body["input_tokens"], body["output_tokens"]) == (100, 50)
+    assert body["price"] == pricing.price_payload()
+    assert "ip_hash" not in r.text and "pdf" not in body
+
+
+def test_get_run_running_has_null_result_and_duration(client):
+    row = db.create_run(topic="a", audience="b")
+    db.update_run(row["id"], status="running")
+    body = client.get(f"/api/v1/runs/{row['id']}").json()
+    assert body["status"] == "running"
+    assert body["result"] is None
+    assert body["duration_ms"] is None
+    assert body["completed_at"] is None
+
+
+def test_get_run_failed_has_null_result(client):
+    row = db.create_run(topic="a", audience="b")
+    db.update_run(
+        row["id"], status="failed", result={"x": 1}, completed_at=datetime.now(UTC)
+    )
+    assert client.get(f"/api/v1/runs/{row['id']}").json()["result"] is None
+
+
+@pytest.mark.parametrize("run_id", [str(uuid.uuid4()), "abc"])
+def test_get_run_unknown_is_404(client, run_id):
+    r = client.get(f"/api/v1/runs/{run_id}")
+    assert r.status_code == 404
+    assert r.json()["code"] == "RUN_NOT_FOUND"
+
+
+def test_get_run_requires_secret(client):
+    row = db.create_run(topic="a", audience="b")
+    r = client.get(f"/api/v1/runs/{row['id']}", headers={"X-Internal-Secret": ""})
+    assert r.status_code == 401
+
+
+def test_get_run_db_failure_is_503_with_code(client, monkeypatch):
+    def boom(_):
+        raise RuntimeError("postgres://user:titok@host")
+
+    monkeypatch.setattr(db, "get_run", boom)
+    r = client.get(f"/api/v1/runs/{uuid.uuid4()}")
+    assert r.status_code == 503
+    assert r.json()["code"] == "SERVICE_UNAVAILABLE"
+    assert "titok" not in r.text
 
 
 def test_every_runs_endpoint_requires_secret(client):

@@ -204,11 +204,21 @@ async def _process_run(
             output_tokens=failed_usage.output_tokens,
         )
 
-    _finish_run(
+    final_status = _resolve_final_status(result=result, synthesis=synthesis)
+    _store_result(
         run_id=run_id,
-        status=_resolve_final_status(result=result, synthesis=synthesis),
+        final_status=final_status,
         result=result,
         synthesis=synthesis,
+        usage=usage,
+        topic=topic,
+        audience=audience,
+    )
+    # ide kerül a PDF-készítés (a státusz addig `composing`)
+    _complete_run(
+        run_id=run_id,
+        status=final_status,
+        result=result,
         usage=usage,
         started=started,
     )
@@ -220,25 +230,33 @@ def _elapsed_ms(started: float) -> int:
     return int((time.monotonic() - started) * 1000)
 
 
-def _finish_run(
+def _store_result(
     *,
     run_id: str,
-    status: str,
+    final_status: str,
     result: PersonaRunResult,
     synthesis: SynthesisResult | None,
     usage: TokenUsage,
-    started: float,
+    topic: str,
+    audience: str,
 ) -> None:
+    """1. lépés: eredmény, számlálók, szintézis-oszlopok, tokenek; a státusz marad."""
     fields: dict[str, Any] = {
-        "status": status,
         "persona_count": result.successful_count,
-        "completed_at": datetime.now(UTC),
         "input_tokens": usage.input_tokens,
         "output_tokens": usage.output_tokens,
         "support_count": sum(1 for r in result.responses if r.stance == "support"),
         "reject_count": sum(1 for r in result.responses if r.stance == "reject"),
         "conditional_count": sum(
             1 for r in result.responses if r.stance == "conditional"
+        ),
+        "result": _build_result_payload(
+            run_id=run_id,
+            result=result,
+            final_status=final_status,
+            topic=topic,
+            audience=audience,
+            synthesis=synthesis,
         ),
     }
     if synthesis is not None:
@@ -250,6 +268,18 @@ def _finish_run(
             synthesis_strategic_recommendation=synthesis.strategic_recommendation,
         )
     db.update_run(run_id, **fields)
+
+
+def _complete_run(
+    *,
+    run_id: str,
+    status: str,
+    result: PersonaRunResult,
+    usage: TokenUsage,
+    started: float,
+) -> None:
+    """2. lépés: végső státusz és `completed_at`, napló."""
+    db.update_run(run_id, status=status, completed_at=datetime.now(UTC))
     _log_summary(
         run_id=run_id,
         status=status,
@@ -324,6 +354,10 @@ def _build_result_payload(
         "top_arguments": top_arguments,
         "personas": personas,
         "synthesis": synthesis.model_dump() if synthesis is not None else None,
+        "failed_personas": [
+            {"name": failure.persona_name, "error_code": failure.error_code}
+            for failure in result.failures
+        ],
     }
 
 

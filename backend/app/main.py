@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -17,7 +18,24 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+def _setup_logging() -> None:
+    """A `swarmsense.*` naplók (pl. a futásonkénti összefoglaló sor) látszódjanak.
+
+    Az uvicorn csak a saját loggereit állítja be, a gyökér szintje WARNING marad,
+    ezért az INFO sorok elvesznének. Hívásonként legfeljebb egy handler kerül fel.
+    """
+    logger = logging.getLogger("swarmsense")
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+        )
+        logger.addHandler(handler)
+
+
 def create_app() -> FastAPI:
+    _setup_logging()
     settings = get_settings()
     docs_url = None if settings.is_production else "/docs"
     redoc_url = None if settings.is_production else "/redoc"

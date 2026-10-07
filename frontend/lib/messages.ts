@@ -243,6 +243,11 @@ export const messages = {
       completed: "kész",
       failed: "kiesett",
       attemptLabel: "kísérlet",
+      // a sor saját tokenjei: „be 812 · ki 1 940 token"
+      tokensIn: "be",
+      tokensOut: "ki",
+      tokensUnit: "token",
+      tokensPending: "–",
     },
     synthesisFailedNotice: "A szintézis nem sikerült, a futás részleges eredménnyel zárul.",
     connectionLost: "A kapcsolat megszakadt, az élő követés leállt.",

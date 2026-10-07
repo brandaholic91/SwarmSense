@@ -69,6 +69,16 @@ function rowElapsed(row: PersonaRow, now: number): string {
   return formatDuration(now - Date.parse(row.startedAt));
 }
 
+// Ezres tagolás nem törhető szóközzel (1 940); saját függvény, hogy a szerveren és
+// a böngészőben biztosan ugyanaz a szöveg készüljön.
+function groupThousands(value: number): string {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+export function formatRowTokens(inputTokens: number, outputTokens: number): string {
+  return `${t.row.tokensIn} ${groupThousands(inputTokens)} · ${t.row.tokensOut} ${groupThousands(outputTokens)} ${t.row.tokensUnit}`;
+}
+
 function rowStatusColor(status: PersonaRow["status"]): string {
   if (status === "completed") return stanceSupport;
   if (status === "failed") return errorDim;
@@ -88,6 +98,12 @@ function PersonaListItem({ row, now }: { row: PersonaRow; now: number }) {
       <span style={{ color: textSecondary, ...labelFont }}>{rowElapsed(row, now)}</span>
       <span style={{ color: textSecondary, ...labelFont }}>
         {t.row.attemptLabel} {row.attempt}/{MAX_ATTEMPTS}
+      </span>
+      {/* a tokenek a lezáró eseménnyel érkeznek; futó sornál még nincs mit mutatni */}
+      <span style={{ color: textSecondary, ...labelFont }}>
+        {row.status === "running"
+          ? t.row.tokensPending
+          : formatRowTokens(row.inputTokens, row.outputTokens)}
       </span>
       {row.errorCode ? (
         <span style={{ color: errorDim, ...labelFont }}>{row.errorCode}</span>

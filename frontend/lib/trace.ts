@@ -22,6 +22,10 @@ export type PersonaRow = {
   startedAt: string;
   durationMs: number | null;
   errorCode: string | null;
+  // A persona saját hívásának tokenjei: 0, amíg a sor fut; a lezáró esemény
+  // (persona_completed / persona_failed) hozza az értéket.
+  inputTokens: number;
+  outputTokens: number;
 };
 
 export type TracePhase =
@@ -89,6 +93,8 @@ export function applyEvent(state: TraceState, event: TraceEvent): TraceState {
         startedAt: event.at,
         durationMs: null,
         errorCode: null,
+        inputTokens: 0,
+        outputTokens: 0,
       };
       const personas = [...next.personas.filter((r) => r.index !== row.index), row].sort(
         (a, b) => a.index - b.index
@@ -114,6 +120,8 @@ export function applyEvent(state: TraceState, event: TraceEvent): TraceState {
           durationMs: event.duration_ms ?? null,
           attempt: event.attempt ?? row.attempt,
           errorCode: null,
+          inputTokens: event.input_tokens ?? 0,
+          outputTokens: event.output_tokens ?? 0,
         })),
       });
     case "persona_failed":
@@ -125,6 +133,8 @@ export function applyEvent(state: TraceState, event: TraceEvent): TraceState {
           durationMs: event.duration_ms ?? null,
           attempt: event.attempt ?? row.attempt,
           errorCode: event.error_code ?? null,
+          inputTokens: event.input_tokens ?? 0,
+          outputTokens: event.output_tokens ?? 0,
         })),
       });
     case "synthesis_started":

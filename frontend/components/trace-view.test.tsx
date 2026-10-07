@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { axe } from "jest-axe";
 
-import { TraceView } from "@/components/trace-view";
+import { formatRowTokens, TraceView } from "@/components/trace-view";
 import { estimateCostUsd, formatCostUsd } from "@/lib/cost";
 import { messages } from "@/lib/messages";
 import { applyEvent, initialTraceState } from "@/lib/trace";
@@ -32,6 +32,41 @@ describe("TraceView", () => {
     render(<TraceView topic="x" state={done} now={NOW} price={price} />);
 
     expect(personaList().getAllByText(`${t.row.attemptLabel} 2/3`)).toHaveLength(1);
+  });
+
+  it("shows each finished persona's own tokens in its row", () => {
+    render(<TraceView topic="x" state={done} now={NOW} price={price} />);
+
+    const list = personaList();
+    // 17 kész persona 100/200 tokennel, a kiesett 10/20-szal
+    expect(list.getAllByText(formatRowTokens(100, 200))).toHaveLength(17);
+    const failedRow = list.getByText("INVALID_RESPONSE").closest("li");
+    expect(failedRow).toHaveTextContent(formatRowTokens(10, 20));
+  });
+
+  it("groups thousands in the row tokens", () => {
+    expect(formatRowTokens(812, 1940)).toBe(
+      `${t.row.tokensIn} 812 · ${t.row.tokensOut} 1 940 ${t.row.tokensUnit}`
+    );
+    expect(formatRowTokens(0, 1234567)).toContain("1 234 567");
+  });
+
+  it("shows a dash instead of tokens while a persona is still running", () => {
+    const state = [
+      ev(1, "run_started"),
+      ev(2, "personas_generated"),
+      ev(3, "persona_started", { persona_index: 0, persona_name: "P0" }),
+      ev(4, "persona_started", { persona_index: 1, persona_name: "P1" }),
+      ev(5, "persona_completed", { persona_index: 1, input_tokens: 7, output_tokens: 9 }),
+    ].reduce(applyEvent, initialTraceState());
+
+    render(<TraceView topic="x" state={state} now={NOW} price={price} />);
+
+    const list = personaList();
+    const running = list.getByText("P0").closest("li");
+    expect(running).toHaveTextContent(t.row.tokensPending);
+    expect(running).not.toHaveTextContent(t.row.tokensUnit);
+    expect(list.getByText("P1").closest("li")).toHaveTextContent(formatRowTokens(7, 9));
   });
 
   it("shows the estimated cost and the estimate marker in the summary", () => {

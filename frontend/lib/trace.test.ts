@@ -43,8 +43,39 @@ describe("applyEvent", () => {
         startedAt: ev(1, "persona_started").at,
         durationMs: null,
         errorCode: null,
+        inputTokens: 0,
+        outputTokens: 0,
       },
     ]);
+  });
+
+  it("keeps a persona's tokens at 0 through a retry", () => {
+    const state = replay([
+      ev(1, "persona_started", { persona_index: 0, persona_name: "A" }),
+      ev(2, "persona_retry", { persona_index: 0, attempt: 2, error_code: "LLM_TIMEOUT" }),
+    ]);
+    expect(state.personas[0]).toMatchObject({ inputTokens: 0, outputTokens: 0 });
+  });
+
+  it("persona_completed and persona_failed store the event's tokens on their own row only", () => {
+    const state = replay([
+      ev(1, "persona_started", { persona_index: 0, persona_name: "A" }),
+      ev(2, "persona_started", { persona_index: 1, persona_name: "B" }),
+      ev(3, "persona_started", { persona_index: 2, persona_name: "C" }),
+      ev(4, "persona_completed", { persona_index: 0, input_tokens: 812, output_tokens: 1940 }),
+      ev(5, "persona_failed", { persona_index: 1, input_tokens: 5, output_tokens: 6 }),
+    ]);
+    expect(state.personas[0]).toMatchObject({ inputTokens: 812, outputTokens: 1940 });
+    expect(state.personas[1]).toMatchObject({ inputTokens: 5, outputTokens: 6 });
+    expect(state.personas[2]).toMatchObject({ inputTokens: 0, outputTokens: 0 });
+  });
+
+  it("a finished persona without token fields keeps 0 tokens", () => {
+    const state = replay([
+      ev(1, "persona_started", { persona_index: 0, persona_name: "A" }),
+      ev(2, "persona_failed", { persona_index: 0, error_code: "NETWORK_ERROR" }),
+    ]);
+    expect(state.personas[0]).toMatchObject({ inputTokens: 0, outputTokens: 0 });
   });
 
   it("persona_retry updates attempt and error code and counts the retry", () => {

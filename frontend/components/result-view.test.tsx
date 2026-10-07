@@ -24,6 +24,7 @@ function makeRun(overrides: Partial<RunDetail> = {}): RunDetail {
     output_tokens: 36335,
     retry_count: 2,
     price,
+    emails_remaining: 3,
     result: {
       completed_persona_count: 18,
       total_persona_count: 18,

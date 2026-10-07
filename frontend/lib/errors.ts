@@ -11,6 +11,16 @@ export const errorMessages = {
   PERSONA_GENERATION_FAILED: "A personák generálása nem sikerült.",
   RUN_TIMED_OUT: "A futás megszakadt, mielőtt elkészült volna.",
   INTERNAL_ERROR: "Váratlan hiba történt a futás közben.",
+  INVALID_EMAIL: "Ez nem tűnik érvényes e-mail-címnek.",
+  EMAIL_RUN_LIMIT_REACHED: "Erre a futásra már nem kérhető több levél.",
+  EMAIL_DAILY_LIMIT_REACHED:
+    "A mai levélkeret betelt. A PDF-et az oldalról le tudod tölteni.",
+  EMAIL_SEND_FAILED:
+    "A levél küldése nem sikerült. A PDF-et az oldalról le tudod tölteni.",
+  EMAIL_NOT_CONFIGURED:
+    "A levélküldés ezen a példányon nincs beállítva. A PDF-et az oldalról le tudod tölteni.",
+  PDF_UNAVAILABLE: "A PDF most nem készíthető el. Próbáld újra egy perc múlva.",
+  RUN_NOT_FINISHED: "Ez a futás még nem készült el.",
 } as const;
 
 export type AppErrorCode = keyof typeof errorMessages;

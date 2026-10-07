@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, StringConstraints
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, StringConstraints
 
 MAX_FIELD_LENGTH = 500
 
@@ -70,3 +70,18 @@ class RunDetailResponse(BaseModel):
     retry_count: int
     price: PriceInfo
     result: dict[str, Any] | None
+    emails_remaining: int
+
+
+MAX_EMAIL_LENGTH = 254
+
+
+class EmailRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: Annotated[EmailStr, StringConstraints(max_length=MAX_EMAIL_LENGTH)]
+
+
+class EmailSentResponse(BaseModel):
+    status: Literal["sent"]
+    emails_remaining: int

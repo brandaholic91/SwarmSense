@@ -187,3 +187,35 @@ def count_events(run_id: str, type: str) -> int:
             "select count(*) as n from run_events where run_id = %s and type = %s",
             (parsed, type),
         ).fetchone()["n"]
+
+
+def create_email_request(run_id: str, email: str) -> int:
+    with connect() as conn:
+        row = conn.execute(
+            "insert into email_requests (run_id, email) values (%s, %s) returning id",
+            (uuid.UUID(run_id), email),
+        ).fetchone()
+    return row["id"]
+
+
+def mark_email_sent(request_id: int) -> None:
+    with connect() as conn:
+        conn.execute(
+            "update email_requests set sent_at = now() where id = %s", (request_id,)
+        )
+
+
+def count_email_requests(*, run_id: str | None = None, hours: int | None = None) -> int:
+    query = "select count(*) as n from email_requests where true"
+    params: list[Any] = []
+    if run_id is not None:
+        try:
+            params.append(uuid.UUID(run_id))
+        except (ValueError, AttributeError, TypeError):
+            return 0
+        query += " and run_id = %s"
+    if hours is not None:
+        query += " and created_at > now() - make_interval(hours => %s)"
+        params.append(hours)
+    with connect() as conn:
+        return conn.execute(query, params).fetchone()["n"]

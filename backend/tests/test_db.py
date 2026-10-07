@@ -139,3 +139,29 @@ def test_apply_schema_is_idempotent(clean_db):
     db.apply_schema()
     db.apply_schema()
     assert db.create_run(topic="a", audience="b")["status"] == "queued"
+
+
+def test_email_requests_are_counted_per_run_and_window(clean_db):
+    first = db.create_run(topic="a", audience="b")["id"]
+    second = db.create_run(topic="a", audience="b")["id"]
+    request_id = db.create_email_request(first, "reader@example.com")
+    db.create_email_request(first, "reader@example.com")
+    old_id = db.create_email_request(second, "reader@example.com")
+    with db.connect() as conn:
+        conn.execute(
+            "update email_requests set created_at = now() - interval '25 hours' "
+            "where id = %s",
+            (old_id,),
+        )
+    assert db.count_email_requests(run_id=first) == 2
+    assert db.count_email_requests(run_id=second) == 1
+    assert db.count_email_requests(hours=24) == 2
+    assert db.count_email_requests() == 3
+    assert db.count_email_requests(run_id="not-a-uuid") == 0
+
+    db.mark_email_sent(request_id)
+    with db.connect() as conn:
+        sent = conn.execute(
+            "select sent_at from email_requests where id = %s", (request_id,)
+        ).fetchone()["sent_at"]
+    assert sent is not None

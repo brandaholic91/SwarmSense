@@ -22,6 +22,8 @@ def settings_env(monkeypatch):
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
     monkeypatch.setenv("SWARMSENSE_LLM_API_KEY", "test-llm-key")
     monkeypatch.setenv("SWARMSENSE_IP_HASH_SECRET", "test-ip-secret")
+    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "test-resend-key")
+    monkeypatch.setenv("SWARMSENSE_EMAIL_FROM", "demo@example.test")
     yield
     get_settings.cache_clear()
 
@@ -52,3 +54,11 @@ def no_real_llm(monkeypatch):
         raise AssertionError("valódi hálózati hívás tesztben")
 
     monkeypatch.setattr("app.services.llm_client._post_json_sync", _blocked)
+
+
+@pytest.fixture(autouse=True)
+def no_real_email(monkeypatch):
+    def _blocked(*args, **kwargs):
+        raise AssertionError("valódi hálózati hívás tesztben")
+
+    monkeypatch.setattr("app.services.email_service._post_resend", _blocked)

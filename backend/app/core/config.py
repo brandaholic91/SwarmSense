@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     max_concurrent_runs: int = Field(default=2)
     runs_per_ip_per_day: int = Field(default=3)
     runs_per_day: int = Field(default=20)
+    resend_api_key: str = Field(default="")
+    email_from: str = Field(default="")
+    public_base_url: AnyHttpUrl = Field(default="http://localhost:3000")
+    emails_per_run: int = Field(default=3)
+    emails_per_day: int = Field(default=30)
 
     @property
     def is_production(self) -> bool:

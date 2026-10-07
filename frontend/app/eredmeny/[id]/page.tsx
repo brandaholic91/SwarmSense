@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { EmailRequestForm } from "@/components/email-request-form";
 import { ResultView } from "@/components/result-view";
 import { fetchRun } from "@/lib/run";
 
@@ -20,5 +21,13 @@ export default async function ResultPage({ params }: ResultPageProps) {
     redirect(`/waiting/${id}`);
   }
 
-  return <ResultView run={run} />;
+  const hasResult = run.status === "completed" || run.status === "partial";
+
+  return (
+    <ResultView run={run}>
+      {hasResult ? (
+        <EmailRequestForm runId={run.run_id} emailsRemaining={run.emails_remaining} />
+      ) : null}
+    </ResultView>
+  );
 }

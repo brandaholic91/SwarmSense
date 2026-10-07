@@ -35,6 +35,7 @@ export type RunDetail = {
   retry_count: number;
   price: Price;
   result: RunResult | null;
+  emails_remaining: number;
 };
 
 // Csak szerveroldalon használható. `null`: nincs ilyen futás (404 vagy nem UUID);

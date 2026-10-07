@@ -11,7 +11,7 @@ from app.core import pricing
 from app.core.config import get_settings
 from app.core.errors import ErrorCode
 from app.routers import runs as runs_router
-from app.services import limits, pdf_service
+from app.services import email_service, limits, pdf_service
 
 HEADERS = {"X-Internal-Secret": "test-internal-secret"}
 
@@ -296,7 +296,7 @@ def test_get_run_returns_detail(client):
     assert set(body) == {
         "run_id", "status", "is_sample", "topic", "audience", "created_at",
         "completed_at", "duration_ms", "input_tokens", "output_tokens",
-        "retry_count", "price", "result",
+        "retry_count", "price", "result", "emails_remaining",
     }
     assert body["run_id"] == row["id"]
     assert body["status"] == "partial"
@@ -459,3 +459,207 @@ def test_pdf_db_failure_is_503_service_unavailable(client, monkeypatch):
     assert r.status_code == 503
     assert r.json()["code"] == "SERVICE_UNAVAILABLE"
     assert "titok" not in r.text
+
+
+# --- e-mail a PDF-fel ---
+
+ADDRESS = "reader@example.com"
+
+
+@pytest.fixture
+def mails(monkeypatch) -> list[dict]:
+    calls: list[dict] = []
+    monkeypatch.setattr(
+        email_service, "send_report_email", lambda **kwargs: calls.append(kwargs)
+    )
+    return calls
+
+
+def _ready_run(status: str = "completed") -> str:
+    run_id = _run_with_status(status)
+    db.save_pdf(run_id, b"%PDF-stored")
+    return run_id
+
+
+def _request_email(client, run_id: str, email: str = ADDRESS):
+    return client.post(f"/api/v1/runs/{run_id}/email", json={"email": email})
+
+
+def _email_rows() -> list[dict]:
+    with db.connect() as conn:
+        return conn.execute("select id, sent_at from email_requests").fetchall()
+
+
+def test_email_success_sends_and_marks_sent(client, mails, caplog):
+    run_id = _ready_run()
+    r = _request_email(client, run_id)
+    assert r.status_code == 200
+    assert r.json() == {"status": "sent", "emails_remaining": 2}
+    assert len(mails) == 1
+    assert mails[0]["to"] == ADDRESS
+    assert mails[0]["run_id"] == run_id
+    assert mails[0]["pdf"] == b"%PDF-stored"
+    (row,) = _email_rows()
+    assert row["sent_at"] is not None
+    assert ADDRESS not in caplog.text
+
+
+def test_email_works_for_partial_run(client, mails):
+    run_id = _ready_run("partial")
+    assert _request_email(client, run_id).status_code == 200
+
+
+def test_email_generates_pdf_when_missing(client, mails, generated):
+    run_id = _run_with_status("completed")
+    r = _request_email(client, run_id)
+    assert r.status_code == 200
+    assert mails[0]["pdf"] == b"%PDF-generated"
+    assert db.get_pdf(run_id) == b"%PDF-generated"
+
+
+def test_email_pdf_generation_failure_is_503(client, mails, monkeypatch):
+    async def broken(run: dict) -> bytes:
+        raise RuntimeError("titok")
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", broken)
+    run_id = _run_with_status("completed")
+    r = _request_email(client, run_id)
+    assert r.status_code == 503
+    assert r.json()["code"] == ErrorCode.PDF_UNAVAILABLE.value
+    assert mails == [] and _email_rows() == []
+
+
+def _address_of_length(length: int) -> str:
+    """Egyébként érvényes cím (64-nél rövidebb local rész, 63-nál rövidebb címkék)."""
+    domain = ".".join(["b" * 63] * 3 + ["co"])
+    return "a" * (length - len(domain) - 1) + "@" + domain
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "a@b.hu\nBcc: x@y.hu",
+        "a@b.hu, c@d.hu",
+        "nem-cím",
+        _address_of_length(255),
+    ],
+)
+def test_email_invalid_address_is_422(client, mails, caplog, bad):
+    run_id = _ready_run()
+    r = _request_email(client, run_id, bad)
+    assert r.status_code == 422
+    assert r.json()["code"] == "INVALID_EMAIL"
+    assert mails == [] and _email_rows() == []
+    assert bad not in r.text and bad not in caplog.text
+
+
+def test_email_malformed_body_is_422_without_echo(client, mails):
+    run_id = _ready_run()
+    for body in ({"email": ADDRESS, "extra": "x"}, {}, {"email": 5}):
+        r = client.post(f"/api/v1/runs/{run_id}/email", json=body)
+        assert r.status_code == 422
+        assert r.json()["code"] == "INVALID_EMAIL"
+        assert ADDRESS not in r.text
+    r = client.post(
+        f"/api/v1/runs/{run_id}/email",
+        content=b"not json",
+        headers={"Content-Type": "application/json"},
+    )
+    assert r.status_code == 422 and r.json()["code"] == "INVALID_EMAIL"
+    assert mails == []
+
+
+def test_email_fourth_request_for_run_is_429(client, mails):
+    run_id = _ready_run()
+    for _ in range(3):
+        assert _request_email(client, run_id).status_code == 200
+    r = _request_email(client, run_id)
+    assert r.status_code == 429
+    assert r.json()["code"] == "EMAIL_RUN_LIMIT_REACHED"
+    assert len(_email_rows()) == 3 and len(mails) == 3
+
+
+def test_email_daily_limit_is_429(client, mails):
+    for _ in range(30):
+        db.create_email_request(_ready_run(), ADDRESS)
+    r = _request_email(client, _ready_run())
+    assert r.status_code == 429
+    assert r.json()["code"] == "EMAIL_DAILY_LIMIT_REACHED"
+    assert mails == []
+
+
+def test_email_requests_older_than_a_day_do_not_count(client, mails):
+    for _ in range(30):
+        request_id = db.create_email_request(_ready_run(), ADDRESS)
+        with db.connect() as conn:
+            conn.execute(
+                "update email_requests set created_at = now() - interval '25 hours' "
+                "where id = %s",
+                (request_id,),
+            )
+    assert _request_email(client, _ready_run()).status_code == 200
+
+
+def test_email_running_run_is_409(client, mails):
+    run_id = _run_with_status("running")
+    r = _request_email(client, run_id)
+    assert r.status_code == 409
+    assert r.json()["code"] == ErrorCode.RUN_NOT_FINISHED.value
+    assert _email_rows() == []
+
+
+def test_email_unknown_run_is_404(client, mails):
+    r = _request_email(client, str(uuid.uuid4()))
+    assert r.status_code == 404
+    assert r.json()["code"] == ErrorCode.RUN_NOT_FOUND.value
+
+
+def test_email_not_configured_is_503(client, mails, monkeypatch):
+    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "")
+    get_settings.cache_clear()
+    run_id = _ready_run()
+    r = _request_email(client, run_id)
+    assert r.status_code == 503
+    assert r.json()["code"] == "EMAIL_NOT_CONFIGURED"
+    assert _email_rows() == [] and mails == []
+
+
+def test_email_send_failure_is_502_and_row_stays_unsent(client, monkeypatch, caplog):
+    def failing(**kwargs):
+        raise email_service.EmailSendError("HTTP 500")
+
+    monkeypatch.setattr(email_service, "send_report_email", failing)
+    run_id = _ready_run()
+    r = _request_email(client, run_id)
+    assert r.status_code == 502
+    assert r.json()["code"] == "EMAIL_SEND_FAILED"
+    (row,) = _email_rows()
+    assert row["sent_at"] is None
+    assert ADDRESS not in r.text and ADDRESS not in caplog.text
+
+
+def test_email_unexpected_send_error_is_502(client, monkeypatch, caplog):
+    def failing(**kwargs):
+        raise RuntimeError(f"boom {ADDRESS}")
+
+    monkeypatch.setattr(email_service, "send_report_email", failing)
+    r = _request_email(client, _ready_run())
+    assert r.status_code == 502
+    assert ADDRESS not in r.text and ADDRESS not in caplog.text
+
+
+def test_email_requires_secret(client, mails):
+    r = client.post(
+        f"/api/v1/runs/{_ready_run()}/email",
+        json={"email": ADDRESS},
+        headers={"X-Internal-Secret": ""},
+    )
+    assert r.status_code == 401
+
+
+def test_run_detail_reports_emails_remaining(client, mails):
+    run_id = _ready_run()
+    assert client.get(f"/api/v1/runs/{run_id}").json()["emails_remaining"] == 3
+    _request_email(client, run_id)
+    _request_email(client, run_id)
+    assert client.get(f"/api/v1/runs/{run_id}").json()["emails_remaining"] == 1

@@ -257,6 +257,15 @@ export const messages = {
     methodologyLink: "Módszertan",
     failedHeading: "A futás nem fejeződött el",
     failedFallback: "Ehhez a futáshoz nincs eredmény.",
+    email: {
+      heading: "PDF e-mailben",
+      label: "E-mail-cím",
+      submit: "Küldés",
+      sending: "Küldés...",
+      sent: "A levelet elküldtük. Pár percen belül meg kell érkeznie.",
+      retentionNote: "A címet a levél elküldéséhez használjuk, és 14 nap után töröljük.",
+      privacyLink: "Adatkezelés",
+    },
   },
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",

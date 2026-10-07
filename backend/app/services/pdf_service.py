@@ -86,8 +86,8 @@ def render_report_html(run: dict[str, Any]) -> str:
         "output_tokens": _int_hu(output_tokens),
         "cost": _cost_hu(input_tokens, output_tokens),
         "limits_text": LIMITS_TEXT,
-        "font_regular_url": (FONTS_DIR / "IBMPlexSans-Regular.ttf").as_uri(),
-        "font_bold_url": (FONTS_DIR / "IBMPlexSans-Bold.ttf").as_uri(),
+        "font_body_url": (FONTS_DIR / "Outfit.ttf").as_uri(),
+        "font_label_url": (FONTS_DIR / "SpaceGrotesk.ttf").as_uri(),
     }
     return _env.get_template("report.html.j2").render(**context)
 
@@ -119,7 +119,8 @@ async def html_to_pdf(html: str) -> bytes:
                 # JavaScript nélkül nem várhatunk a `document.fonts.ready`-re; a
                 # betűtípust a `load` esemény előtt kéri le az elrendezés.
                 await page.goto(page_path.as_uri(), wait_until="load")
-                return await page.pdf(format="A4", print_background=True)
+                # A méretet a sablon `@page` szabálya adja, hogy a borító pontosan kitöltse a lapot.
+                return await page.pdf(prefer_css_page_size=True, print_background=True)
             finally:
                 await browser.close()
 

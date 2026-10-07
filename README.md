@@ -103,4 +103,4 @@ cd frontend && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 
 ## Licenc
 
-A kód MIT licenc alatt érhető el, lásd a [`LICENSE`](LICENSE) fájlt. A PDF-ben használt IBM Plex Sans betűtípus licence a `backend/app/assets/fonts/OFL.txt`.
+A kód MIT licenc alatt érhető el, lásd a [`LICENSE`](LICENSE) fájlt. A PDF-ben használt Outfit és Space Grotesk betűtípus licence a `backend/app/assets/fonts/` mappában van (`OFL-*.txt`).

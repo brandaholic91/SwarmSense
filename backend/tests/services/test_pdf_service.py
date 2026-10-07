@@ -152,9 +152,9 @@ def test_html_embeds_bundled_font():
     html = pdf_service.render_report_html(make_run())
     assert "@font-face" in html
     assert "file://" in html
-    assert "IBMPlexSans-Regular.ttf" in html and "IBMPlexSans-Bold.ttf" in html
-    assert pdf_service.FONTS_DIR.joinpath("IBMPlexSans-Regular.ttf").is_file()
-    assert pdf_service.FONTS_DIR.joinpath("OFL.txt").is_file()
+    assert "Outfit.ttf" in html and "SpaceGrotesk.ttf" in html
+    for name in ("Outfit.ttf", "SpaceGrotesk.ttf", "OFL-Outfit.txt", "OFL-SpaceGrotesk.txt"):
+        assert pdf_service.FONTS_DIR.joinpath(name).is_file()
 
 
 def test_html_has_no_external_network_reference():
@@ -169,7 +169,7 @@ def test_generate_pdf_smoke():
     )
     assert pdf.startswith(b"%PDF-") and len(pdf) > 10_000
     # a becsomagolt betűtípus (JavaScript nélkül is) bekerült a PDF-be
-    assert b"IBMPlexSans" in pdf
+    assert b"Outfit" in pdf and b"SpaceGrotesk" in pdf
 
 
 def test_generate_pdf_times_out(monkeypatch):

@@ -4,98 +4,201 @@
 <meta charset="utf-8">
 <title>SwarmSense jelentés</title>
 <style>
+  /* Ugyanaz a két betűtípus és színvilág, mint a weboldalon (frontend/lib/tokens.ts). */
   @font-face {
-    font-family: "Plex";
-    font-weight: 400;
-    src: url("{{ font_regular_url }}") format("truetype");
+    font-family: "Outfit";
+    font-weight: 100 900;
+    src: url("{{ font_body_url }}") format("truetype");
   }
   @font-face {
-    font-family: "Plex";
-    font-weight: 700;
-    src: url("{{ font_bold_url }}") format("truetype");
+    font-family: "Space Grotesk";
+    font-weight: 300 700;
+    src: url("{{ font_label_url }}") format("truetype");
   }
   @page { size: A4; margin: 18mm 16mm; }
+  @page :first { margin: 0; }
   * { box-sizing: border-box; }
   body {
-    font-family: "Plex", sans-serif;
+    font-family: "Outfit", sans-serif;
     font-size: 10.5pt;
     line-height: 1.5;
-    color: #1d2433;
+    color: #18181b;
     margin: 0;
   }
   h1, h2, h3 { line-height: 1.2; margin: 0; break-after: avoid; }
-  h1 { font-size: 26pt; }
+  h1 { font-size: 30pt; font-weight: 600; letter-spacing: -0.01em; }
   h2 {
-    font-size: 15pt;
+    font-size: 16pt;
+    font-weight: 600;
     margin: 0 0 10pt;
-    padding-bottom: 4pt;
-    border-bottom: 1.5pt solid #2b4c7e;
-    color: #2b4c7e;
+    padding-left: 9pt;
+    border-left: 3pt solid #fbbf24;
   }
-  h3 { font-size: 11.5pt; margin-bottom: 4pt; }
-  p { margin: 0 0 6pt; }
-  ul { margin: 0 0 6pt; padding-left: 16pt; }
-  section { margin-bottom: 22pt; }
-  .cover {
-    min-height: 240mm;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    break-after: page;
-  }
-  .badge {
-    display: inline-block;
-    align-self: flex-start;
-    background: #2b4c7e;
-    color: #fff;
+  h3 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 8.5pt;
     font-weight: 700;
-    font-size: 9pt;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 3pt 9pt;
-    border-radius: 3pt;
-    margin-bottom: 18pt;
+    color: #52525b;
+    margin-bottom: 3pt;
   }
-  .cover .meta { margin-top: 18pt; font-size: 12pt; color: #4a5568; }
-  .cover .meta strong { color: #1d2433; }
-  .note { color: #4a5568; font-size: 9.5pt; }
+  p { margin: 0 0 6pt; }
+  ul { margin: 0 0 6pt; padding-left: 16pt; }
+  li::marker { color: #d97706; }
+  section { margin-bottom: 24pt; }
+
+  .cover {
+    height: 297mm;
+    padding: 22mm 20mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #09090b;
+    color: #fafafa;
+    break-after: page;
+  }
+  .brand {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 11pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .brand span { color: #fbbf24; }
+  .badge {
+    display: inline-block;
+    font-family: "Space Grotesk", sans-serif;
+    color: #fbbf24;
+    font-weight: 700;
+    font-size: 9pt;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 14pt;
+  }
+  .cover .meta {
+    margin-top: 22pt;
+    padding-top: 14pt;
+    border-top: 0.75pt solid #27272a;
+    font-size: 11.5pt;
+    color: #a1a1aa;
+  }
+  .cover .meta strong { color: #fafafa; font-weight: 500; }
+  .cover .note { font-size: 9.5pt; color: #a1a1aa; margin: 0; }
+
+  .stances { display: flex; gap: 8pt; margin-bottom: 8pt; }
+  .stance-box {
+    flex: 1;
+    border: 0.75pt solid #e4e4e7;
+    border-radius: 5pt;
+    padding: 8pt 10pt;
+    background: #fafafa;
+  }
+  .stance-box .count { font-size: 22pt; font-weight: 600; line-height: 1.1; }
+  .stance-box .label {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 8.5pt;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #52525b;
+  }
+  .bar { display: flex; height: 5pt; border-radius: 3pt; overflow: hidden; margin-bottom: 10pt; background: #e4e4e7; }
+  .bar div { height: 100%; }
+  .c-support { color: #059669; }
+  .c-reject { color: #e11d48; }
+  .c-conditional { color: #d97706; }
+  .bg-support { background: #34d399; }
+  .bg-reject { background: #fb7185; }
+  .bg-conditional { background: #fbbf24; }
+
+  .lead { font-size: 11.5pt; }
+  .block { break-inside: avoid; margin-bottom: 10pt; }
+
   .persona {
-    border: 0.75pt solid #cbd5e0;
+    border: 0.75pt solid #e4e4e7;
+    border-left: 3pt solid #a1a1aa;
     border-radius: 4pt;
     padding: 9pt 11pt;
     margin-bottom: 9pt;
     break-inside: avoid;
-    background: #f7f9fc;
+    background: #fafafa;
   }
-  .persona .role { color: #4a5568; font-size: 9.5pt; margin-bottom: 4pt; }
-  .stance { font-weight: 700; color: #2b4c7e; }
-  .stance-reject { color: #9b2c2c; }
-  .stance-conditional { color: #8a5a00; }
-  dl { margin: 0; }
-  dt { font-weight: 700; font-size: 9pt; color: #4a5568; margin-top: 4pt; }
+  .persona.p-support { border-left-color: #34d399; }
+  .persona.p-reject { border-left-color: #fb7185; }
+  .persona.p-conditional { border-left-color: #fbbf24; }
+  .persona .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10pt; }
+  .persona .name { font-size: 12pt; font-weight: 600; }
+  .persona .role { color: #52525b; font-size: 9.5pt; margin-bottom: 5pt; }
+  .stance {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; column-gap: 14pt; }
+  dt {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #71717a;
+    margin-top: 5pt;
+  }
   dd { margin: 0; }
-  .traits { margin-top: 6pt; font-size: 9pt; color: #4a5568; }
+  .traits {
+    margin-top: 7pt;
+    padding-top: 5pt;
+    border-top: 0.5pt solid #e4e4e7;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 8.5pt;
+    color: #71717a;
+  }
   table { border-collapse: collapse; width: 100%; break-inside: avoid; }
-  td { padding: 4pt 0; border-bottom: 0.5pt solid #e2e8f0; }
-  td:last-child { text-align: right; font-weight: 700; }
-  .block { break-inside: avoid; margin-bottom: 8pt; }
+  td { padding: 5pt 0; border-bottom: 0.5pt solid #e4e4e7; }
+  td:last-child { text-align: right; font-family: "Space Grotesk", sans-serif; font-weight: 700; }
+  .note-box {
+    border-left: 3pt solid #fbbf24;
+    background: #fffbeb;
+    padding: 8pt 11pt;
+    border-radius: 0 4pt 4pt 0;
+  }
 </style>
 </head>
 <body>
 
 <div class="cover">
-  <span class="badge">Szintetikus elemzés</span>
-  <h1>{{ topic }}</h1>
-  <div class="meta">
-    <p><strong>Célközönség:</strong> {{ audience }}</p>
-    {% if date %}<p><strong>Dátum:</strong> {{ date }}</p>{% endif %}
-    <p class="note">Az elemzést szintetikus, AI által előállított personák adták; nem valódi megkérdezés eredménye.</p>
+  <div class="brand">Swarm<span>Sense</span></div>
+  <div>
+    <span class="badge">Szintetikus elemzés</span>
+    <h1>{{ topic }}</h1>
+    <div class="meta">
+      <p>Célközönség: <strong>{{ audience }}</strong></p>
+      {% if date %}<p>Dátum: <strong>{{ date }}</strong></p>{% endif %}
+    </div>
   </div>
+  <p class="note">Az elemzést szintetikus, AI által előállított personák adták; nem valódi megkérdezés eredménye.</p>
 </div>
 
 <section>
   <h2>Konszenzus és top érvek</h2>
-  {% if aggregate_display %}<p>{{ aggregate_display }}</p>{% endif %}
+  {% set n_support = stance_counts.get("support", 0) %}
+  {% set n_reject = stance_counts.get("reject", 0) %}
+  {% set n_conditional = stance_counts.get("conditional", 0) %}
+  {% set n_total = n_support + n_reject + n_conditional %}
+  {% if n_total %}
+  <div class="stances">
+    <div class="stance-box"><div class="count c-support">{{ n_support }}</div><div class="label">Támogatja</div></div>
+    <div class="stance-box"><div class="count c-conditional">{{ n_conditional }}</div><div class="label">Feltételes</div></div>
+    <div class="stance-box"><div class="count c-reject">{{ n_reject }}</div><div class="label">Elutasítja</div></div>
+  </div>
+  <div class="bar">
+    <div class="bg-support" style="flex: {{ n_support }}"></div>
+    <div class="bg-conditional" style="flex: {{ n_conditional }}"></div>
+    <div class="bg-reject" style="flex: {{ n_reject }}"></div>
+  </div>
+  {% elif aggregate_display %}<p>{{ aggregate_display }}</p>{% endif %}
   <p>
     {% if consensus_display %}<strong>Konszenzus:</strong> {{ consensus_display }}.
     {% else %}Nincs egyértelmű konszenzus.{% endif %}
@@ -111,7 +214,7 @@
 <section>
   <h2>Szintézis</h2>
   {% if synthesis %}
-    <div class="block"><h3>Összefoglaló</h3><p>{{ synthesis.summary }}</p></div>
+    <div class="block"><h3>Összefoglaló</h3><p class="lead">{{ synthesis.summary }}</p></div>
     <div class="block"><h3>Fő akadályok</h3>
       <ul>{% for barrier in synthesis.main_barriers %}<li>{{ barrier }}</li>{% endfor %}</ul>
     </div>
@@ -126,14 +229,17 @@
 <section>
   <h2>Personák</h2>
   {% for persona in personas %}
-  <div class="persona">
-    <h3>{{ persona.name }}</h3>
-    <div class="role">{{ persona.role }} · <span class="stance stance-{{ persona.stance }}">{{ persona.stance_label }}</span></div>
+  <div class="persona p-{{ persona.stance }}">
+    <div class="head">
+      <span class="name">{{ persona.name }}</span>
+      <span class="stance c-{{ persona.stance }}">{{ persona.stance_label }}</span>
+    </div>
+    <div class="role">{{ persona.role }}</div>
     <dl>
-      <dt>Fő érv</dt><dd>{{ persona.primary_argument }}</dd>
-      <dt>Mi változtatná meg a véleményét</dt><dd>{{ persona.change_condition }}</dd>
-      <dt>Fő aggodalom</dt><dd>{{ persona.core_concern }}</dd>
-      <dt>Vásárlási kiváltó ok</dt><dd>{{ persona.buying_trigger }}</dd>
+      <div><dt>Fő érv</dt><dd>{{ persona.primary_argument }}</dd></div>
+      <div><dt>Mi változtatná meg a véleményét</dt><dd>{{ persona.change_condition }}</dd></div>
+      <div><dt>Fő aggodalom</dt><dd>{{ persona.core_concern }}</dd></div>
+      <div><dt>Vásárlási kiváltó ok</dt><dd>{{ persona.buying_trigger }}</dd></div>
     </dl>
     <div class="traits">
       Kockázatvállalás: {{ persona.risk_appetite }} ·
@@ -166,7 +272,7 @@
 <section>
   <h2>Módszertan és korlátok</h2>
   <p>A jelentés 18 szintetikus persona válaszát és ezek szintézisét tartalmazza; a personákat nyelvi modell állítja elő a megadott kérdés és célközönség alapján.</p>
-  <p><strong>Mire nem jó:</strong> {{ limits_text }}</p>
+  <div class="note-box"><strong>Mire nem jó:</strong> {{ limits_text }}</div>
 </section>
 
 </body>

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import http.client
 import io
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 import pytest
 
@@ -177,6 +177,11 @@ class _FakeResponse:
         return False
 
 
+class _TimeoutBody(io.BytesIO):
+    def read(self, *args, **kwargs):
+        raise TimeoutError("timed out")
+
+
 def _raiser(exc: BaseException):
     def fake_urlopen(*args, **kwargs):
         raise exc
@@ -191,8 +196,15 @@ def _raiser(exc: BaseException):
         _raiser(ConnectionResetError("reset by peer")),
         _raiser(http.client.RemoteDisconnected("Remote end closed connection")),
         lambda *a, **k: _FakeResponse(b"<html>"),
+        lambda *a, **k: _FakeResponse(b"\xff\xfe nem utf-8"),
     ],
-    ids=["timeout", "connection-reset", "remote-disconnected", "non-json-body"],
+    ids=[
+        "timeout",
+        "connection-reset",
+        "remote-disconnected",
+        "non-json-body",
+        "non-utf8-body",
+    ],
 )
 def test_real_transport_maps_low_level_failures_to_network_error(
     monkeypatch, fake_urlopen
@@ -206,6 +218,75 @@ def test_real_transport_maps_low_level_failures_to_network_error(
     # a nyers kivételszöveg nem kerülhet a body-ba
     assert "timed out" not in str(excinfo.value.body)
     assert "reset by peer" not in str(excinfo.value.body)
+
+
+def test_real_transport_http_error_with_unreadable_body_keeps_status(monkeypatch):
+    error = HTTPError(
+        "https://example.invalid/x", 503, "Unavailable", {}, _TimeoutBody()
+    )
+    monkeypatch.setattr(llm_client, "urlopen", _raiser(error))
+
+    with pytest.raises(TransportError) as excinfo:
+        real_post_json_sync("https://example.invalid/x", {}, {})
+
+    assert excinfo.value.status_code == 503
+    assert excinfo.value.body is None
+
+
+def test_url_error_body_has_no_reason_text(monkeypatch):
+    monkeypatch.setattr(
+        llm_client, "urlopen", _raiser(URLError("titkos-gepnev.belso"))
+    )
+
+    with pytest.raises(TransportError) as excinfo:
+        real_post_json_sync("https://example.invalid/x", {}, {})
+
+    assert excinfo.value.status_code is None
+    assert "titkos-gepnev" not in str(excinfo.value.body)
+
+
+async def _no_sleep(_seconds: float) -> None:
+    return None
+
+
+def test_on_retry_called_with_next_attempt_and_code() -> None:
+    calls: list[tuple[int, str]] = []
+    attempts = {"count": 0}
+
+    async def fake_transport(_url, _headers, _payload):
+        attempts["count"] += 1
+        if attempts["count"] <= 2:
+            raise TransportError(status_code=429, body=None)
+        return {"choices": [{"message": {"content": '{"ok": true}'}}]}
+
+    async def on_retry(next_attempt: int, error_code: str) -> None:
+        calls.append((next_attempt, error_code))
+
+    client = LLMClient(session_id="s", transport=fake_transport, sleep=_no_sleep)
+    data, _ = asyncio.run(
+        client.generate_json(system_prompt="s", user_prompt="u", on_retry=on_retry)
+    )
+
+    assert data == {"ok": True}
+    assert calls == [(2, "RATE_LIMITED"), (3, "RATE_LIMITED")]
+
+
+def test_on_retry_not_called_on_terminal_error() -> None:
+    calls: list[tuple[int, str]] = []
+
+    async def fake_transport(_url, _headers, _payload):
+        raise TransportError(status_code=400, body=None)
+
+    async def on_retry(next_attempt: int, error_code: str) -> None:
+        calls.append((next_attempt, error_code))
+
+    client = LLMClient(session_id="s", transport=fake_transport, sleep=_no_sleep)
+    with pytest.raises(LLMProviderError):
+        asyncio.run(
+            client.generate_json(system_prompt="s", user_prompt="u", on_retry=on_retry)
+        )
+
+    assert calls == []
 
 
 def test_real_transport_keeps_http_status_code(monkeypatch):

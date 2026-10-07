@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+import time
 from typing import Any
 
 from pydantic import ValidationError
@@ -14,6 +14,7 @@ from app.models.persona import (
     SynthesisResult,
 )
 from app.services.blueprint_generator import generate_persona_blueprints
+from app.services.events import EventSink, safe_emit
 from app.services.llm_client import LLMClient, LLMProviderError, TokenUsage
 
 DEFAULT_PERSONA_COUNT = 18
@@ -200,6 +201,10 @@ PERSONA_BLUEPRINT_DEFINITIONS: tuple[dict[str, str], ...] = (
 )
 
 
+def _elapsed_ms(started: float) -> int:
+    return int((time.monotonic() - started) * 1000)
+
+
 def build_persona_blueprints(
     total_personas: int = DEFAULT_PERSONA_COUNT,
 ) -> list[PersonaBlueprint]:
@@ -264,12 +269,13 @@ async def execute_persona_engine(
     concurrency_limit: int = 5,
     total_personas: int = DEFAULT_PERSONA_COUNT,
     blueprints: list[PersonaBlueprint] | None = None,
-    on_persona_completed: Callable[[int, int], None] | None = None,
+    on_event: EventSink | None = None,
 ) -> PersonaRunResult:
     total_usage = TokenUsage()
     if blueprints is not None:
         personas = blueprints
     else:
+        generation_started = time.monotonic()
         personas, blueprint_usage = await generate_persona_blueprints(
             topic=topic,
             audience=audience,
@@ -277,50 +283,102 @@ async def execute_persona_engine(
             llm_client=llm_client,
         )
         total_usage += blueprint_usage
+        await safe_emit(
+            on_event,
+            "personas_generated",
+            duration_ms=_elapsed_ms(generation_started),
+            input_tokens=blueprint_usage.input_tokens,
+            output_tokens=blueprint_usage.output_tokens,
+        )
     semaphore = asyncio.Semaphore(concurrency_limit)
 
     async def _run_persona(
+        index: int,
         persona: PersonaBlueprint,
     ) -> tuple[PersonaBlueprint, PersonaResponse | PersonaFailure, TokenUsage]:
+        # A befejező eseményt még a szemafor elengedése előtt írjuk ki, különben
+        # a sorrendben több mint 5 persona látszana egyszerre futónak.
         async with semaphore:
+            persona_started = time.monotonic()
+            attempt = 1
+            await safe_emit(
+                on_event,
+                "persona_started",
+                persona_index=index,
+                persona_name=persona.name,
+            )
+
+            async def on_retry(next_attempt: int, error_code: str) -> None:
+                nonlocal attempt
+                attempt = next_attempt
+                await safe_emit(
+                    on_event,
+                    "persona_retry",
+                    persona_index=index,
+                    persona_name=persona.name,
+                    attempt=next_attempt,
+                    error_code=error_code,
+                )
+
             prompt = build_persona_user_prompt(
                 persona=persona, topic=topic, audience=audience
             )
             usage = TokenUsage()
+            response: PersonaResponse | None = None
+            error_code = ""
             try:
                 raw, usage = await llm_client.generate_json(
                     system_prompt=HUNGARIAN_SYSTEM_PROMPT,
                     user_prompt=prompt,
+                    on_retry=on_retry,
                 )
-                return persona, normalize_persona_response(raw), usage
+                response = normalize_persona_response(raw)
             except LLMProviderError as exc:
-                return (
-                    persona,
-                    PersonaFailure(
-                        persona_name=persona.name,
-                        error_code=exc.error_code,
-                        error_message=str(exc),
-                    ),
-                    exc.usage,
-                )
-            except ValueError as exc:
-                return (
-                    persona,
-                    PersonaFailure(
-                        persona_name=persona.name,
-                        error_code="MALFORMED_PROVIDER_OUTPUT",
-                        error_message=str(exc),
-                    ),
-                    usage,
-                )
+                error_code, usage = exc.error_code, exc.usage
+            except ValueError:
+                error_code = "MALFORMED_PROVIDER_OUTPUT"
+            except Exception:
+                error_code = "UNEXPECTED_ENGINE_ERROR"
 
-    tasks = [asyncio.create_task(_run_persona(persona)) for persona in personas]
+            outcome: PersonaResponse | PersonaFailure
+            if response is not None:
+                outcome = response
+                await safe_emit(
+                    on_event,
+                    "persona_completed",
+                    persona_index=index,
+                    persona_name=persona.name,
+                    attempt=attempt,
+                    duration_ms=_elapsed_ms(persona_started),
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                )
+            else:
+                outcome = PersonaFailure(
+                    persona_name=persona.name, error_code=error_code
+                )
+                await safe_emit(
+                    on_event,
+                    "persona_failed",
+                    persona_index=index,
+                    persona_name=persona.name,
+                    attempt=attempt,
+                    error_code=error_code,
+                    duration_ms=_elapsed_ms(persona_started),
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                )
+            return persona, outcome, usage
+
+    tasks = [
+        asyncio.create_task(_run_persona(index, persona))
+        for index, persona in enumerate(personas)
+    ]
 
     responses: list[PersonaResponse] = []
     failures: list[PersonaFailure] = []
     handoff_pairs: list[tuple[PersonaResponse, dict[str, str]]] = []
 
-    processed_count = 0
     try:
         for task in asyncio.as_completed(tasks):
             persona_name = "unknown"
@@ -341,7 +399,6 @@ async def execute_persona_engine(
                     PersonaFailure(
                         persona_name=persona_name,
                         error_code="UNEXPECTED_ENGINE_ERROR",
-                        error_message=str(item),
                     ),
                     TokenUsage(),
                 )
@@ -366,13 +423,8 @@ async def execute_persona_engine(
                     PersonaFailure(
                         persona_name=persona_name,
                         error_code="UNEXPECTED_ENGINE_ERROR",
-                        error_message=str(result_item),
                     )
                 )
-
-            processed_count += 1
-            if on_persona_completed is not None:
-                await asyncio.to_thread(on_persona_completed, processed_count, len(personas))
     except BaseException:
         for t in tasks:
             if not t.done():

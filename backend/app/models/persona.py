@@ -46,7 +46,6 @@ class PersonaFailure(BaseModel):
 
     persona_name: str
     error_code: str
-    error_message: str
 
 
 class PersonaRunResult(BaseModel):

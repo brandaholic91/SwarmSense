@@ -33,6 +33,18 @@ UPDATABLE_RUN_COLUMNS = frozenset(
     }
 )
 
+EVENT_COLUMNS = frozenset(
+    {
+        "persona_index",
+        "persona_name",
+        "attempt",
+        "error_code",
+        "duration_ms",
+        "input_tokens",
+        "output_tokens",
+    }
+)
+
 # A `pdf` oszlop nagy, ezért a get_run nem kéri le.
 _RUN_COLUMNS = sql.SQL(
     "id, topic, audience, status, persona_count, support_count, reject_count, "
@@ -91,3 +103,31 @@ def update_run(run_id: str, **fields: Any) -> None:
     query = sql.SQL("update runs set {} where id = %s").format(assignments)
     with connect() as conn:
         conn.execute(query, [*fields.values(), uuid.UUID(run_id)])
+
+
+def insert_event(run_id: str, type: str, **fields: Any) -> int:
+    unknown = set(fields) - EVENT_COLUMNS
+    if unknown:
+        raise ValueError(f"ismeretlen eseménymező: {', '.join(sorted(unknown))}")
+    columns = ["run_id", "type", *fields]
+    query = sql.SQL("insert into run_events ({}) values ({}) returning id").format(
+        sql.SQL(", ").join(sql.Identifier(name) for name in columns),
+        sql.SQL(", ").join(sql.Placeholder() for _ in columns),
+    )
+    with connect() as conn:
+        row = conn.execute(query, [uuid.UUID(run_id), type, *fields.values()]).fetchone()
+    return row["id"]
+
+
+def list_events(run_id: str, *, after: int = 0) -> list[dict[str, Any]]:
+    try:
+        parsed = uuid.UUID(run_id)
+    except (ValueError, AttributeError, TypeError):
+        return []
+    with connect() as conn:
+        return conn.execute(
+            "select id, type, persona_index, persona_name, attempt, error_code, "
+            "duration_ms, input_tokens, output_tokens, created_at "
+            "from run_events where run_id = %s and id > %s order by id",
+            (parsed, after),
+        ).fetchall()

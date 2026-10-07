@@ -5,6 +5,8 @@ import json
 import re
 from typing import Any, cast
 
+import pytest
+
 from app import db
 from app.models.persona import (
     PersonaFailure,
@@ -14,7 +16,12 @@ from app.models.persona import (
 )
 from app.services import run_processor
 from app.services.blueprint_generator import BLUEPRINT_SYSTEM_PROMPT
-from app.services.llm_client import LLMClient, TransportError
+from app.services.llm_client import (
+    LLMClient,
+    LLMProviderError,
+    TokenUsage,
+    TransportError,
+)
 from app.services.persona_engine import HUNGARIAN_SYSTEM_PROMPT
 from app.services.run_processor import (
     _build_result_payload,
@@ -167,6 +174,7 @@ def test_partial_when_some_personas_fail(clean_db):
     assert run["persona_count"] == 15
     assert run["support_count"] == 7
     assert (run["input_tokens"], run["output_tokens"]) == (170, 85)  # 17 sikeres hívás
+    assert run["completed_at"] is not None
 
 
 def test_failed_below_threshold_skips_synthesis(clean_db):
@@ -176,6 +184,8 @@ def test_failed_below_threshold_skips_synthesis(clean_db):
     assert run["persona_count"] == 11
     assert run["synthesis_summary"] is None
     assert run["completed_at"] is not None
+    # a blueprint-hívás és a 11 sikeres persona-hívás tokenjei megmaradnak
+    assert (run["input_tokens"], run["output_tokens"]) == (120, 60)
 
 
 def test_exactly_threshold_is_not_failed(clean_db):
@@ -192,9 +202,97 @@ def test_partial_when_synthesis_fails(clean_db):
 
 
 def test_failed_when_persona_generation_fails(clean_db):
-    run = _run(clean_db, blueprint_fails=True)  # a dispatch nem dobhat
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    result = asyncio.run(  # nem dobhat, és nem ad eredményt
+        process_run(
+            run_id=row["id"],
+            topic=TOPIC,
+            audience=AUDIENCE,
+            llm_client=make_fake_llm(blueprint_fails=True),
+        )
+    )
+    run = db.get_run(row["id"])
+    assert result is None
     assert run["status"] == "failed"
     assert run["completed_at"] is not None
+    assert (run["input_tokens"], run["output_tokens"]) == (0, 0)
+
+
+def _events(run_id: str) -> list[dict[str, Any]]:
+    return db.list_events(run_id)
+
+
+def _types(run_id: str) -> list[str]:
+    return [event["type"] for event in _events(run_id)]
+
+
+def test_event_sequence_of_completed_run(clean_db):
+    run = _run(clean_db)
+    events = _events(run["id"])
+    types = [e["type"] for e in events]
+
+    assert types[:2] == ["run_started", "personas_generated"]
+    assert sorted(types[2:-3]) == ["persona_completed"] * 18 + ["persona_started"] * 18
+    assert types[-3:] == ["synthesis_started", "synthesis_completed", "run_completed"]
+    assert sum(e["input_tokens"] or 0 for e in events) == run["input_tokens"] == 200
+    assert sum(e["output_tokens"] or 0 for e in events) == run["output_tokens"] == 100
+
+
+def test_partial_run_event_tokens_match_run_tokens(clean_db):
+    run = _run(clean_db, failing_personas=frozenset({"Persona 1", "Persona 2"}))
+    events = _events(run["id"])
+    assert run["status"] == "partial"
+    assert sum(e["input_tokens"] or 0 for e in events) == run["input_tokens"]
+    assert sum(e["output_tokens"] or 0 for e in events) == run["output_tokens"]
+
+
+def test_synthesis_failure_emits_synthesis_failed(clean_db):
+    run = _run(clean_db, synthesis_fails=True)
+    events = _events(run["id"])
+    failed = [e for e in events if e["type"] == "synthesis_failed"]
+    assert run["status"] == "partial"
+    assert len(failed) == 1 and failed[0]["error_code"] == "REQUEST_FAILED"
+    assert events[-1]["type"] == "run_completed"
+    assert MARKER not in repr(events)
+
+
+def test_too_few_personas_emits_run_failed_code(clean_db):
+    failing = frozenset(f"Persona {i}" for i in range(1, 8))
+    run = _run(clean_db, failing_personas=failing)
+    events = _events(run["id"])
+    assert events[-1]["type"] == "run_failed"
+    assert events[-1]["error_code"] == "TOO_FEW_PERSONAS"
+    assert "synthesis_started" not in [e["type"] for e in events]
+    assert sum(e["input_tokens"] or 0 for e in events) == run["input_tokens"]
+
+
+def test_blueprint_failure_emits_run_failed_code(clean_db):
+    run = _run(clean_db, blueprint_fails=True)
+    events = _events(run["id"])
+    assert run["status"] == "failed"
+    assert [e["type"] for e in events] == ["run_started", "run_failed"]
+    assert events[1]["error_code"] == "PERSONA_GENERATION_FAILED"
+
+
+def test_unexpected_error_emits_internal_error(clean_db, monkeypatch):
+    async def broken_engine(**_: Any):
+        raise RuntimeError("váratlan")
+
+    monkeypatch.setattr(run_processor, "execute_persona_engine", broken_engine)
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    with pytest.raises(RuntimeError):
+        asyncio.run(
+            process_run(
+                run_id=row["id"],
+                topic=TOPIC,
+                audience=AUDIENCE,
+                llm_client=make_fake_llm(),
+            )
+        )
+    events = _events(row["id"])
+    assert [e["type"] for e in events] == ["run_started", "run_failed"]
+    assert events[1]["error_code"] == "INTERNAL_ERROR"
+    assert db.get_run(row["id"])["status"] == "failed"
 
 
 def test_summary_log_has_no_topic_text(clean_db, caplog):
@@ -233,11 +331,21 @@ def test_provider_error_message_is_not_logged(clean_db, caplog):
     _assert_clean_log(caplog)
 
 
-def test_unexpected_failure_logs_summary_and_provider_usage(clean_db, caplog):
+def test_unexpected_failure_logs_summary_and_provider_usage(
+    clean_db, caplog, monkeypatch
+):
+    async def broken_engine(**_: Any):
+        raise LLMProviderError(
+            error_code="INVALID_JSON", message=MARKER, usage=TokenUsage(7, 3)
+        )
+
+    monkeypatch.setattr(run_processor, "execute_persona_engine", broken_engine)
     with caplog.at_level("INFO", logger="swarmsense.run"):
-        _run(clean_db, blueprint_fails=True)
+        run = _run(clean_db)
     assert any("failed" in r.getMessage() and "elapsed" in r.getMessage()
                for r in caplog.records)
+    assert (run["input_tokens"], run["output_tokens"]) == (7, 3)
+    assert MARKER not in caplog.text
 
 
 def test_default_llm_client_uses_run_session_id(clean_db, monkeypatch):
@@ -297,7 +405,7 @@ def _result(*, successful: int, total: int) -> PersonaRunResult:
         for i in range(successful)
     ]
     failures = [
-        PersonaFailure(persona_name=f"Missing-{i}", error_code="X", error_message="x")
+        PersonaFailure(persona_name=f"Missing-{i}", error_code="X")
         for i in range(total - successful)
     ]
     return PersonaRunResult(

@@ -49,6 +49,10 @@ TransportFn = Callable[
 ]
 
 
+# a következő kísérlet sorszáma és az elbukott kísérlet hibakódja
+RetryCallback = Callable[[int, str], Awaitable[None]]
+
+
 class LLMClient:
     def __init__(
         self,
@@ -74,6 +78,7 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.3,
+        on_retry: RetryCallback | None = None,
     ) -> tuple[dict[str, Any], TokenUsage]:
         if not self._settings.llm_api_key:
             raise LLMProviderError(
@@ -101,7 +106,7 @@ class LLMClient:
         )
 
         raw = await self._request_with_retry(
-            endpoint=endpoint, headers=headers, payload=payload
+            endpoint=endpoint, headers=headers, payload=payload, on_retry=on_retry
         )
         usage = _extract_usage(raw)
         try:
@@ -116,6 +121,7 @@ class LLMClient:
         endpoint: str,
         headers: dict[str, str],
         payload: dict[str, Any],
+        on_retry: RetryCallback | None = None,
     ) -> dict[str, Any]:
         last_error: TransportError | None = None
 
@@ -126,6 +132,8 @@ class LLMClient:
                 last_error = exc
                 if not _is_retryable(exc.status_code) or attempt >= self._max_attempts:
                     break
+                if on_retry is not None:
+                    await on_retry(attempt + 1, _classify_error_code(exc.status_code))
                 backoff_seconds = self._base_backoff_seconds * (2 ** (attempt - 1))
                 await self._sleep(backoff_seconds)
 
@@ -161,14 +169,23 @@ def _post_json_sync(
             body = response.read().decode("utf-8")
             return json.loads(body)
     except HTTPError as exc:
-        body_text = exc.read().decode("utf-8", errors="replace")
-        parsed_body = _parse_error_body(body_text)
+        try:
+            body_text = exc.read().decode("utf-8", errors="replace")
+            parsed_body = _parse_error_body(body_text)
+        except (OSError, http.client.HTTPException):
+            # a törzs olvasása közben megszakadt a kapcsolat: a státusz így is megvan
+            parsed_body = None
         raise TransportError(status_code=exc.code, body=parsed_body) from exc
     except URLError as exc:
         raise TransportError(
-            status_code=None, body={"detail": str(exc.reason)}
+            status_code=None, body={"detail": type(exc.reason).__name__}
         ) from exc
-    except (OSError, http.client.HTTPException, json.JSONDecodeError) as exc:
+    except (
+        OSError,
+        http.client.HTTPException,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ) as exc:
         # timeout, kapcsolat-megszakadás, félbemaradt vagy nem JSON válasz:
         # a nyers kivételszöveg nem kerül a body-ba, csak a típus neve
         raise TransportError(

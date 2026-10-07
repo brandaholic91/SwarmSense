@@ -8,12 +8,19 @@ from typing import Any
 
 from app import db
 from app.models.persona import SynthesisResult
+from app.services.blueprint_generator import BlueprintGenerationError
+from app.services.events import EventSink, safe_emit
 from app.services.llm_client import LLMClient, LLMProviderError, TokenUsage
 from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 from app.services.synthesis_service import execute_synthesis
 
 MIN_SUCCESSFUL_PERSONAS = 12
 CONSENSUS_THRESHOLD = 15
+
+# a `run_failed` esemény hibakódjai
+PERSONA_GENERATION_FAILED = "PERSONA_GENERATION_FAILED"
+TOO_FEW_PERSONAS = "TOO_FEW_PERSONAS"
+INTERNAL_ERROR = "INTERNAL_ERROR"
 
 logger = logging.getLogger("swarmsense.run")
 
@@ -24,8 +31,14 @@ async def process_run(
     topic: str,
     audience: str,
     llm_client: LLMClient | None = None,
-) -> PersonaRunResult:
+) -> PersonaRunResult | None:
+    """Lefuttat egy futást. `None`, ha a persona-generálás elbukott (a futás
+    ilyenkor `failed`, és nem dobunk); más váratlan hibánál a kivétel továbbmegy."""
     started = time.monotonic()
+
+    def sink(type: str, **fields: Any) -> None:
+        db.insert_event(run_id, type, **fields)
+
     try:
         return await _process_run(
             run_id=run_id,
@@ -33,29 +46,63 @@ async def process_run(
             audience=audience,
             llm_client=llm_client,
             started=started,
+            sink=sink,
         )
+    except BlueprintGenerationError as exc:
+        await _fail_run(
+            run_id=run_id,
+            error_code=PERSONA_GENERATION_FAILED,
+            usage=exc.usage,
+            started=started,
+            dropped=None,
+            sink=sink,
+        )
+        return None
     except Exception as exc:
         # bármilyen nem várt hiba: a futás ne maradjon running/composing állapotban
         # Naplóba csak a kivétel típusa (és a hibakód) kerül: az üzenet és a
         # lánc LLM-kimenetet, a szolgáltató nyers szövegét, témát tartalmazhat.
         logger.error("run %s failed unexpectedly: %s", run_id, _describe(exc))
-        usage = exc.usage if isinstance(exc, LLMProviderError) else TokenUsage()
-        try:
-            db.update_run(
-                run_id,
-                status="failed",
-                completed_at=datetime.now(UTC),
-                input_tokens=usage.input_tokens,
-                output_tokens=usage.output_tokens,
-            )
-        except Exception as update_exc:
-            logger.error(
-                "run %s could not be marked failed: %s", run_id, _describe(update_exc)
-            )
-        _log_summary(
-            run_id=run_id, status="failed", started=started, usage=usage, dropped=None
+        await _fail_run(
+            run_id=run_id,
+            error_code=INTERNAL_ERROR,
+            usage=exc.usage if isinstance(exc, LLMProviderError) else TokenUsage(),
+            started=started,
+            dropped=None,
+            sink=sink,
         )
         raise
+
+
+async def _fail_run(
+    *,
+    run_id: str,
+    error_code: str,
+    usage: TokenUsage,
+    started: float,
+    dropped: int | None,
+    sink: EventSink,
+    persona_count: int | None = None,
+) -> None:
+    """A három bukási út közös lezárása: `failed` állapot, tokenek, esemény, napló."""
+    fields: dict[str, Any] = {
+        "status": "failed",
+        "completed_at": datetime.now(UTC),
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+    }
+    if persona_count is not None:
+        fields["persona_count"] = persona_count
+    try:
+        db.update_run(run_id, **fields)
+    except Exception as update_exc:
+        logger.error(
+            "run %s could not be marked failed: %s", run_id, _describe(update_exc)
+        )
+    await safe_emit(sink, "run_failed", error_code=error_code)
+    _log_summary(
+        run_id=run_id, status="failed", started=started, usage=usage, dropped=dropped
+    )
 
 
 def _describe(exc: BaseException) -> str:
@@ -92,16 +139,10 @@ async def _process_run(
     audience: str,
     llm_client: LLMClient | None,
     started: float,
+    sink: EventSink,
 ) -> PersonaRunResult:
-    db.update_run(run_id, status="running", persona_count=0)
-
-    def on_persona_completed(processed_count: int, total_personas: int) -> None:
-        _ = total_personas
-        try:
-            db.update_run(run_id, status="running", persona_count=processed_count)
-        except Exception as exc:
-            # a haladásjelzés nem kritikus, a futás mehet tovább
-            logger.error("run %s progress update failed: %s", run_id, _describe(exc))
+    db.update_run(run_id, status="running")
+    await safe_emit(sink, "run_started")
 
     if llm_client is None:
         llm_client = LLMClient(session_id=f"swarmsense-{run_id}")
@@ -110,25 +151,27 @@ async def _process_run(
         topic=topic,
         audience=audience,
         llm_client=llm_client,
-        on_persona_completed=on_persona_completed,
+        on_event=sink,
     )
     usage = TokenUsage(result.input_tokens, result.output_tokens)
 
     if result.successful_count < MIN_SUCCESSFUL_PERSONAS:
-        _finish_run(
+        await _fail_run(
             run_id=run_id,
-            status="failed",
-            result=result,
-            synthesis=None,
+            error_code=TOO_FEW_PERSONAS,
             usage=usage,
             started=started,
-            persist_counts=False,
+            dropped=len(result.failures),
+            sink=sink,
+            persona_count=result.successful_count,
         )
         return result
 
     db.update_run(run_id, status="composing", persona_count=result.successful_count)
 
     synthesis: SynthesisResult | None = None
+    synthesis_started = time.monotonic()
+    await safe_emit(sink, "synthesis_started")
     try:
         synthesis, synthesis_usage = await execute_synthesis(
             personas=result.responses,
@@ -137,10 +180,29 @@ async def _process_run(
             llm_client=llm_client,
         )
         usage += synthesis_usage
+        await safe_emit(
+            sink,
+            "synthesis_completed",
+            duration_ms=_elapsed_ms(synthesis_started),
+            input_tokens=synthesis_usage.input_tokens,
+            output_tokens=synthesis_usage.output_tokens,
+        )
     except Exception as exc:
         logger.error("run %s synthesis failed: %s", run_id, _describe(exc))
+        failed_usage = TokenUsage()
+        error_code = "MALFORMED_PROVIDER_OUTPUT"
         if isinstance(exc, LLMProviderError):
-            usage += exc.usage
+            failed_usage = exc.usage
+            error_code = exc.error_code
+        usage += failed_usage
+        await safe_emit(
+            sink,
+            "synthesis_failed",
+            error_code=error_code,
+            duration_ms=_elapsed_ms(synthesis_started),
+            input_tokens=failed_usage.input_tokens,
+            output_tokens=failed_usage.output_tokens,
+        )
 
     _finish_run(
         run_id=run_id,
@@ -149,9 +211,13 @@ async def _process_run(
         synthesis=synthesis,
         usage=usage,
         started=started,
-        persist_counts=True,
     )
+    await safe_emit(sink, "run_completed")
     return result
+
+
+def _elapsed_ms(started: float) -> int:
+    return int((time.monotonic() - started) * 1000)
 
 
 def _finish_run(
@@ -162,7 +228,6 @@ def _finish_run(
     synthesis: SynthesisResult | None,
     usage: TokenUsage,
     started: float,
-    persist_counts: bool,
 ) -> None:
     fields: dict[str, Any] = {
         "status": status,
@@ -170,15 +235,12 @@ def _finish_run(
         "completed_at": datetime.now(UTC),
         "input_tokens": usage.input_tokens,
         "output_tokens": usage.output_tokens,
+        "support_count": sum(1 for r in result.responses if r.stance == "support"),
+        "reject_count": sum(1 for r in result.responses if r.stance == "reject"),
+        "conditional_count": sum(
+            1 for r in result.responses if r.stance == "conditional"
+        ),
     }
-    if persist_counts:
-        fields.update(
-            support_count=sum(1 for r in result.responses if r.stance == "support"),
-            reject_count=sum(1 for r in result.responses if r.stance == "reject"),
-            conditional_count=sum(
-                1 for r in result.responses if r.stance == "conditional"
-            ),
-        )
     if synthesis is not None:
         fields.update(
             synthesis_summary=synthesis.summary,
@@ -322,7 +384,7 @@ def _format_persona_count_header_display(
     *, completed: int, total: int, final_status: str
 ) -> str:
     if final_status == "partial":
-        return f"{completed}/{total} persona valaszolt"
+        return f"{completed}/{total} persona válaszolt"
     return _format_persona_count_label(completed=completed, total=total)
 
 

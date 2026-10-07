@@ -82,9 +82,13 @@ Egyetlen `backend/schema.sql`, amit a backend induláskor futtat (`create table 
 | `persona_started` | a persona bejut az 5-ös keretbe | `persona_index`, `persona_name` |
 | `persona_retry` | egy kísérlet elbukott, újrapróbál | + `attempt`, `error_code` |
 | `persona_completed` | érvényes válasz jött | + `attempt`, `duration_ms`, tokenek |
-| `persona_failed` | kiesett | + `attempt`, `error_code`, `duration_ms` |
+| `persona_failed` | kiesett | + `attempt`, `error_code`, `duration_ms`, tokenek (lehet 0) |
 | `synthesis_started`, `synthesis_completed` | a szintézis hívása | `duration_ms`, tokenek |
-| `run_completed`, `run_failed` | vége | – |
+| `synthesis_failed` | a szintézis elbukott, a futás `partial` lesz | `error_code`, `duration_ms`, tokenek |
+| `run_completed` | vége, `completed` vagy `partial` | – |
+| `run_failed` | vége, `failed` | `error_code` |
+
+- A persona-leírások száma pontosan 18: ha a modell többet ad, a felesleget levágjuk, ha kevesebbet, a persona-generálás elbukik (`PERSONA_GENERATION_FAILED`).
 
 - „Sorban áll” állapotra nincs esemény: a `personas_generated` után minden persona sorban áll, amíg nem jön róla `persona_started`. A kliens számolja.
 - Hibáról csak `error_code` megy ki, a szolgáltató nyers üzenete nem.

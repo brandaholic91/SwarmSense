@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
+import psycopg
 import pytest
 
 from app import db
@@ -60,9 +61,32 @@ def test_update_run_rejects_unknown_column(clean_db):
 
 def test_update_run_rejects_invalid_status(clean_db):
     created = db.create_run(topic="Árazás", audience="KKV vezetők")
-    with pytest.raises(Exception):
+    with pytest.raises(psycopg.errors.CheckViolation):
         db.update_run(created["id"], status="nonsense")
     assert db.get_run(created["id"])["status"] == "queued"
+
+
+def test_insert_and_list_events_in_order(clean_db):
+    run = db.create_run(topic="t", audience="a")
+    first = db.insert_event(run["id"], "run_started")
+    second = db.insert_event(
+        run["id"], "persona_retry", persona_index=7, persona_name="Kovács Anna",
+        attempt=2, error_code="RATE_LIMITED",
+    )
+    events = db.list_events(run["id"])
+    assert [e["id"] for e in events] == [first, second]
+    assert events[1]["attempt"] == 2 and events[1]["persona_name"] == "Kovács Anna"
+    assert [e["id"] for e in db.list_events(run["id"], after=first)] == [second]
+
+
+def test_insert_event_rejects_unknown_field(clean_db):
+    run = db.create_run(topic="t", audience="a")
+    with pytest.raises(ValueError):
+        db.insert_event(run["id"], "run_started", error_message="nyers szöveg")
+
+
+def test_list_events_invalid_run_id_is_empty(clean_db):
+    assert db.list_events("nem-uuid") == []
 
 
 def test_apply_schema_is_idempotent(clean_db):

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from pydantic import ValidationError
-
 from app.models.persona import PersonaBlueprint
-from app.services.llm_client import LLMClient, TokenUsage
+from app.services.llm_client import LLMClient, LLMProviderError, TokenUsage
 
 BLUEPRINT_SYSTEM_PROMPT = (
     "Te egy tapasztalt kutatási szakértő vagy, aki szintetikus persona profilokat készít. "
@@ -14,6 +12,18 @@ BLUEPRINT_SYSTEM_PROMPT = (
 )
 
 BLUEPRINT_TEMPERATURE = 0.7
+
+
+class BlueprintGenerationError(Exception):
+    """A persona-leírások generálása elbukott.
+
+    Szándékosan nincs benne szolgáltatói vagy LLM-szöveg, és a kivétellánc sem
+    viszi tovább. A `usage` a hívás tokenje, ha a szolgáltató válaszolt.
+    """
+
+    def __init__(self, usage: TokenUsage | None = None) -> None:
+        super().__init__("persona blueprint generation failed")
+        self.usage = usage or TokenUsage()
 
 
 def build_blueprint_user_prompt(*, topic: str, audience: str, count: int) -> str:
@@ -51,24 +61,24 @@ async def generate_persona_blueprints(
     llm_client: LLMClient,
 ) -> tuple[list[PersonaBlueprint], TokenUsage]:
     prompt = build_blueprint_user_prompt(topic=topic, audience=audience, count=count)
-    raw, usage = await llm_client.generate_json(
-        system_prompt=BLUEPRINT_SYSTEM_PROMPT,
-        user_prompt=prompt,
-        temperature=BLUEPRINT_TEMPERATURE,
-    )
+    try:
+        raw, usage = await llm_client.generate_json(
+            system_prompt=BLUEPRINT_SYSTEM_PROMPT,
+            user_prompt=prompt,
+            temperature=BLUEPRINT_TEMPERATURE,
+        )
+    except LLMProviderError as exc:
+        raise BlueprintGenerationError(usage=exc.usage) from None
 
     personas_raw = raw.get("personas")
-    if not isinstance(personas_raw, list):
-        raise ValueError(
-            "A blueprint generátor nem adott vissza érvényes 'personas' listát."
-        )
-    if len(personas_raw) == 0:
-        raise ValueError("A blueprint generátor üres persona listát adott vissza.")
+    # a modell néha többet ad a kértnél: a felesleget levágjuk, a hiányt nem pótoljuk
+    if not isinstance(personas_raw, list) or len(personas_raw) < count:
+        raise BlueprintGenerationError()
 
     try:
-        blueprints = [PersonaBlueprint.model_validate(item) for item in personas_raw]
-    except ValidationError as exc:
-        raise ValueError(
-            "A generált persona blueprint nem felel meg az elvárásoknak."
-        ) from exc
+        blueprints = [
+            PersonaBlueprint.model_validate(item) for item in personas_raw[:count]
+        ]
+    except ValueError:  # a pydantic ValidationError is ValueError
+        raise BlueprintGenerationError() from None
     return blueprints, usage

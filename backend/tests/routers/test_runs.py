@@ -11,7 +11,7 @@ from app.core import pricing
 from app.core.config import get_settings
 from app.core.errors import ErrorCode
 from app.routers import runs as runs_router
-from app.services import limits
+from app.services import limits, pdf_service
 
 HEADERS = {"X-Internal-Secret": "test-internal-secret"}
 
@@ -367,3 +367,95 @@ def test_status_and_root_are_open(client):
     no_secret = {"X-Internal-Secret": ""}
     assert client.get("/", headers=no_secret).status_code == 200
     assert client.get("/api/v1/status", headers=no_secret).status_code == 200
+
+
+def _run_with_status(status: str) -> str:
+    row = db.create_run(topic="Árazás", audience="KKV vezetők")
+    db.update_run(
+        row["id"],
+        status=status,
+        result={"personas": [], "synthesis": None, "failed_personas": []},
+    )
+    return row["id"]
+
+
+@pytest.fixture
+def generated(monkeypatch) -> list[str]:
+    calls: list[str] = []
+
+    async def fake_generate(run: dict) -> bytes:
+        calls.append(run["id"])
+        return b"%PDF-generated"
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", fake_generate)
+    return calls
+
+
+def test_pdf_returns_stored_pdf_with_headers(client, generated):
+    run_id = _run_with_status("completed")
+    db.save_pdf(run_id, b"%PDF-stored\x00\xff")
+    r = client.get(f"/api/v1/runs/{run_id}/pdf")
+    assert r.status_code == 200
+    assert r.content == b"%PDF-stored\x00\xff"
+    assert r.headers["content-type"] == "application/pdf"
+    assert (
+        r.headers["content-disposition"]
+        == f'attachment; filename="swarmsense-{run_id[:8]}.pdf"'
+    )
+    assert generated == []
+
+
+def test_pdf_is_generated_once_when_missing(client, generated):
+    run_id = _run_with_status("partial")
+    first = client.get(f"/api/v1/runs/{run_id}/pdf")
+    second = client.get(f"/api/v1/runs/{run_id}/pdf")
+    assert first.status_code == second.status_code == 200
+    assert first.content == second.content == b"%PDF-generated"
+    assert generated == [run_id]
+    assert db.get_pdf(run_id) == b"%PDF-generated"
+
+
+def test_pdf_generation_failure_is_503(client, monkeypatch):
+    async def broken(run: dict) -> bytes:
+        raise RuntimeError("NYERS-titok")
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", broken)
+    run_id = _run_with_status("completed")
+    r = client.get(f"/api/v1/runs/{run_id}/pdf")
+    assert r.status_code == 503
+    assert r.json()["code"] == "PDF_UNAVAILABLE"
+    assert "NYERS" not in r.text
+    assert db.get_pdf(run_id) is None
+
+
+@pytest.mark.parametrize("status", ["queued", "running", "composing", "failed"])
+def test_pdf_of_unfinished_or_failed_run_is_409(client, generated, status):
+    run_id = _run_with_status(status)
+    r = client.get(f"/api/v1/runs/{run_id}/pdf")
+    assert r.status_code == 409
+    assert r.json()["code"] == "RUN_NOT_FINISHED"
+    assert generated == []
+
+
+def test_pdf_unknown_run_is_404(client, generated):
+    r = client.get(f"/api/v1/runs/{uuid.uuid4()}/pdf")
+    assert r.status_code == 404
+    assert r.json()["code"] == "RUN_NOT_FOUND"
+
+
+def test_pdf_requires_secret(client, generated):
+    run_id = _run_with_status("completed")
+    r = client.get(f"/api/v1/runs/{run_id}/pdf", headers={"X-Internal-Secret": ""})
+    assert r.status_code == 401
+    assert generated == []
+
+
+def test_pdf_db_failure_is_503_service_unavailable(client, monkeypatch):
+    def boom(_):
+        raise RuntimeError("postgres://user:titok@host")
+
+    monkeypatch.setattr(db, "get_run", boom)
+    r = client.get(f"/api/v1/runs/{uuid.uuid4()}/pdf")
+    assert r.status_code == 503
+    assert r.json()["code"] == "SERVICE_UNAVAILABLE"
+    assert "titok" not in r.text

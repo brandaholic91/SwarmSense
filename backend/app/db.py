@@ -132,6 +132,23 @@ def update_run(run_id: str, **fields: Any) -> None:
         conn.execute(query, [*values, uuid.UUID(run_id)])
 
 
+def save_pdf(run_id: str, pdf: bytes) -> None:
+    with connect() as conn:
+        conn.execute("update runs set pdf = %s where id = %s", (pdf, uuid.UUID(run_id)))
+
+
+def get_pdf(run_id: str) -> bytes | None:
+    try:
+        parsed = uuid.UUID(run_id)
+    except (ValueError, AttributeError, TypeError):
+        return None
+    with connect() as conn:
+        row = conn.execute("select pdf from runs where id = %s", (parsed,)).fetchone()
+    if row is None or row["pdf"] is None:
+        return None
+    return bytes(row["pdf"])
+
+
 def insert_event(run_id: str, type: str, **fields: Any) -> int:
     unknown = set(fields) - EVENT_COLUMNS
     if unknown:

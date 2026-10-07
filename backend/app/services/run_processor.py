@@ -11,6 +11,7 @@ from app.models.persona import SynthesisResult
 from app.services.blueprint_generator import BlueprintGenerationError
 from app.services.events import EventSink, safe_emit
 from app.services.llm_client import LLMClient, LLMProviderError, TokenUsage
+from app.services import pdf_service
 from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 from app.services.synthesis_service import execute_synthesis
 
@@ -214,7 +215,8 @@ async def _process_run(
         topic=topic,
         audience=audience,
     )
-    # ide kerül a PDF-készítés (a státusz addig `composing`)
+    # eredmény mentve → PDF → végső státusz → run_completed (a státusz addig `composing`)
+    await _store_pdf(run_id)
     _complete_run(
         run_id=run_id,
         status=final_status,
@@ -268,6 +270,18 @@ def _store_result(
             synthesis_strategic_recommendation=synthesis.strategic_recommendation,
         )
     db.update_run(run_id, **fields)
+
+
+async def _store_pdf(run_id: str) -> None:
+    """PDF-készítés és mentés. A hibája nem buktatja a futást: a letöltő végpont
+    első kérésre újrapróbálja. Naplóba csak a kivétel típusa kerül."""
+    try:
+        run = db.get_run(run_id)
+        if run is None:
+            return
+        db.save_pdf(run_id, await pdf_service.generate_pdf(run))
+    except Exception as exc:
+        logger.error("run %s pdf failed: %s", run_id, _describe(exc))
 
 
 def _complete_run(

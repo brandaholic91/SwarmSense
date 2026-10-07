@@ -81,6 +81,7 @@ docker compose -f docker-compose.dev.yml up -d
 # Backend (backend/ mappából, Python 3.12)
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+python -m playwright install chromium
 pytest tests -q
 pytest tests/services/test_persona_engine.py -q           # egy tesztfájl
 pytest tests/services/test_persona_engine.py -k "név" -q  # egy teszt

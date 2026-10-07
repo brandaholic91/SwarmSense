@@ -63,3 +63,4 @@ Ha építés közben valami másképp alakul, mint a specben, ide kerül egy sor
 
 - A kérdés szövege egyszer megjelent a Next fejlesztői szerver naplójában a Server Action nyomvonalán (fejlesztői mód; éles buildnél nincs ellenőrizve).
 - A böngésző fülében a polling megállt, amíg a fül a háttérben volt (az ok nincs megerősítve; a B terv lecseréli a pollingot).
+- A PDF mérete: 40 977 bájt (kb. 40 KB), 8 oldal, 17 persona + szintézis. Ez a tesztek `make_run` adatával készült, rövid mesterséges szövegekkel, nem valódi futásból; valódi (hosszabb) personaszövegekkel nagyobb lesz. A betűtípus (IBM Plex Sans, két TTF) a PDF-be részhalmazként ágyazódik, a `runs.pdf` mérete így nem a fontfájlokkal nő. Valódi futás PDF-je nincs lemérve.

@@ -13,6 +13,8 @@ class ErrorCode(str, Enum):
     IP_LIMIT_REACHED = "IP_LIMIT_REACHED"
     DAILY_LIMIT_REACHED = "DAILY_LIMIT_REACHED"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
+    RUN_NOT_FINISHED = "RUN_NOT_FINISHED"
+    PDF_UNAVAILABLE = "PDF_UNAVAILABLE"
 
 
 def error_response(status_code: int, detail: str, code: ErrorCode) -> JSONResponse:

@@ -14,7 +14,7 @@ from app.models.persona import (
     PersonaRunResult,
     SynthesisResult,
 )
-from app.services import run_processor
+from app.services import pdf_service, run_processor
 from app.services.blueprint_generator import BLUEPRINT_SYSTEM_PROMPT
 from app.services.llm_client import (
     LLMClient,
@@ -138,6 +138,16 @@ def make_fake_llm(
         return None
 
     return LLMClient(session_id="test-session", transport=transport, sleep=no_sleep)
+
+
+@pytest.fixture(autouse=True)
+def fake_pdf(monkeypatch):
+    """A futás-tesztekben ne induljon Chromium."""
+
+    async def fake_generate(run: dict[str, Any]) -> bytes:
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", fake_generate)
 
 
 def _run(clean_db, **fake_kwargs):
@@ -547,3 +557,70 @@ def test_result_payload_no_consensus_when_all_conditional() -> None:
     assert payload["consensus_flag"]["direction"] is None
     assert payload["consensus_flag"]["count"] is None
     assert payload["consensus_flag_display"] is None
+
+
+def test_completed_run_stores_pdf(clean_db):
+    run = _run(clean_db)
+    assert run["status"] == "completed"
+    assert db.get_pdf(run["id"]) == b"%PDF-fake"
+
+
+def test_pdf_is_generated_between_result_and_final_status(clean_db, monkeypatch):
+    seen: dict[str, Any] = {}
+
+    async def spying_generate(run: dict[str, Any]) -> bytes:
+        current = db.get_run(run["id"])
+        seen["status_at_generate"] = current["status"]
+        seen["result_stored"] = current["result"] is not None
+        seen["events"] = _types(run["id"])
+        return b"%PDF-fake"
+
+    real_save = db.save_pdf
+
+    def spying_save(run_id: str, pdf: bytes) -> None:
+        seen["status_at_save"] = db.get_run(run_id)["status"]
+        seen["events_at_save"] = _types(run_id)
+        real_save(run_id, pdf)
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", spying_generate)
+    monkeypatch.setattr(db, "save_pdf", spying_save)
+
+    run = _run(clean_db)
+
+    assert seen["status_at_generate"] == "composing"
+    assert seen["result_stored"] is True
+    assert "run_completed" not in seen["events"]
+    assert seen["status_at_save"] == "composing"
+    assert "run_completed" not in seen["events_at_save"]
+    assert run["status"] == "completed"
+    assert _types(run["id"])[-1] == "run_completed"
+
+
+def test_pdf_failure_keeps_run_completed(clean_db, monkeypatch, caplog):
+    async def broken_generate(run: dict[str, Any]) -> bytes:
+        raise RuntimeError("NYERS")
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", broken_generate)
+    with caplog.at_level("DEBUG"):
+        run = _run(clean_db)
+    assert run["status"] == "completed"
+    assert run["completed_at"] is not None
+    assert db.get_pdf(run["id"]) is None
+    assert _types(run["id"])[-1] == "run_completed"
+    assert "RuntimeError" in caplog.text
+    assert "NYERS" not in caplog.text
+
+
+def test_failed_run_generates_no_pdf(clean_db, monkeypatch):
+    calls: list[str] = []
+
+    async def counting_generate(run: dict[str, Any]) -> bytes:
+        calls.append(run["id"])
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", counting_generate)
+    failing = frozenset(f"Persona {i}" for i in range(1, 8))
+    run = _run(clean_db, failing_personas=failing)
+    assert run["status"] == "failed"
+    assert calls == []
+    assert db.get_pdf(run["id"]) is None

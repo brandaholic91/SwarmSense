@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<title>SwarmSense jelentés</title>
+<style>
+  @font-face {
+    font-family: "Plex";
+    font-weight: 400;
+    src: url("{{ font_regular_url }}") format("truetype");
+  }
+  @font-face {
+    font-family: "Plex";
+    font-weight: 700;
+    src: url("{{ font_bold_url }}") format("truetype");
+  }
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Plex", sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: #1d2433;
+    margin: 0;
+  }
+  h1, h2, h3 { line-height: 1.2; margin: 0; break-after: avoid; }
+  h1 { font-size: 26pt; }
+  h2 {
+    font-size: 15pt;
+    margin: 0 0 10pt;
+    padding-bottom: 4pt;
+    border-bottom: 1.5pt solid #2b4c7e;
+    color: #2b4c7e;
+  }
+  h3 { font-size: 11.5pt; margin-bottom: 4pt; }
+  p { margin: 0 0 6pt; }
+  ul { margin: 0 0 6pt; padding-left: 16pt; }
+  section { margin-bottom: 22pt; }
+  .cover {
+    min-height: 240mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    break-after: page;
+  }
+  .badge {
+    display: inline-block;
+    align-self: flex-start;
+    background: #2b4c7e;
+    color: #fff;
+    font-weight: 700;
+    font-size: 9pt;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3pt 9pt;
+    border-radius: 3pt;
+    margin-bottom: 18pt;
+  }
+  .cover .meta { margin-top: 18pt; font-size: 12pt; color: #4a5568; }
+  .cover .meta strong { color: #1d2433; }
+  .note { color: #4a5568; font-size: 9.5pt; }
+  .persona {
+    border: 0.75pt solid #cbd5e0;
+    border-radius: 4pt;
+    padding: 9pt 11pt;
+    margin-bottom: 9pt;
+    break-inside: avoid;
+    background: #f7f9fc;
+  }
+  .persona .role { color: #4a5568; font-size: 9.5pt; margin-bottom: 4pt; }
+  .stance { font-weight: 700; color: #2b4c7e; }
+  .stance-reject { color: #9b2c2c; }
+  .stance-conditional { color: #8a5a00; }
+  dl { margin: 0; }
+  dt { font-weight: 700; font-size: 9pt; color: #4a5568; margin-top: 4pt; }
+  dd { margin: 0; }
+  .traits { margin-top: 6pt; font-size: 9pt; color: #4a5568; }
+  table { border-collapse: collapse; width: 100%; break-inside: avoid; }
+  td { padding: 4pt 0; border-bottom: 0.5pt solid #e2e8f0; }
+  td:last-child { text-align: right; font-weight: 700; }
+  .block { break-inside: avoid; margin-bottom: 8pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <span class="badge">Szintetikus elemzés</span>
+  <h1>{{ topic }}</h1>
+  <div class="meta">
+    <p><strong>Célközönség:</strong> {{ audience }}</p>
+    {% if date %}<p><strong>Dátum:</strong> {{ date }}</p>{% endif %}
+    <p class="note">Az elemzést szintetikus, AI által előállított personák adták; nem valódi megkérdezés eredménye.</p>
+  </div>
+</div>
+
+<section>
+  <h2>Konszenzus és top érvek</h2>
+  {% if aggregate_display %}<p>{{ aggregate_display }}</p>{% endif %}
+  <p>
+    {% if consensus_display %}<strong>Konszenzus:</strong> {{ consensus_display }}.
+    {% else %}Nincs egyértelmű konszenzus.{% endif %}
+  </p>
+  {% if top_arguments %}
+  <h3>Leggyakoribb érvek</h3>
+  <ul>
+    {% for argument in top_arguments %}<li>{{ argument }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Szintézis</h2>
+  {% if synthesis %}
+    <div class="block"><h3>Összefoglaló</h3><p>{{ synthesis.summary }}</p></div>
+    <div class="block"><h3>Fő akadályok</h3>
+      <ul>{% for barrier in synthesis.main_barriers %}<li>{{ barrier }}</li>{% endfor %}</ul>
+    </div>
+    <div class="block"><h3>Nyerő feltételek</h3><p>{{ synthesis.winning_conditions }}</p></div>
+    <div class="block"><h3>Legjobb célszegmens</h3><p>{{ synthesis.best_target_segment }}</p></div>
+    <div class="block"><h3>Stratégiai ajánlás</h3><p>{{ synthesis.strategic_recommendation }}</p></div>
+  {% else %}
+    <p>A szintézis nem készült el.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Personák</h2>
+  {% for persona in personas %}
+  <div class="persona">
+    <h3>{{ persona.name }}</h3>
+    <div class="role">{{ persona.role }} · <span class="stance stance-{{ persona.stance }}">{{ persona.stance_label }}</span></div>
+    <dl>
+      <dt>Fő érv</dt><dd>{{ persona.primary_argument }}</dd>
+      <dt>Mi változtatná meg a véleményét</dt><dd>{{ persona.change_condition }}</dd>
+      <dt>Fő aggodalom</dt><dd>{{ persona.core_concern }}</dd>
+      <dt>Vásárlási kiváltó ok</dt><dd>{{ persona.buying_trigger }}</dd>
+    </dl>
+    <div class="traits">
+      Kockázatvállalás: {{ persona.risk_appetite }} ·
+      Döntési stílus: {{ persona.decision_style }} ·
+      Szervezeti szerep: {{ persona.organizational_role }} ·
+      Árérzékenység: {{ persona.price_sensitivity }} ·
+      Technológia-adaptáció: {{ persona.technology_adoption_curve }}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section>
+  <h2>Hogyan futott</h2>
+  <table>
+    {% if duration %}<tr><td>Futásidő</td><td>{{ duration }}</td></tr>{% endif %}
+    <tr><td>Bemeneti token</td><td>{{ input_tokens }}</td></tr>
+    <tr><td>Kimeneti token</td><td>{{ output_tokens }}</td></tr>
+    <tr><td>Becsült költség (becslés, listaár alapján)</td><td>{{ cost }}</td></tr>
+    <tr><td>Válaszoló personák</td><td>{{ persona_label }} persona</td></tr>
+  </table>
+  {% if failed_personas %}
+  <h3 style="margin-top: 10pt;">Kiesett personák</h3>
+  <ul>
+    {% for failed in failed_personas %}<li>{{ failed.name }} ({{ failed.error_code }})</li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Módszertan és korlátok</h2>
+  <p>A jelentés 18 szintetikus persona válaszát és ezek szintézisét tartalmazza; a personákat nyelvi modell állítja elő a megadott kérdés és célközönség alapján.</p>
+  <p><strong>Mire nem jó:</strong> {{ limits_text }}</p>
+</section>
+
+</body>
+</html>

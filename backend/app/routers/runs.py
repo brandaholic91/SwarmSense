@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Header, Query
+from fastapi import APIRouter, BackgroundTasks, Header, Query, Response
 from fastapi.responses import JSONResponse
 
 from app import db
@@ -16,7 +16,7 @@ from app.models.run import (
     RunEvent,
     RunEventsResponse,
 )
-from app.services import limits
+from app.services import limits, pdf_service
 from app.services.run_processor import dispatch_run_processing
 
 router = APIRouter(prefix="/api/v1/runs", tags=["runs"])
@@ -100,6 +100,50 @@ def get_run_detail(run_id: str) -> RunDetailResponse | JSONResponse:
         retry_count=retry_count,
         price=PriceInfo(**pricing.price_payload()),
         result=run["result"] if has_result else None,
+    )
+
+
+@router.get("/{run_id}/pdf", response_model=None)
+async def get_run_pdf(run_id: str) -> Response | JSONResponse:
+    try:
+        run = db.get_run(run_id)
+        pdf = db.get_pdf(run_id) if run is not None else None
+    except Exception as exc:
+        # csak a kivétel típusa kerül a naplóba: a szöveg titkot (pl. DSN) hordozhat
+        logger.error("run pdf lookup failed: %s", type(exc).__name__)
+        return error_response(
+            status_code=503,
+            detail="Service unavailable",
+            code=ErrorCode.SERVICE_UNAVAILABLE,
+        )
+    if run is None:
+        return error_response(
+            status_code=404, detail="Run not found", code=ErrorCode.RUN_NOT_FOUND
+        )
+    if run["status"] not in ("completed", "partial"):
+        return error_response(
+            status_code=409,
+            detail="Run has no result",
+            code=ErrorCode.RUN_NOT_FINISHED,
+        )
+    if pdf is None:
+        # a futás közben nem sikerült PDF-et első kérésre újrapróbáljuk
+        try:
+            pdf = await pdf_service.generate_pdf(run)
+            db.save_pdf(run_id, pdf)
+        except Exception as exc:
+            logger.error("run %s pdf failed: %s", run_id, type(exc).__name__)
+            return error_response(
+                status_code=503,
+                detail="PDF unavailable",
+                code=ErrorCode.PDF_UNAVAILABLE,
+            )
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="swarmsense-{run_id[:8]}.pdf"'
+        },
     )
 
 

@@ -11,7 +11,7 @@ from app.models.persona import SynthesisResult
 from app.services.blueprint_generator import BlueprintGenerationError
 from app.services.events import EventSink, safe_emit
 from app.services.llm_client import LLMClient, LLMProviderError, TokenUsage
-from app.services import pdf_service
+from app.services import notifier, pdf_service
 from app.services.persona_engine import PersonaRunResult, execute_persona_engine
 from app.services.synthesis_service import execute_synthesis
 
@@ -101,6 +101,7 @@ async def _fail_run(
             "run %s could not be marked failed: %s", run_id, _describe(update_exc)
         )
     await safe_emit(sink, "run_failed", error_code=error_code)
+    await asyncio.to_thread(notifier.notify_run_failed, run_id, error_code)
     _log_summary(
         run_id=run_id, status="failed", started=started, usage=usage, dropped=dropped
     )
@@ -217,14 +218,15 @@ async def _process_run(
     )
     # eredmény mentve → PDF → végső státusz → run_completed (a státusz addig `composing`)
     await _store_pdf(run_id)
-    _complete_run(
+    completed = _complete_run(
         run_id=run_id,
         status=final_status,
         result=result,
         usage=usage,
         started=started,
     )
-    await safe_emit(sink, "run_completed")
+    if completed:
+        await safe_emit(sink, "run_completed")
     return result
 
 
@@ -294,9 +296,12 @@ def _complete_run(
     result: PersonaRunResult,
     usage: TokenUsage,
     started: float,
-) -> None:
-    """2. lépés: végső státusz és `completed_at`, napló."""
-    db.update_run(run_id, status=status, completed_at=datetime.now(UTC))
+) -> bool:
+    """2. lépés: végső státusz és `completed_at`, napló. Hamis, ha a futást közben
+    lezárták (pl. a takarító): ilyenkor nem írunk és nincs `run_completed`."""
+    if not db.finalize_run(run_id, status=status, completed_at=datetime.now(UTC)):
+        logger.warning("run %s was closed meanwhile, not marked %s", run_id, status)
+        return False
     _log_summary(
         run_id=run_id,
         status=status,
@@ -304,6 +309,7 @@ def _complete_run(
         usage=usage,
         dropped=len(result.failures),
     )
+    return True
 
 
 def _resolve_final_status(

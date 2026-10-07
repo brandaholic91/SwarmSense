@@ -22,11 +22,21 @@ from app.models.run import (
     RunEvent,
     RunEventsResponse,
 )
-from app.services import email_service, limits, pdf_service
+from app.services import email_service, limits, notifier, pdf_service
 from app.services.run_processor import dispatch_run_processing
 
 router = APIRouter(prefix="/api/v1/runs", tags=["runs"])
 logger = logging.getLogger("swarmsense.run")
+
+
+def _daily_limit_just_reached() -> bool:
+    """Igaz, ha a most létrehozott futás töltötte be a napi keretet (így a
+    betelés egyszer jelez). Az értesítés hibája nem akadályozhatja a futást."""
+    try:
+        return db.count_runs_since() == get_settings().runs_per_day
+    except Exception as exc:
+        logger.error("daily limit check failed: %s", type(exc).__name__)
+        return False
 
 
 @router.post("", response_model=RunCreateResponse)
@@ -55,6 +65,8 @@ def create_run(
             status_code=429, detail="Run limit reached", code=limit_code
         )
 
+    if _daily_limit_just_reached():
+        background_tasks.add_task(notifier.notify_daily_limit_reached)
     background_tasks.add_task(
         dispatch_run_processing,
         run_id=row["id"],

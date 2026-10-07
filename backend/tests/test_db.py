@@ -165,3 +165,21 @@ def test_email_requests_are_counted_per_run_and_window(clean_db):
             "select sent_at from email_requests where id = %s", (request_id,)
         ).fetchone()["sent_at"]
     assert sent is not None
+
+
+def test_finalize_run_writes_only_while_the_run_is_open(clean_db):
+    open_run = db.create_run(topic="a", audience="b")
+    db.update_run(open_run["id"], status="composing")
+    assert db.finalize_run(open_run["id"], status="completed") is True
+    assert db.get_run(open_run["id"])["status"] == "completed"
+
+    failed = db.create_run(topic="a", audience="b")
+    db.update_run(failed["id"], status="failed")
+    assert db.finalize_run(failed["id"], status="completed") is False
+    assert db.get_run(failed["id"])["status"] == "failed"
+
+
+def test_finalize_run_rejects_unknown_columns(clean_db):
+    run = db.create_run(topic="a", audience="b")
+    with pytest.raises(ValueError):
+        db.finalize_run(run["id"], nincs_ilyen=1)

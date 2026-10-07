@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     public_base_url: AnyHttpUrl = Field(default="http://localhost:3000")
     emails_per_run: int = Field(default=3)
     emails_per_day: int = Field(default=30)
+    discord_webhook_url: str = Field(default="")
 
     @property
     def is_production(self) -> bool:

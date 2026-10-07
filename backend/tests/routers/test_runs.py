@@ -663,3 +663,24 @@ def test_run_detail_reports_emails_remaining(client, mails):
     _request_email(client, run_id)
     _request_email(client, run_id)
     assert client.get(f"/api/v1/runs/{run_id}").json()["emails_remaining"] == 1
+
+
+def test_daily_limit_notification_fires_once_when_the_limit_is_reached(
+    clean_db, dispatched, monkeypatch
+):
+    from app.main import create_app
+
+    monkeypatch.setenv("SWARMSENSE_RUNS_PER_DAY", "2")
+    get_settings.cache_clear()
+    notices: list[int] = []
+    monkeypatch.setattr(
+        runs_router.notifier, "notify_daily_limit_reached", lambda: notices.append(1)
+    )
+    body = {"topic": "a", "audience": "b"}
+    with TestClient(create_app(), headers=HEADERS) as client:
+        assert client.post("/api/v1/runs", json=body).status_code == 200
+        assert notices == []
+        assert client.post("/api/v1/runs", json=body).status_code == 200
+        assert notices == [1]
+        assert client.post("/api/v1/runs", json=body).status_code == 429
+        assert notices == [1]

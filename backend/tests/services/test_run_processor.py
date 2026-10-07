@@ -637,3 +637,51 @@ def test_in_run_pdf_html_contains_run_duration(clean_db, monkeypatch):
     monkeypatch.setattr(pdf_service, "generate_pdf", rendering_generate)
     _run(clean_db)
     assert re.search(r"Futásidő</td><td>\d+ mp</td>", rendered["html"])
+
+
+@pytest.fixture
+def failure_notices(monkeypatch) -> list[tuple[str, str]]:
+    from app.services import notifier
+
+    calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        notifier, "notify_run_failed", lambda run_id, code: calls.append((run_id, code))
+    )
+    return calls
+
+
+def test_too_few_personas_sends_one_notification(clean_db, failure_notices):
+    failing = frozenset(f"Persona {i}" for i in range(1, 8))
+    run = _run(clean_db, failing_personas=failing)
+    assert failure_notices == [(run["id"], "TOO_FEW_PERSONAS")]
+
+
+def test_blueprint_failure_sends_one_notification(clean_db, failure_notices):
+    run = _run(clean_db, blueprint_fails=True)
+    assert failure_notices == [(run["id"], "PERSONA_GENERATION_FAILED")]
+
+
+def test_unexpected_error_sends_one_notification(
+    clean_db, monkeypatch, failure_notices
+):
+    async def broken_engine(**_: Any):
+        raise RuntimeError("váratlan")
+
+    monkeypatch.setattr(run_processor, "execute_persona_engine", broken_engine)
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    with pytest.raises(RuntimeError):
+        asyncio.run(
+            process_run(
+                run_id=row["id"],
+                topic=TOPIC,
+                audience=AUDIENCE,
+                llm_client=make_fake_llm(),
+            )
+        )
+    assert failure_notices == [(row["id"], "INTERNAL_ERROR")]
+
+
+def test_successful_runs_send_no_notification(clean_db, failure_notices):
+    _run(clean_db)
+    _run(clean_db, synthesis_fails=True)
+    assert failure_notices == []

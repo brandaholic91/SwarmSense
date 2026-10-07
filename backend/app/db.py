@@ -116,20 +116,60 @@ def get_run(run_id: str) -> dict[str, Any] | None:
     return row
 
 
-def update_run(run_id: str, **fields: Any) -> None:
+def _run_assignments(fields: dict[str, Any]) -> tuple[sql.Composed, list[Any]]:
     unknown = set(fields) - UPDATABLE_RUN_COLUMNS
     if unknown:
         raise ValueError(f"ismeretlen oszlop: {', '.join(sorted(unknown))}")
-    if not fields:
-        return
     assignments = sql.SQL(", ").join(
         sql.SQL("{} = %s").format(sql.Identifier(name)) for name in fields
     )
-    query = sql.SQL("update runs set {} where id = %s").format(assignments)
     values = [Jsonb(v) if name == "result" and v is not None else v
               for name, v in fields.items()]
+    return assignments, values
+
+
+def update_run(run_id: str, **fields: Any) -> None:
+    assignments, values = _run_assignments(fields)
+    if not fields:
+        return
+    query = sql.SQL("update runs set {} where id = %s").format(assignments)
     with connect() as conn:
         conn.execute(query, [*values, uuid.UUID(run_id)])
+
+
+def finalize_run(run_id: str, **fields: Any) -> bool:
+    """Mint az `update_run`, de csak `running` vagy `composing` sorra ír (egy
+    közben lezárt futást nem éleszt újra). Igaz, ha írt."""
+    assignments, values = _run_assignments(fields)
+    if not fields:
+        return False
+    query = sql.SQL(
+        "update runs set {} where id = %s and status in ('running', 'composing')"
+    ).format(assignments)
+    with connect() as conn:
+        return conn.execute(query, [*values, uuid.UUID(run_id)]).rowcount > 0
+
+
+def delete_old_email_requests(*, days: int = 14) -> int:
+    with connect() as conn:
+        return conn.execute(
+            "delete from email_requests "
+            "where created_at < now() - make_interval(days => %s)",
+            (days,),
+        ).rowcount
+
+
+def fail_stuck_runs(*, minutes: int = 10) -> list[str]:
+    """A régóta nem záruló futásokat `failed`-re állítja; az azonosítóikat adja."""
+    with connect() as conn:
+        rows = conn.execute(
+            "update runs set status = 'failed', completed_at = now() "
+            "where status in ('queued', 'running', 'composing') and not is_sample "
+            "and created_at < now() - make_interval(mins => %s) "
+            "returning id",
+            (minutes,),
+        ).fetchall()
+    return [str(row["id"]) for row in rows]
 
 
 def save_pdf(run_id: str, pdf: bytes) -> None:

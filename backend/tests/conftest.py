@@ -24,6 +24,7 @@ def settings_env(monkeypatch):
     monkeypatch.setenv("SWARMSENSE_IP_HASH_SECRET", "test-ip-secret")
     monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "test-resend-key")
     monkeypatch.setenv("SWARMSENSE_EMAIL_FROM", "demo@example.test")
+    monkeypatch.delenv("SWARMSENSE_DISCORD_WEBHOOK_URL", raising=False)
     yield
     get_settings.cache_clear()
 
@@ -62,3 +63,11 @@ def no_real_email(monkeypatch):
         raise AssertionError("valódi hálózati hívás tesztben")
 
     monkeypatch.setattr("app.services.email_service._post_resend", _blocked)
+
+
+@pytest.fixture(autouse=True)
+def no_real_discord(monkeypatch):
+    def _blocked(*args, **kwargs):
+        raise AssertionError("valódi hálózati hívás tesztben")
+
+    monkeypatch.setattr("app.services.notifier._post_discord", _blocked)

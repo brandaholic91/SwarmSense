@@ -1,6 +1,7 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -9,12 +10,19 @@ from app import db
 from app.core.config import get_settings
 from app.core.internal_auth import internal_auth_middleware
 from app.routers import runs, status
+from app.services import cleanup
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     db.apply_schema()
-    yield
+    cleanup_task = asyncio.create_task(cleanup.cleanup_loop())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await cleanup_task
 
 
 def _setup_logging() -> None:

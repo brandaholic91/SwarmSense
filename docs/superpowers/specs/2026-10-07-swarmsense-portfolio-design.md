@@ -237,19 +237,19 @@ Futás indítása előtt, ebben a sorrendben. Az értékek környezeti változó
 
 ## 14. Építési sorrend
 
-Az implementációs terv lépésenként készül; minden lépés végén működő állapot van.
+Nyolc lépés, három implementációs tervben. Egyszerre mindig csak a következő terv van megírva, mert a 0. lépés mérései a későbbi részleteket módosíthatják. Minden terv végén működő, megszakítható állapot van. A haladást a `TRACKING.md` követi.
 
-| # | Lépés |
-|---|---|
-| 0 | Kideríteni, hol fut most élesben; kimérő futás az opencode Go-n |
-| 1 | Törlés (backend, frontend, tesztek, Sentry) |
-| 2 | Postgres, `db.py`, LLM-kliens átállítása, tesztek valódi Postgresen |
-| 3 | Események, trace képernyő, keretek |
-| 4 | Eredmény tárolása, eredményoldal, PDF |
-| 5 | E-mail, takarító feladat, Discord, adatkezelési szöveg, módszertani oldal |
-| 6 | Mintafutás, visszajátszás, seed |
-| 7 | Deploy, régi lekapcsolása |
-| 8 | Publikálás |
+| Terv | # | Lépés |
+|---|---|---|
+| nincs terv (mérés) | 0 | Kideríteni, hol fut most élesben; kimérő futás az opencode Go-n |
+| **A: Új alap** | 1 | Törlés (backend, frontend, tesztek, Sentry) |
+| | 2 | Postgres, `db.py`, LLM-kliens átállítása, tesztek valódi Postgresen |
+| **B: A darab** | 3 | Események, trace képernyő, keretek |
+| | 4 | Eredmény tárolása, eredményoldal, PDF |
+| | 5 | E-mail, takarító feladat, Discord, adatkezelési szöveg, módszertani oldal |
+| | 6 | Mintafutás, visszajátszás, seed |
+| **C: Kiadás** | 7 | Deploy, régi lekapcsolása |
+| | 8 | Publikálás |
 
 ## 15. Amit a 0. lépés kimér
 

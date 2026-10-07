@@ -117,6 +117,7 @@ A kliens a legnagyobb kapott `id`-t küldi vissza `after`-ként.
 - Kötelező fejléc: `x-opencode-session: swarmsense-<run_id>` (enélkül 400).
 - Kötelező saját `User-Agent` fejléc is (pl. `swarmsense/<verzió>`): a Python alapértelmezett `User-Agent`-jét a szolgáltató előtti Cloudflare 403-mal (1010) elutasítja. Mérve 2026-10-07.
 - A modell gondolkodó modell: a válaszban `reasoning_content` is jön, és a kimeneti tokenek nagy része gondolkodás. A kliens csak a `content`-et dolgozza fel; a tokenszám a `usage` mezőből jön.
+- **Tokenszámlálás:** az a persona-hívás is beleszámít, amely válaszolt, de a válasza a séma szerint érvénytelen volt (a tokeneket a szolgáltató ettől még elszámolta). Az érvénytelen blueprint vagy szintézis válaszának tokenjei nem számítanak bele, mert az a hívás nem jut tovább.
 - A `config.py` `openrouter_*` mezőiből `llm_*` lesz, az osztályból `LLMClient`. A nem használt `kimi_api_key` törlődik.
 - **Költség:** a trace és az eredményoldal tokenszámot mutat, mellette a DeepSeek listaárából számolt becslést, becslésként jelölve. Az ár egy konstans a kódban.
 - **Ismert függés:** a demó Balázs napi munkaeszközének keretét használja. Ezt a globális napi futáskeret korlátozza (7. szakasz).
@@ -194,7 +195,7 @@ Futás indítása előtt, ebben a sorrendben. Az értékek környezeti változó
 
 - A backend hibakódot ad, a szövegek a `frontend/lib/messages.ts`-ben vannak.
 - **Sentry kikerül** (backend SDK, frontend config fájlok, `test_sentry.py`).
-- **Napló:** szabványos kimenet, futásonként egy összefoglaló sor (azonosító, státusz, idő, tokenek, kiesettek). E-mail-cím nem kerül a naplóba.
+- **Napló:** szabványos kimenet, futásonként egy összefoglaló sor (azonosító, státusz, idő, tokenek, kiesettek). E-mail-cím nem kerül a naplóba. Hibánál a napló csak a futás azonosítóját, a kivétel típusát és a hibakódot tartalmazza, kivételszöveget és tracebacket soha (egy láncolt validációs hiba kiírhatná az LLM kimenetét). A `swarmsense` logger az `app/main.py`-ban kap egy minimális beállítást (INFO szint, egy `StreamHandler` a standard hibakimenetre, ismételt híváskor nem duplázódik), különben az uvicorn alatt az INFO sorok elvesznének.
 - **Discord-értesítés** webhookon: ha egy futás `failed`, és ha betelt az összesített napi keret. Tartalma futásazonosító, hibakód, link; a kérdés szövege nem. Ha a webhook-változó üres, nincs értesítés; ha a Discord nem elérhető, a hiba a naplóba kerül.
 - **Elérhetőség:** az Uptime Kuma figyeli a `/api/v1/status` végpontot.
 - **Operator endpointok nincsenek.** Helyettük `docs/lekerdezesek.md` három SQL-lekérdezéssel (mai futások státusz szerint, napi tokenösszeg, leggyakoribb hibakódok).
@@ -226,6 +227,7 @@ Futás indítása előtt, ebben a sorrendben. Az értékek környezeti változó
 
 - Egy compose fájl három szolgáltatással (frontend, backend, Postgres kötettel) a Dokployon; Traefik-címet csak a frontend kap.
 - A backend image a hivatalos Playwright Python image-re épül.
+- A helyi fejlesztői `docker-compose.dev.yml` rögzített projektnevet kap (`swarmsense-dev`), hogy ne függjön a mappa nevétől és ne ütközzön más projektek konténereivel.
 - A CI marad, kiegészül a Postgres service containerrel és a Chromium telepítésével.
 - Adatbázis-mentés nincs; a mintafutást a seed fájl pótolja.
 - A régi deploy lekapcsolása a végén.

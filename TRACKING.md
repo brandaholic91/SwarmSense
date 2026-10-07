@@ -47,8 +47,13 @@ Ha építés közben valami másképp alakul, mint a specben, ide kerül egy sor
 |---|---|---|
 | 2026-10-07 | A spec 6. szakaszába bekerült a kötelező saját `User-Agent` fejléc és a `reasoning_content` | A 0. lépés mérése: az alapértelmezett Python `User-Agent`-re 403 (Cloudflare 1010) jön |
 | 2026-10-07 | A spec 11. szakaszába bekerült a Plausible és a `supabase-migrations-draft.yml` törlése | Balázs döntése (Plausible); a workflow a `supabase/` mappával együtt értelmét veszti |
-| 2026-10-07 | A `docker-compose.dev.yml`-nek rögzített projektneve van: `swarmsense-dev` | A mappanévtől függő név ütközött volna más projektek konténereivel |
-| 2026-10-07 | Annak a persona-hívásnak a tokenjei is beleszámítanak, amely válaszolt, de a séma szerint érvénytelen volt; az érvénytelen blueprint és szintézis válaszának tokenjei nem | A persona-hívás költsége valós, a másik kettőnél a hibás válasz nem jut tovább, és nem vesz részt az összesítésben |
-| 2026-10-07 | A futásnapló nem tartalmaz kivételszöveget vagy tracebacket, csak futásazonosítót, kivételtípust és hibakódot | Egy láncolt validációs hiba kiírta az LLM kimenetét a naplóba |
+| 2026-10-07 | A `docker-compose.dev.yml`-nek rögzített projektneve van: `swarmsense-dev` (spec 13. szakasz, frissítve) | A mappanévtől függő név ütközött volna más projektek konténereivel |
+| 2026-10-07 | Annak a persona-hívásnak a tokenjei is beleszámítanak, amely válaszolt, de a séma szerint érvénytelen volt; az érvénytelen blueprint és szintézis válaszának tokenjei nem (spec 6. szakasz, frissítve) | A persona-hívás költsége valós, a másik kettőnél a hibás válasz nem jut tovább, és nem vesz részt az összesítésben |
+| 2026-10-07 | A futásnapló nem tartalmaz kivételszöveget vagy tracebacket, csak futásazonosítót, kivételtípust és hibakódot (spec 10. szakasz, frissítve) | Egy láncolt validációs hiba kiírta az LLM kimenetét a naplóba |
 | 2026-10-07 | Az adatkezelési és a felhasználási feltételek szövege még a régi e-mailes folyamatot írja le, a nyitóoldali statisztika még „90 másodperc”; a B tervben íródik újra | Az A terv csak az alapot cseréli; a szövegek a B terv 5. lépéséhez tartoznak |
-| 2026-10-07 | A backend INFO szintű naplója (a futásonkénti összefoglaló sor) uvicorn alatt nem látszik, mert nincs naplózási beállítás | A valódi futásnál derült ki; nyitott, a B terv elején vagy az 5. lépésben javítandó |
+| 2026-10-07 | A `swarmsense` logger minimális beállítást kapott az `app/main.py`-ban (INFO, egy `StreamHandler`), így a futásonkénti összefoglaló sor uvicorn alatt is látszik (spec 10. szakasz, frissítve) | A valódi futásnál derült ki, hogy nincs naplózási beállítás, ezért az INFO sorok elvesztek; javítva, a javítás utáni láthatóságot egy próbasorral ellenőriztük, valódi futással nem |
+
+## Megfigyelések a valódi futásból
+
+- A kérdés szövege egyszer megjelent a Next fejlesztői szerver naplójában a Server Action nyomvonalán (fejlesztői mód; éles buildnél nincs ellenőrizve).
+- A böngésző fülében a polling megállt, amíg a fül a háttérben volt (az ok nincs megerősítve; a B terv lecseréli a pollingot).

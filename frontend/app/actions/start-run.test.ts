@@ -136,6 +136,21 @@ describe("startRunAction", () => {
     expect(new Headers(init.headers).get("X-Client-IP")).toBe("203.0.113.7");
   });
 
+  it("prefers cf-connecting-ip over x-forwarded-for", async () => {
+    headersMock.mockResolvedValue(
+      new Headers({
+        "cf-connecting-ip": "198.51.100.9",
+        "x-forwarded-for": "172.18.0.1",
+      }) as never
+    );
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ run_id: "r-1" }), { status: 200 }));
+
+    await startRunAction({ topic: "a", audience: "b" });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(new Headers(init.headers).get("X-Client-IP")).toBe("198.51.100.9");
+  });
+
   it("sends no X-Client-IP without a forwarded header", async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ run_id: "r-1" }), { status: 200 }));
 

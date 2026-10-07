@@ -30,8 +30,13 @@ export function isRunId(value: string): boolean {
   return UUID_PATTERN.test(value);
 }
 
-// Az x-forwarded-for első eleme a kliens címe; a többi a közbenső proxykoké.
+// Cloudflare mögött a kliens címe a cf-connecting-ip fejlécben van: ezt a Cloudflare
+// mindig felülírja, az x-forwarded-for ott már csak a proxy címét hordozza.
+// Cloudflare nélkül az x-forwarded-for első eleme a kliens; a többi a közbenső proxyké.
 export function clientIp(headers: Headers): string | null {
+  const cloudflare = headers.get("cf-connecting-ip")?.trim();
+  if (cloudflare) return cloudflare;
+
   const forwarded = headers.get("x-forwarded-for");
   if (!forwarded) return null;
   const first = forwarded.split(",")[0]?.trim();

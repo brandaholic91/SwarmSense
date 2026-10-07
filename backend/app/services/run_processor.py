@@ -279,6 +279,9 @@ async def _store_pdf(run_id: str) -> None:
         run = db.get_run(run_id)
         if run is None:
             return
+        # a `completed_at` csak a PDF után kerül az adatbázisba; a futásidőt a
+        # PDF-készítés kezdetéig számoljuk (a sablon nem olvas órát)
+        run["completed_at"] = datetime.now(UTC)
         db.save_pdf(run_id, await pdf_service.generate_pdf(run))
     except Exception as exc:
         logger.error("run %s pdf failed: %s", run_id, _describe(exc))

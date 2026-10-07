@@ -624,3 +624,16 @@ def test_failed_run_generates_no_pdf(clean_db, monkeypatch):
     assert run["status"] == "failed"
     assert calls == []
     assert db.get_pdf(run["id"]) is None
+
+
+def test_in_run_pdf_html_contains_run_duration(clean_db, monkeypatch):
+    # a PDF a végső státusz (és a completed_at) előtt készül, mégis kell bele a futásidő
+    rendered: dict[str, str] = {}
+
+    async def rendering_generate(run: dict[str, Any]) -> bytes:
+        rendered["html"] = pdf_service.render_report_html(run)
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", rendering_generate)
+    _run(clean_db)
+    assert re.search(r"Futásidő</td><td>\d+ mp</td>", rendered["html"])

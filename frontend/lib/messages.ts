@@ -494,4 +494,8 @@ export const messages = {
   },
   piiWarning: "Ne adj meg személyes adatot vagy bizalmas információt.",
   genericError: "Váratlan hiba történt. Kérjük, próbáld újra.",
+  errorPage: {
+    retry: "Újrapróbálom",
+    home: "Vissza a főoldalra",
+  },
 };

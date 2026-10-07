@@ -9,7 +9,8 @@ import { accent, onSurface } from "@/lib/tokens";
 export const dynamic = "force-dynamic";
 
 export default async function SamplePage() {
-  const runId = await fetchSampleRunId();
+  // Ha a háttér nem érhető el, a minta ugyanazt az üzenetet adja, mint amikor nincs minta.
+  const runId = await fetchSampleRunId().catch(() => null);
   if (runId === null) {
     return (
       <div className="mx-auto w-full max-w-3xl space-y-6 px-6 py-12" style={{ color: onSurface }}>

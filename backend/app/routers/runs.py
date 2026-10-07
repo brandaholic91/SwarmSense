@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Header
+from fastapi import APIRouter, BackgroundTasks, Header, Query
 from fastapi.responses import JSONResponse
 
 from app import db
+from app.core import pricing
 from app.core.errors import ErrorCode, error_response
-from app.models.run import RunCreateRequest, RunCreateResponse, RunStatusResponse
+from app.models.run import (
+    PriceInfo,
+    RunCreateRequest,
+    RunCreateResponse,
+    RunEvent,
+    RunEventsResponse,
+)
 from app.services import limits
-from app.services.persona_engine import DEFAULT_PERSONA_COUNT
 from app.services.run_processor import dispatch_run_processing
 
 router = APIRouter(prefix="/api/v1/runs", tags=["runs"])
@@ -53,19 +59,34 @@ def create_run(
     )
 
 
-@router.get("/{run_id}/status", response_model=RunStatusResponse)
-def get_run_status(run_id: str) -> RunStatusResponse | JSONResponse:
-    run = db.get_run(run_id)
+@router.get(
+    "/{run_id}/events",
+    response_model=RunEventsResponse,
+    response_model_exclude_none=True,
+)
+def get_run_events(
+    run_id: str, after: int = Query(default=0, ge=0)
+) -> RunEventsResponse | JSONResponse:
+    try:
+        run = db.get_run(run_id)
+        events = db.list_events(run_id, after=after) if run is not None else []
+    except Exception as exc:
+        # csak a kivétel típusa kerül a naplóba: a szöveg titkot (pl. DSN) hordozhat
+        logger.error("run events failed: %s", type(exc).__name__)
+        return error_response(
+            status_code=503,
+            detail="Service unavailable",
+            code=ErrorCode.SERVICE_UNAVAILABLE,
+        )
     if run is None:
         return error_response(
-            status_code=404,
-            detail="Run not found",
-            code=ErrorCode.RUN_NOT_FOUND,
+            status_code=404, detail="Run not found", code=ErrorCode.RUN_NOT_FOUND
         )
-    return RunStatusResponse(
-        run_id=run["id"],
+    return RunEventsResponse(
         status=run["status"],
-        persona_count=max(run["persona_count"], 0),
-        total_personas=DEFAULT_PERSONA_COUNT,
-        updated_at=run["completed_at"] or run["created_at"],
+        is_sample=run["is_sample"],
+        topic=run["topic"],
+        created_at=run["created_at"],
+        price=PriceInfo(**pricing.price_payload()),
+        events=[RunEvent(**event, at=event["created_at"]) for event in events],
     )

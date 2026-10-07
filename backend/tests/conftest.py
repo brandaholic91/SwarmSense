@@ -19,7 +19,6 @@ def settings_env(monkeypatch):
     get_settings.cache_clear()
     monkeypatch.setenv("SWARMSENSE_DATABASE_URL", TEST_DATABASE_URL)
     monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", "test-internal-secret")
-    monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "http://localhost:3000")
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
     monkeypatch.setenv("SWARMSENSE_LLM_API_KEY", "test-llm-key")
     monkeypatch.setenv("SWARMSENSE_IP_HASH_SECRET", "test-ip-secret")

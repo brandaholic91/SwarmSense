@@ -26,9 +26,31 @@ class RunCreateResponse(BaseModel):
     created_at: AwareDatetime
 
 
-class RunStatusResponse(BaseModel):
-    run_id: str
-    status: Literal["queued", "running", "composing", "completed", "partial", "failed"]
-    persona_count: int
-    total_personas: int
-    updated_at: AwareDatetime | None = None
+RunStatus = Literal["queued", "running", "composing", "completed", "partial", "failed"]
+
+
+class PriceInfo(BaseModel):
+    input_per_million_usd: float
+    output_per_million_usd: float
+
+
+class RunEvent(BaseModel):
+    id: int
+    type: str
+    persona_index: int | None = None
+    persona_name: str | None = None
+    attempt: int | None = None
+    error_code: str | None = None
+    duration_ms: int | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    at: AwareDatetime
+
+
+class RunEventsResponse(BaseModel):
+    status: RunStatus
+    is_sample: bool
+    topic: str
+    created_at: AwareDatetime
+    price: PriceInfo
+    events: list[RunEvent]

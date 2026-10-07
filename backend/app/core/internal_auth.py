@@ -7,14 +7,13 @@ from fastapi import Request
 from app.core.config import get_settings
 from app.core.errors import ErrorCode, error_response
 
-INTERNAL_ONLY_ENDPOINTS = {
-    ("POST", "/api/v1/runs"),
-}
+PROTECTED_PREFIX = "/api/v1/runs"
 
 
 def is_internal_endpoint(request: Request) -> bool:
+    # minden /api/v1/runs és /api/v1/runs/... útvonal, metódustól függetlenül
     path = request.url.path.rstrip("/") or "/"
-    return (request.method.upper(), path) in INTERNAL_ONLY_ENDPOINTS
+    return path == PROTECTED_PREFIX or path.startswith(PROTECTED_PREFIX + "/")
 
 
 async def internal_auth_middleware(request: Request, call_next):

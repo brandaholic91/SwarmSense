@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     llm_model: str = Field(default="deepseek-v4.1-flash")
     llm_base_url: AnyHttpUrl = Field(default="https://opencode.ai/zen/go/v1")
     internal_secret: str = Field(...)
-    frontend_origin: AnyHttpUrl = Field(...)
     environment: str = Field(default="development")
     ip_hash_secret: str = Field(...)
     max_concurrent_runs: int = Field(default=2)

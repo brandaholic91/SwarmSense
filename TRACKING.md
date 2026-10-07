@@ -56,6 +56,8 @@ Ha építés közben valami másképp alakul, mint a specben, ide kerül egy sor
 | 2026-10-07 | A persona-leírások száma pontosan 18: a többletet levágjuk, a hiányt hibának vesszük (spec 5. szakasz, frissítve) | A trace és a keretek 18 personára épülnek; a modell néha többet ad |
 | 2026-10-07 | A `swarmsense` logger minimális beállítást kapott az `app/main.py`-ban (INFO, egy `StreamHandler`), így a futásonkénti összefoglaló sor uvicorn alatt is látszik (spec 10. szakasz, frissítve) | A valódi futásnál derült ki, hogy nincs naplózási beállítás, ezért az INFO sorok elvesztek; javítva, a javítás utáni láthatóságot egy próbasorral ellenőriztük, valódi futással nem |
 | 2026-10-07 | A landing oldal újraírása bekerült a B terv 5. lépésébe (spec 14. szakasz, frissítve) | Balázs döntése; a spec eddig egyik lépéshez sem rendelte, a mostani szövegben hamis állítások vannak („90 másodperc", „15-20 persona") |
+| 2026-10-07 | A spec 3. szakasza: minden `/api/v1/runs…` végpont `X-Internal-Secret`-et kér, nem csak az írásiak | Az eseményvégpont a futás témáját adja vissza, ezért nem lehet nyitott; a CORS és a `frontend_origin` beállítás megszűnt |
+| 2026-10-07 | A spec 5. szakasza: a polling válasz kiegészült `topic`, `created_at` és `price` mezőkkel; az ár a csúcsidős listaár (0,30 / 1,20 USD / 1M token, forrás a `pricing.py`-ban) | A kijelzőnek kell a téma és a költségbecslés; az ár idősávos, a felső érték a konzervatív becslés |
 
 ## Megfigyelések a valódi futásból
 

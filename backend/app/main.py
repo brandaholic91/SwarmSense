@@ -3,7 +3,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app import db
@@ -41,18 +40,7 @@ def create_app() -> FastAPI:
     redoc_url = None if settings.is_production else "/redoc"
 
     app = FastAPI(lifespan=lifespan, docs_url=docs_url, redoc_url=redoc_url)
-    # Middleware registration order (innermost → outermost):
-    # internal_auth (innermost) → CORS (outermost).
-    # CORS is outermost so its headers are present on all responses (401 too).
     app.add_middleware(BaseHTTPMiddleware, dispatch=internal_auth_middleware)
-    # átmeneti, a B terv 3. lépése szünteti meg
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(settings.frontend_origin).rstrip("/")],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
     app.include_router(runs.router)
     app.include_router(status.router)
 

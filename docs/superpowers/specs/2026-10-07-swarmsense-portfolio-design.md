@@ -44,7 +44,7 @@ Next.js frontend ──────────────► FastAPI backend �
 - **Server Action** az egyszeri műveletekre (futás indítása, e-mail-kérés). **Route handler** arra, amit a böngésző ismételten lekér vagy fájlként letölt:
   - `GET /api/runs/[id]/events?after=<id>` → a backend eseményvégpontja
   - `GET /api/runs/[id]/pdf` → a backend PDF-végpontja
-- **`X-Internal-Secret`** marad a backend írási végpontjain a belső hálón is.
+- **`X-Internal-Secret`** minden `/api/v1/runs…` végponton kötelező (az eseményvégponton is, nem csak az írásin); a `/` és az `/api/v1/status` nyitva marad.
 - **Kliens IP:** a Next a Traefiktől kapott címet fejlécben adja tovább; a backend csak érvényes `X-Internal-Secret` mellett fogadja el.
 - **A futás** a backend folyamatában, háttérfeladatként megy (`BackgroundTasks`, külön szál, saját event loop). Ez nem változik.
 
@@ -99,6 +99,9 @@ Egyetlen `backend/schema.sql`, amit a backend induláskor futtat (`create table 
 {
   "status": "running",
   "is_sample": false,
+  "topic": "…",
+  "created_at": "2026-10-07T12:00:00Z",
+  "price": {"input_per_million_usd": 0.30, "output_per_million_usd": 1.20},
   "events": [
     {"id": 41, "type": "persona_retry", "persona_index": 7,
      "persona_name": "Kovács Anna", "attempt": 2,
@@ -107,7 +110,7 @@ Egyetlen `backend/schema.sql`, amit a backend induláskor futtat (`create table 
 }
 ```
 
-A kliens a legnagyobb kapott `id`-t küldi vissza `after`-ként.
+A kliens a legnagyobb kapott `id`-t küldi vissza `after`-ként. Az eseményből a `None` értékű mezők kimaradnak; az `at` az esemény létrehozásának ideje. A `price` a `backend/app/core/pricing.py` listaára (USD / 1M token), a kijelző ebből becsül költséget. Ismeretlen vagy nem UUID azonosító: `404 RUN_NOT_FOUND`; adatbázishiba: `503 SERVICE_UNAVAILABLE`; negatív vagy nem szám `after`: `422`. A régi `GET /runs/{id}/status` megszűnt.
 
 **Változás a kódban**
 

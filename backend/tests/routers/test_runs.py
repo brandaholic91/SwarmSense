@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import db
+from app.core import pricing
 from app.core.config import get_settings
 from app.core.errors import ErrorCode
 from app.routers import runs as runs_router
@@ -27,7 +28,7 @@ def dispatched(monkeypatch) -> list[dict]:
 def client(clean_db, dispatched):
     from app.main import create_app
 
-    with TestClient(create_app()) as test_client:
+    with TestClient(create_app(), headers=HEADERS) as test_client:
         yield test_client
 
 
@@ -87,7 +88,7 @@ def test_create_run_full_limit_is_429(client, dispatched, monkeypatch, code):
 @pytest.mark.parametrize(
     "headers",
     [
-        {},
+        {"X-Internal-Secret": ""},
         {"X-Internal-Secret": "rossz"},
         {"X-Internal-Secret": "titok-é".encode("utf-8")},  # nem-ASCII érték
     ],
@@ -103,7 +104,11 @@ def test_create_run_without_valid_secret_is_401(client, dispatched, headers):
 
 
 def test_trailing_slash_still_requires_secret(client, dispatched):
-    r = client.post("/api/v1/runs/", json={"topic": "a", "audience": "b"})
+    r = client.post(
+        "/api/v1/runs/",
+        json={"topic": "a", "audience": "b"},
+        headers={"X-Internal-Secret": ""},
+    )
     assert r.status_code == 401
     assert dispatched == []
 
@@ -169,27 +174,6 @@ def test_create_run_limit_check_db_failure_is_500(client, dispatched, monkeypatc
     assert dispatched == []
 
 
-def test_get_status_returns_progress(client):
-    row = db.create_run(topic="a", audience="b")
-    db.update_run(row["id"], status="running", persona_count=7)
-    body = client.get(f"/api/v1/runs/{row['id']}/status").json()
-    assert body == {
-        "run_id": row["id"],
-        "status": "running",
-        "persona_count": 7,
-        "total_personas": 18,
-        "updated_at": body["updated_at"],
-    }
-    assert body["updated_at"] is not None
-
-
-@pytest.mark.parametrize("run_id", [str(uuid.uuid4()), "abc", "x" * 200])
-def test_get_status_unknown_or_malformed_id_is_404(client, run_id):
-    r = client.get(f"/api/v1/runs/{run_id}/status")
-    assert r.status_code == 404
-    assert r.json()["code"] == "RUN_NOT_FOUND"
-
-
 def test_startup_applies_schema_on_empty_database(clean_db):
     from app.main import create_app
 
@@ -219,11 +203,90 @@ def test_docs_disabled_in_production(monkeypatch):
     assert client.get("/redoc").status_code == 404
 
 
-def test_cors_allows_frontend_origin(client):
+def test_no_cors_headers(client):
     r = client.get("/", headers={"Origin": "http://localhost:3000"})
-    assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
-
-
-def test_cors_blocks_unknown_origin(client):
-    r = client.get("/", headers={"Origin": "https://evil.example.com"})
     assert "access-control-allow-origin" not in r.headers
+
+
+def _make_run_with_events():
+    row = db.create_run(topic="Árazás", audience="b")
+    db.update_run(row["id"], status="running")
+    first = db.insert_event(row["id"], "run_started")
+    second = db.insert_event(
+        row["id"],
+        "persona_retry",
+        persona_index=7,
+        persona_name="Kovács Anna",
+        attempt=2,
+        error_code="RATE_LIMITED",
+    )
+    return row, first, second
+
+
+def test_events_returns_status_topic_price_and_events(client):
+    row, first, second = _make_run_with_events()
+    body = client.get(f"/api/v1/runs/{row['id']}/events").json()
+    assert set(body) == {"status", "is_sample", "topic", "created_at", "price", "events"}
+    assert body["status"] == "running"
+    assert body["is_sample"] is False
+    assert body["topic"] == "Árazás"
+    assert body["price"] == pricing.price_payload()
+    assert [e["id"] for e in body["events"]] == [first, second]
+    assert "persona_index" not in body["events"][0]
+    assert body["events"][0]["type"] == "run_started"
+    assert body["events"][0]["at"]
+    assert body["events"][1]["persona_name"] == "Kovács Anna"
+    assert body["events"][1]["error_code"] == "RATE_LIMITED"
+
+
+def test_events_after_cursor_returns_only_newer(client):
+    row, first, second = _make_run_with_events()
+    body = client.get(f"/api/v1/runs/{row['id']}/events?after={first}").json()
+    assert [e["id"] for e in body["events"]] == [second]
+
+
+@pytest.mark.parametrize("run_id", [str(uuid.uuid4()), "abc"])
+def test_events_unknown_or_malformed_id_is_404(client, run_id):
+    r = client.get(f"/api/v1/runs/{run_id}/events")
+    assert r.status_code == 404
+    assert r.json()["code"] == "RUN_NOT_FOUND"
+
+
+@pytest.mark.parametrize("after", ["-1", "x"])
+def test_events_invalid_after_is_422(client, after):
+    row = db.create_run(topic="a", audience="b")
+    r = client.get(f"/api/v1/runs/{row['id']}/events?after={after}")
+    assert r.status_code == 422
+
+
+def test_events_db_failure_is_503_with_code(client, monkeypatch, caplog):
+    def boom(_):
+        raise RuntimeError("connection refused: postgres://user:titok@host")
+
+    monkeypatch.setattr(db, "get_run", boom)
+    r = client.get(f"/api/v1/runs/{uuid.uuid4()}/events")
+    assert r.status_code == 503
+    assert r.json()["code"] == "SERVICE_UNAVAILABLE"
+    assert "titok" not in r.text
+    assert "RuntimeError" in caplog.text
+    assert "titok" not in caplog.text
+    assert "Traceback" not in caplog.text
+
+
+def test_every_runs_endpoint_requires_secret(client):
+    run_id = uuid.uuid4()
+    no_secret = {"X-Internal-Secret": ""}
+    assert (
+        client.post(
+            "/api/v1/runs", json={"topic": "a", "audience": "b"}, headers=no_secret
+        ).status_code
+        == 401
+    )
+    for path in (f"/api/v1/runs/{run_id}/events", f"/api/v1/runs/{run_id}/events/"):
+        assert client.get(path, headers=no_secret).status_code == 401
+
+
+def test_status_and_root_are_open(client):
+    no_secret = {"X-Internal-Secret": ""}
+    assert client.get("/", headers=no_secret).status_code == 200
+    assert client.get("/api/v1/status", headers=no_secret).status_code == 200

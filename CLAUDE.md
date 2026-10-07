@@ -57,6 +57,8 @@ Böngésző → Next.js frontend (egyedül ez nyilvános) → FastAPI backend �
 
 A nyitott kritériumból mi hiányzik (részletek a `TRACKING.md`-ben): a levél tényleges megérkezése nincs ellenőrizve, mert helyben nincs Resend-beállítás (a 14 napos törlés igazolva van). A `/minta` kritériuma teljesül, de a mintában nincs szintézis (a rögzítésekor még élt a szintézis hibája).
 
+Megjegyzés a kipipált kritériumokhoz: a keretek közül az egyidejűségi keret és a levélkeretek üzenete szándékosan nem mutat a mintafutásra (spec 7. szakasz); a mintára az IP-nkénti és a napi futáskeret üzenete linkel. A landing oldal „kérésre levélben is megkapod” mondata a még ellenőrizetlen kézbesítésen múlik, ugyanaz a nyitott pont, mint az e-mail kritériumé.
+
 **C terv: Kiadás** (7–8. lépés)
 
 - [ ] A `swarmsense.growthframe.hu` él; a backend és a Postgres kívülről nem érhető el.

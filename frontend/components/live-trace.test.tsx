@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import type { MockInstance } from "vitest";
 
 import { LiveTrace } from "@/components/live-trace";
@@ -14,9 +14,9 @@ vi.mock("next/navigation", () => ({
 
 const price = { input_per_million_usd: 0.5, output_per_million_usd: 1.5 };
 
-function ok(events: unknown[]): Response {
+function ok(events: unknown[], status = "running"): Response {
   return new Response(
-    JSON.stringify({ status: "running", is_sample: false, topic: "Árazás", price, events }),
+    JSON.stringify({ status, is_sample: false, topic: "Árazás", price, events }),
     { status: 200 }
   );
 }
@@ -154,6 +154,40 @@ describe("LiveTrace", () => {
       "href",
       "/minta"
     );
+    expect(replaceMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["completed", "partial"])(
+    "redirects on status %s even when no run_completed event arrived",
+    async (status) => {
+      fetchMock.mockResolvedValue(ok([ev(1, "run_started")], status));
+
+      render(<LiveTrace runId={RUN_ID} />);
+      await tick(0);
+      await tick(5000);
+
+      expect(replaceMock).toHaveBeenCalledTimes(1);
+      expect(replaceMock).toHaveBeenCalledWith(`/eredmeny/${RUN_ID}`);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it("shows the generic failure and stops polling on status failed without a run_failed event", async () => {
+    fetchMock.mockResolvedValue(
+      ok([ev(1, "run_started"), ev(2, "persona_started", { persona_index: 0, persona_name: "P0" })], "failed")
+    );
+
+    render(<LiveTrace runId={RUN_ID} />);
+    await tick(0);
+    await tick(5000);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(getErrorMessageByCode("INTERNAL_ERROR"));
+    expect(
+      within(screen.getByRole("list", { name: messages.trace.personasAriaLabel })).queryByText(
+        messages.trace.row.running
+      )
+    ).not.toBeInTheDocument();
     expect(replaceMock).not.toHaveBeenCalled();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

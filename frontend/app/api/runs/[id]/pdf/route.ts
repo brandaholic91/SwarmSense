@@ -1,4 +1,4 @@
-import { backendFetch, isRunId } from "@/lib/backend";
+import { backendFetch, isRunId, upstreamErrorResponse } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,7 @@ export async function GET(_request: Request, { params }: RouteContext): Promise<
 
   try {
     const upstream = await backendFetch(`/api/v1/runs/${id}/pdf`, { timeoutMs: PDF_TIMEOUT_MS });
+    if (!upstream.ok) return upstreamErrorResponse(upstream, NO_STORE);
     // Bináris törzs: arrayBuffer, nem text(), különben a PDF bájtjai megsérülnének.
     const body = await upstream.arrayBuffer();
     const headers = new Headers(NO_STORE);

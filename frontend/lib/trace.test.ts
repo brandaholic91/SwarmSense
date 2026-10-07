@@ -176,6 +176,29 @@ describe("applyEvent", () => {
     expect(state.endedAt).toBe(ev(1, "run_failed").at);
   });
 
+  it("run_failed turns still-running personas into interrupted rows with a frozen duration", () => {
+    const state = [
+      ev(1, "run_started"),
+      ev(2, "personas_generated"),
+      ev(3, "persona_started", { persona_index: 0, persona_name: "P0" }),
+      ev(4, "persona_started", { persona_index: 1, persona_name: "P1" }),
+      ev(5, "persona_completed", { persona_index: 1, duration_ms: 1000 }),
+      ev(9, "run_failed", { error_code: "RUN_TIMED_OUT" }),
+    ].reduce(applyEvent, initialTraceState());
+
+    expect(state.personas.map((row) => row.status)).toEqual(["interrupted", "completed"]);
+    expect(state.personas[0].durationMs).toBe(
+      Date.parse(ev(9, "run_failed").at) - Date.parse(ev(3, "x").at)
+    );
+    expect(countByStatus(state)).toEqual({
+      queued: 0,
+      running: 0,
+      completed: 1,
+      failed: 0,
+      interrupted: 1,
+    });
+  });
+
   it("run_failed without error code leaves failureCode null", () => {
     expect(applyEvent(initialTraceState(), ev(1, "run_failed")).failureCode).toBeNull();
   });
@@ -216,7 +239,7 @@ describe("applyEvent", () => {
   it("a full recorded run ends done with the expected counts and token sums", () => {
     const state = replay(fullRunEvents());
     expect(state.phase).toBe("done");
-    expect(countByStatus(state)).toEqual({ queued: 0, running: 0, completed: 17, failed: 1 });
+    expect(countByStatus(state)).toEqual({ queued: 0, running: 0, completed: 17, failed: 1, interrupted: 0 });
     expect(state.retryCount).toBe(1);
     expect(state.inputTokens).toBe(120 + 17 * 100 + 10 + 500);
     expect(state.outputTokens).toBe(900 + 17 * 200 + 20 + 300);
@@ -230,7 +253,7 @@ describe("applyEvent", () => {
         ev(3 + i, "persona_started", { persona_index: i, persona_name: `P${i}` })
       ),
     ];
-    expect(countByStatus(replay(events))).toEqual({ queued: 13, running: 5, completed: 0, failed: 0 });
+    expect(countByStatus(replay(events))).toEqual({ queued: 13, running: 5, completed: 0, failed: 0, interrupted: 0 });
   });
 
   it("reports no queued personas outside the personas phase", () => {

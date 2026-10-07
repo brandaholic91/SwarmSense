@@ -1,4 +1,4 @@
-import { backendFetch, isRunId } from "@/lib/backend";
+import { backendFetch, isRunId, upstreamErrorResponse } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,7 @@ export async function GET(request: Request, { params }: RouteContext): Promise<R
 
   try {
     const upstream = await backendFetch(`/api/v1/runs/${id}/events?after=${Number(rawAfter)}`);
+    if (!upstream.ok) return upstreamErrorResponse(upstream, NO_STORE);
     const body = await upstream.text();
     return new Response(body, {
       status: upstream.status,

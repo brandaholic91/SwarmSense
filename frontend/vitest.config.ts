@@ -11,6 +11,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // a csomag importáláskor hibát dob, hacsak nem a szerver-buildben fut
+      "server-only": path.resolve(__dirname, "test/server-only.ts"),
     },
   },
 });

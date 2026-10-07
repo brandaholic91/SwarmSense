@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { EmailRequestForm } from "@/components/email-request-form";
@@ -6,6 +7,11 @@ import { fetchRun } from "@/lib/run";
 
 // Futásonként változó adat: a build ne próbálja előállítani.
 export const dynamic = "force-dynamic";
+
+// Futásonkénti, linkkel megosztott oldal: keresők ne indexeljék.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type ResultPageProps = {
   params: Promise<{ id: string }>;

@@ -69,6 +69,30 @@ describe("TraceView", () => {
     expect(list.getByText("P1").closest("li")).toHaveTextContent(formatRowTokens(7, 9));
   });
 
+  it("shows a failed run's unfinished personas as interrupted, not running", () => {
+    const state = [
+      ev(1, "run_started"),
+      ev(2, "personas_generated"),
+      ev(3, "persona_started", { persona_index: 0, persona_name: "P0" }),
+      ev(4, "persona_started", { persona_index: 1, persona_name: "P1" }),
+      ev(5, "persona_completed", { persona_index: 1, input_tokens: 7, output_tokens: 9 }),
+      ev(10, "run_failed", { error_code: "RUN_TIMED_OUT" }),
+    ].reduce(applyEvent, initialTraceState());
+
+    render(<TraceView topic="x" state={state} now={NOW + 60_000} price={price} />);
+
+    const list = personaList();
+    expect(list.queryByText(t.row.running)).not.toBeInTheDocument();
+    const row = list.getByText("P0").closest("li");
+    expect(row).toHaveTextContent(t.row.interrupted);
+    // az óra a lezáráskor megáll: 7 mp (12:00:03 -> 12:00:10), nem a mostani idő
+    expect(row).toHaveTextContent("0:07");
+    expect(row).toHaveTextContent(t.row.tokensPending);
+    const summary = within(screen.getByLabelText(t.summaryAriaLabel));
+    expect(summary.getByText(t.summary.interrupted).nextElementSibling).toHaveTextContent("1");
+    expect(summary.getByText(t.summary.running).nextElementSibling).toHaveTextContent("0");
+  });
+
   it("shows the estimated cost and the estimate marker in the summary", () => {
     render(<TraceView topic="x" state={done} now={NOW} price={price} />);
 

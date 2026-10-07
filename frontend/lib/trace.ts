@@ -17,7 +17,7 @@ export type TraceEvent = {
 export type PersonaRow = {
   index: number;
   name: string;
-  status: "running" | "completed" | "failed";
+  status: "running" | "completed" | "failed" | "interrupted";
   attempt: number;
   startedAt: string;
   durationMs: number | null;
@@ -152,6 +152,16 @@ export function applyEvent(state: TraceState, event: TraceEvent): TraceState {
         phase: "failed",
         endedAt: event.at,
         failureCode: event.error_code ?? null,
+        // A lezárt futásban nem maradhat „fut” sor, és az órája sem járhat tovább.
+        personas: next.personas.map((row) =>
+          row.status === "running"
+            ? {
+                ...row,
+                status: "interrupted",
+                durationMs: Math.max(0, Date.parse(event.at) - Date.parse(row.startedAt)),
+              }
+            : row
+        ),
       };
     default:
       return next;
@@ -163,6 +173,7 @@ export function countByStatus(state: TraceState): {
   running: number;
   completed: number;
   failed: number;
+  interrupted: number;
 } {
   const count = (status: PersonaRow["status"]) =>
     state.personas.filter((row) => row.status === status).length;
@@ -171,5 +182,6 @@ export function countByStatus(state: TraceState): {
     running: count("running"),
     completed: count("completed"),
     failed: count("failed"),
+    interrupted: count("interrupted"),
   };
 }

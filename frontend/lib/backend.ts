@@ -1,3 +1,5 @@
+import "server-only";
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -34,4 +36,23 @@ export function clientIp(headers: Headers): string | null {
   if (!forwarded) return null;
   const first = forwarded.split(",")[0]?.trim();
   return first ? first : null;
+}
+
+// Hibás (nem 2xx) backendválaszból kifelé csak az állapotkód és egy hibakód megy;
+// a backend nyers törzse (HTML, szöveg, részletek) sosem.
+export async function upstreamErrorResponse(
+  upstream: Response,
+  headers: HeadersInit
+): Promise<Response> {
+  let code = "BACKEND_UNAVAILABLE";
+  try {
+    const body: unknown = await upstream.json();
+    if (typeof body === "object" && body !== null) {
+      const candidate = (body as { code?: unknown }).code;
+      if (typeof candidate === "string" && candidate !== "") code = candidate;
+    }
+  } catch {
+    // nem JSON törzs: marad az általános kód
+  }
+  return Response.json({ code }, { status: upstream.status, headers });
 }

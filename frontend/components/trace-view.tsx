@@ -81,7 +81,7 @@ export function formatRowTokens(inputTokens: number, outputTokens: number): stri
 
 function rowStatusColor(status: PersonaRow["status"]): string {
   if (status === "completed") return stanceSupport;
-  if (status === "failed") return errorDim;
+  if (status === "failed" || status === "interrupted") return errorDim;
   return accent;
 }
 
@@ -101,7 +101,7 @@ function PersonaListItem({ row, now }: { row: PersonaRow; now: number }) {
       </span>
       {/* a tokenek a lezáró eseménnyel érkeznek; futó sornál még nincs mit mutatni */}
       <span style={{ color: textSecondary, ...labelFont }}>
-        {row.status === "running"
+        {row.status === "running" || row.status === "interrupted"
           ? t.row.tokensPending
           : formatRowTokens(row.inputTokens, row.outputTokens)}
       </span>
@@ -139,6 +139,10 @@ export function TraceView({ topic, state, now, price, banner, eyebrow = t.eyebro
     { label: t.summary.running, value: String(counts.running) },
     { label: t.summary.completed, value: String(counts.completed) },
     { label: t.summary.failed, value: String(counts.failed) },
+    // csak megszakadt futásnál van ilyen sor; különben nem terheli az összesítőt
+    ...(counts.interrupted > 0
+      ? [{ label: t.summary.interrupted, value: String(counts.interrupted) }]
+      : []),
     { label: t.summary.inputTokens, value: String(state.inputTokens) },
     { label: t.summary.outputTokens, value: String(state.outputTokens) },
     { label: `${t.summary.cost} (${t.summary.estimate})`, value: formatCostUsd(cost) },

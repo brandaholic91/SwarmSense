@@ -56,6 +56,8 @@ describe("Landing page", () => {
       "A piackutatás még sosem volt ilyen egyszerű",
       "e-mailben",
       "Ingyenes próba",
+      // az eredményoldal nem mutatja a personák válaszait: azok a PDF-ben vannak
+      "összefoglalót és a personák válaszait",
     ];
 
     const present = forbidden.filter((phrase) => text.includes(phrase.toLowerCase()));

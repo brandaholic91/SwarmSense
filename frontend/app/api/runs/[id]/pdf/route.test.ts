@@ -81,8 +81,23 @@ describe("GET /api/runs/[id]/pdf", () => {
     const response = await call(RUN_ID);
 
     expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ code: "PDF_UNAVAILABLE" });
+    expect(await response.json()).toEqual({ code: "PDF_UNAVAILABLE" });
     expect(response.headers.get("Content-Type")).toBe("application/json");
+  });
+
+  it("never forwards an arbitrary upstream error body", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("<html>Internal Server Error NYERS</html>", {
+        status: 500,
+        headers: { "Content-Type": "text/html" },
+      })
+    );
+
+    const response = await call(RUN_ID);
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ code: "BACKEND_UNAVAILABLE" });
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
   it("answers 502 BACKEND_UNAVAILABLE when the fetch throws", async () => {

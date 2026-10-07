@@ -46,6 +46,41 @@ describe("GET /api/runs/[id]/events", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
+  it.each([404, 409, 503])("passes only status and code through for a backend %i", async (status) => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ detail: "NYERS", code: "SOME_CODE" }), { status })
+    );
+
+    const response = await call(RUN_ID, "?after=0");
+
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ code: "SOME_CODE" });
+  });
+
+  it("never forwards an arbitrary upstream error body", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("<html>Internal Server Error NYERS</html>", {
+        status: 500,
+        headers: { "Content-Type": "text/html" },
+      })
+    );
+
+    const response = await call(RUN_ID, "?after=0");
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ code: "BACKEND_UNAVAILABLE" });
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("falls back to BACKEND_UNAVAILABLE when the upstream code is not a string", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ code: 42 }), { status: 503 }));
+
+    const response = await call(RUN_ID, "?after=0");
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: "BACKEND_UNAVAILABLE" });
+  });
+
   it("proxies a backend 404 unchanged", async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ code: "RUN_NOT_FOUND" }), { status: 404 })

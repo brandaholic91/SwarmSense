@@ -163,7 +163,7 @@ export const messages = {
         {
           title: "Megkapod az eredményt",
           description:
-            "Az eredményoldalon elolvasod az összefoglalót és a personák válaszait, és letöltheted PDF-ben.",
+            "Az eredményoldalon elolvasod az összefoglalót, a personák válaszait pedig PDF-ben töltheted le.",
         },
       ],
     },
@@ -231,6 +231,7 @@ export const messages = {
       running: "fut",
       completed: "kész",
       failed: "kiesett",
+      interrupted: "megszakadt",
       inputTokens: "bemeneti token",
       outputTokens: "kimeneti token",
       cost: "becsült költség",
@@ -242,6 +243,7 @@ export const messages = {
       running: "fut",
       completed: "kész",
       failed: "kiesett",
+      interrupted: "megszakadt",
       attemptLabel: "kísérlet",
       // a sor saját tokenjei: „be 812 · ki 1 940 token"
       tokensIn: "be",

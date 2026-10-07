@@ -16,6 +16,7 @@ const MAX_CONSECUTIVE_FAILURES = 3;
 const NO_PRICE: Price = { input_per_million_usd: 0, output_per_million_usd: 0 };
 
 type EventsResponse = {
+  status?: string;
   topic?: string;
   price?: Price;
   events?: TraceEvent[];
@@ -100,10 +101,24 @@ export function LiveTrace({ runId }: { runId: string }) {
           if (typeof data.topic === "string") setTopic(data.topic);
           if (data.price) setPrice(data.price);
           setNow(Date.now());
+          // A futás állapota tartalék: ha az események nem jutottak el a végállapotig
+          // (kimaradt run_completed / run_failed), a lekérdezés `status` mezője dönt.
+          const runStatus = data.status;
           if (current.phase === "done") {
             halt(null);
             routerRef.current.replace(`/eredmeny/${runId}`);
           } else if (current.phase === "failed") {
+            halt(null);
+          } else if (runStatus === "completed" || runStatus === "partial") {
+            halt(null);
+            routerRef.current.replace(`/eredmeny/${runId}`);
+          } else if (runStatus === "failed") {
+            current = applyEvent(current, {
+              id: current.lastEventId + 1,
+              type: "run_failed",
+              at: new Date().toISOString(),
+            });
+            setState(current);
             halt(null);
           }
         }

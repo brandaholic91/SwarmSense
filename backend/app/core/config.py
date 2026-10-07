@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="SWARMSENSE_", case_sensitive=False)
 
+    database_url: str = Field(...)
     supabase_url: AnyHttpUrl = Field(...)
     supabase_service_key: str = Field(...)
     kimi_api_key: str = Field(...)

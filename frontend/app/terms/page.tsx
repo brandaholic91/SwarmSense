@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getContactLine } from "@/lib/contact";
+import { getContact } from "@/lib/contact";
 import { messages } from "@/lib/messages";
 import { accent, onSurface, textSecondary } from "@/lib/tokens";
 
@@ -16,7 +16,7 @@ type TermsSection = {
 export default async function TermsPage() {
   const legal = messages.legal;
   const sections = legal.termsSections as TermsSection[];
-  const contactLine = await getContactLine();
+  const { line: contactLine } = await getContact();
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16" style={{ color: onSurface }}>

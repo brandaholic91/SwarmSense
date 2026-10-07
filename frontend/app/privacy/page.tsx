@@ -1,12 +1,12 @@
 import Link from "next/link";
 
-import { getContactLine } from "@/lib/contact";
+import { getContact } from "@/lib/contact";
 import { messages } from "@/lib/messages";
 import { accent, onSurface, textSecondary } from "@/lib/tokens";
 
 export default async function PrivacyPage() {
   const legal = messages.legal;
-  const contactLine = await getContactLine();
+  const { line: contactLine, hasAddress } = await getContact();
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16" style={{ color: onSurface }}>
@@ -88,8 +88,8 @@ export default async function PrivacyPage() {
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">
         <h2 className="text-xl font-semibold">{legal.deletionTitle}</h2>
-        <p>{legal.deletionBody}</p>
-        <p>{contactLine}</p>
+        <p>{hasAddress ? legal.deletionBody : legal.deletionBodyNoAddress}</p>
+        {hasAddress ? <p>{contactLine}</p> : null}
       </section>
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">

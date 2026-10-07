@@ -1,3 +1,6 @@
+const linkWarning =
+  "A futás linkjét ne írd bele nyilvános issue-ba: nyiss bejelentést link nélkül, a linket privát csatornán kérjük el tőled.";
+
 type PreviewCard = {
   name: string;
   role: string;
@@ -33,7 +36,7 @@ export const messages = {
     painBridge: {
       heading: "Mit csinál a darab",
       closing:
-        "A SwarmSense portfóliódarab: a válaszokat egy nyelvi modell által szimulált személyek adják, nem valódi megkérdezettek. Valódi piackutatást nem vált ki.",
+        "A SwarmSense portfóliódarab: a válaszokat egy nyelvi modell szimulálja, nem valódi megkérdezettek. Valódi piackutatást nem vált ki.",
       methodologyLink: "A módszertanról bővebben",
       items: [
         {
@@ -42,7 +45,7 @@ export const messages = {
             "Minden persona állapotát, kísérletszámát és idejét látod, ahogy a futás halad.",
         },
         {
-          title: "18 persona, 5-ös párhuzamossággal",
+          title: "18 persona, legfeljebb 5 párhuzamos hívással",
           description:
             "Egy hívás elkészíti a leírásokat, utána a personák külön hívásokban válaszolnak, egyszerre legfeljebb 5.",
         },
@@ -58,7 +61,7 @@ export const messages = {
       heading: "Így nézhet ki egy eredmény",
       illustrationNote:
         "Kitalált példaadat, nem egy valódi futás eredménye. Alább egy valódi futást is megnézhetsz.",
-      sampleLink: "Nézd meg egy valódi mintafutást",
+      sampleLink: "Nézz meg egy valódi mintafutást",
       researchLabel: "Kutatási téma",
       researchValue: "Meggyőző-e ez az üzenet B2B döntéshozóknak: Csökkentsd a sales ciklust 40%-kal automatizálással?",
       audienceLabel: "Célközönség",
@@ -166,7 +169,7 @@ export const messages = {
     },
     stats: {
       items: [
-        { value: "18 persona", label: "szintetikus, nyelvi modellel" },
+        { value: "18 persona", label: "nyelvi modell által generált" },
         { value: "Másfél perc", label: "egy futás nagyjából" },
         { value: "Regisztráció nélkül", label: "két mezős űrlap" },
         { value: "PDF", label: "letölthető eredmény" },
@@ -291,7 +294,8 @@ export const messages = {
     privacyTitle: "Adatkezelési tájékoztató",
     termsTitle: "Felhasználási feltételek",
     effectiveDate: "Hatálybalépés: 2026. október 7. · Verzió: 2.0",
-    contactFallback: "Kapcsolat: a repo issue-követőjén.",
+    contactFallback: `Kapcsolat: a repo issue-követőjén. ${linkWarning}`,
+    linkWarning,
     contactLabel: "Kapcsolat",
     termsIntroParagraphs: [
       "A jelen Felhasználási feltételek (a továbbiakban: Feltételek) a SwarmSense nevű webes demó használatát szabályozzák.",
@@ -301,7 +305,7 @@ export const messages = {
         title: "1. Hatály és szolgáltató",
         paragraphs: [
           "A Feltételek mindenkire vonatkoznak, aki a SwarmSense webes felületét használja.",
-          "Szolgáltató: a SwarmSense demót üzemeltető.",
+          "Szolgáltató: a SwarmSense demó üzemeltetője.",
         ],
         contact: true,
       },
@@ -319,7 +323,7 @@ export const messages = {
         ],
         list: [
           "a kérdés vagy a célközönség mezőjébe valós személyek azonosítására alkalmas adatot, különleges kategóriájú személyes adatot, illetve jogellenes vagy mások jogát sértő tartalmat írni;",
-          "a szolgáltatással visszaélni (például automatizált, terhelő kérések küldése, mások zaklatása, rosszindulatú tartalom terjesztése);",
+          "a szolgáltatással visszaélni (például túlzott terhelést okozó automatizált kérések küldése, mások zaklatása, rosszindulatú tartalom terjesztése);",
           "megkísérelni a szolgáltatás vagy a háttérrendszerek jogosulatlan elérését.",
         ],
       },
@@ -353,7 +357,7 @@ export const messages = {
       {
         title: "8. Adatvédelem",
         paragraphs: [
-          "A személyes adatok kezelését az Adatkezelési tájékoztató részletezi; kérjük, azt külön olvasd el.",
+          "A személyes adatok kezelését az Adatkezelési tájékoztató részletezi; azt külön olvasd el.",
         ],
         linkPrivacy: true,
       },
@@ -383,7 +387,7 @@ export const messages = {
       "Személyes adataidat az Európai Parlament és a Tanács (EU) 2016/679 rendelete (GDPR), valamint az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvény (Infotv.) előírásai szerint kezeljük.",
     ],
     controllerTitle: "1. Adatkezelő és elérhetőség",
-    controllerBody: "Adatkezelő: a SwarmSense demót üzemeltető.",
+    controllerBody: "Adatkezelő: a SwarmSense demó üzemeltetője.",
     processedDataTitle: "2. Kezelt adatok",
     processedDataItems: [
       "a kérdés és a célközönség szövege, valamint a futás eredménye (a personák válaszai, az összefoglaló és a PDF);",
@@ -419,8 +423,9 @@ export const messages = {
     userRightsSupervisoryLinkLabel: "www.naih.hu",
     userRightsSupervisoryHref: "https://www.naih.hu/",
     deletionTitle: "9. Törlési kérelem (GDPR 17. cikk)",
+    deletionBodyNoAddress: `Egy futás törléséhez nyiss bejelentést a repo issue-követőjén. ${linkWarning} A futás szövegét és eredményét töröljük az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.`,
     deletionBody:
-      "Egy futás törléséhez küldd el a futás linkjét a kapcsolattartási elérhetőségre. A futás szövegét és eredményét töröljük az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.",
+      "Egy futás törléséhez küldd el a futás linkjét a kapcsolattartási címre. A futás szövegét és eredményét töröljük az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.",
     updatesTitle: "10. A tájékoztató módosítása",
     updatesBody:
       "A tájékoztatót a demó vagy a jogszabályi környezet változásakor frissíthetjük. A hatályos verzió mindig ezen az oldalon érhető el.",
@@ -439,7 +444,7 @@ export const messages = {
           "Egy utolsó hívás szintézist ír a válaszokból.",
         ],
         after:
-          "Ez összesen 20 hívás. A modell a DeepSeek flash modellje, az opencode szolgáltatáson keresztül. Egy futás nagyjából másfél percig tart, de ez a modell terhelésétől függ.",
+          "Ez összesen 20 hívás. A DeepSeek flash modelljét használjuk, az opencode szolgáltatáson keresztül. Egy futás nagyjából másfél percig tart, de ez a modell terhelésétől függ.",
       },
       {
         title: "Mi történik, ha valami nem sikerül",

@@ -38,6 +38,8 @@ describe("Privacy page", () => {
 
     expect(text).toContain("kapcsolat@example.test");
     expect(text).not.toContain(messages.legal.contactFallback);
+    expect(text).not.toContain(messages.legal.linkWarning);
+    expect(text).toContain(messages.legal.deletionBody);
   });
 
   it("shows the fallback sentence without CONTACT_EMAIL", async () => {
@@ -46,6 +48,15 @@ describe("Privacy page", () => {
 
     expect(text).toContain(messages.legal.contactFallback);
     expect(text).not.toContain("@");
+  });
+
+  it("warns against posting the run link in a public issue without CONTACT_EMAIL", async () => {
+    vi.stubEnv("CONTACT_EMAIL", "");
+    const text = await pageText(PrivacyPage);
+
+    expect(text).toContain(messages.legal.linkWarning);
+    expect(text).toContain(messages.legal.deletionBodyNoAddress);
+    expect(text).not.toContain(messages.legal.deletionBody);
   });
 });
 

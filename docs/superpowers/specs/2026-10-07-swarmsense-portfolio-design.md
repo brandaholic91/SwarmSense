@@ -1,7 +1,7 @@
 # SwarmSense portfóliódarab: design
 
 - **Dátum:** 2026-10-07
-- **Állapot:** jóváhagyásra vár
+- **Állapot:** jóváhagyva (2026-10-07)
 - **Forrás:** `2026-10-07 SwarmSense terv` (second-brain vault) és a 2026-10-07-i brainstorming
 - **Ütemezés:** párhuzamosan fut a Portfólió kapujával (határnap 2026-12-01), a scope nincs vágva (Balázs döntése)
 
@@ -115,6 +115,8 @@ A kliens a legnagyobb kapott `id`-t küldi vissza `after`-ként.
 
 - **opencode Go**, az Ajánlatkészítő mintájára: `https://opencode.ai/zen/go/v1/chat/completions`, OpenAI-kompatibilis kérés, modell `deepseek-v4.1-flash`.
 - Kötelező fejléc: `x-opencode-session: swarmsense-<run_id>` (enélkül 400).
+- Kötelező saját `User-Agent` fejléc is (pl. `swarmsense/<verzió>`): a Python alapértelmezett `User-Agent`-jét a szolgáltató előtti Cloudflare 403-mal (1010) elutasítja. Mérve 2026-10-07.
+- A modell gondolkodó modell: a válaszban `reasoning_content` is jön, és a kimeneti tokenek nagy része gondolkodás. A kliens csak a `content`-et dolgozza fel; a tokenszám a `usage` mezőből jön.
 - A `config.py` `openrouter_*` mezőiből `llm_*` lesz, az osztályból `LLMClient`. A nem használt `kimi_api_key` törlődik.
 - **Költség:** a trace és az eredményoldal tokenszámot mutat, mellette a DeepSeek listaárából számolt becslést, becslésként jelölve. Az ár egy konstans a kódban.
 - **Ismert függés:** a demó Balázs napi munkaeszközének keretét használja. Ezt a globális napi futáskeret korlátozza (7. szakasz).
@@ -200,10 +202,10 @@ Futás indítása előtt, ebben a sorrendben. Az értékek környezeti változó
 ## 11. Mi törlődik
 
 - **Backend:** magic link auth, qualifier, waitlist, unsubscribe, follow-up levelek, e-mail-metrikák, operator endpointok, consent- és adattörlő service, az „egy e-mail, egy futás” korlát, `cost_enforcement.py`, `run_sessions.py`, Sentry, a Supabase-kliens.
-- **Frontend:** a `blocked`, `pro`, `qualifier`, `verify`, `research/email`, `research/sent` oldalak, a három e-mail-renderelő route, a React Email sablonok, a Sentry config.
+- **Frontend:** a `blocked`, `pro`, `qualifier`, `verify`, `research/email`, `research/sent` oldalak, a három e-mail-renderelő route, a React Email sablonok, a Sentry config, a Plausible szkript (`app/layout.tsx`); webanalitika nincs.
 - **Séma:** `users`, `magic_link_tokens`, `qualifier_responses`, `waitlist`, `cost_tracking`.
 - **Tesztek:** a kieső kód tesztjei (13 fájl).
-- **Repo:** `_bmad`, `_bmad-output`, `.cursor`, `.opencode`, `.agent`, `.agents`, `supabase/`, `skills-lock.json`, a `docs/` régi fájljai, `.github/workflows/deploy.yml`, `docker-compose.swarmsense-backend.yml`.
+- **Repo:** `_bmad`, `_bmad-output`, `.cursor`, `.opencode`, `.agent`, `.agents`, `supabase/`, `skills-lock.json`, a `docs/` régi fájljai, `.github/workflows/deploy.yml`, `.github/workflows/supabase-migrations-draft.yml`, `docker-compose.swarmsense-backend.yml`.
 
 ## 12. Tesztelés
 

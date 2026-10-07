@@ -31,7 +31,7 @@ Böngésző → Next.js frontend (egyedül ez nyilvános) → FastAPI backend �
 - **Keretek:** IP-nkénti és összesített futásszám gördülő 24 órára, legfeljebb 2 egyidejű futás, levélkeretek. Mind `count` lekérdezés, az értékek környezeti változók.
 - **Hibáról kifelé csak hibakód megy,** a szolgáltató nyers üzenete nem. A felhasználói szövegek a `frontend/lib/messages.ts`-ben vannak, magyarul.
 - **Megőrzés:** a futás és a PDF megmarad, az e-mail-cím 14 nap után törlődik. Nyers IP nem tárolódik, csak HMAC.
-- **Nincs:** auth, Sentry, operator endpoint, Supabase.
+- **Nincs:** auth, Sentry, webanalitika (Plausible), operator endpoint, Supabase.
 
 ## Teljesítési kritériumok
 

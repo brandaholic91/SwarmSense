@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Hol tart a projekt
 
-A repo átalakítás alatt áll: a freemium funnelből portfóliódarab lesz. **A kód még a régi állapotot tükrözi** (Supabase, OpenRouter, magic link, qualifier, Sentry); ez a fájl a célállapotot rögzíti.
+A repo átalakítás alatt áll: a freemium funnelből portfóliódarab lesz. **A backend és a frontend magja már az új alapon áll** (Postgres, opencode Go, regisztráció nélküli űrlap); a trace, az eredményoldal, a PDF, az e-mail és a keretek még hiányoznak. Ez a fájl a célállapotot rögzíti.
 
 - **Részletes design:** `docs/superpowers/specs/2026-10-07-swarmsense-portfolio-design.md`. Ha ez a fájl és a spec eltér, a spec az irányadó.
 - **Aktuális állás:** `TRACKING.md`. Munka előtt olvasd el, lépés lezárásakor frissítsd.
@@ -64,8 +64,6 @@ Böngésző → Next.js frontend (egyedül ez nyilvános) → FastAPI backend �
 
 ## Parancsok
 
-A `psycopg`-re és a valódi Postgres-tesztekre való átállás után a backend parancsai változnak; akkor ezt a szakaszt frissíteni kell.
-
 ```bash
 # Frontend (frontend/ mappából, pnpm 9, Node 20+)
 pnpm install --frozen-lockfile
@@ -75,6 +73,9 @@ pnpm exec tsc --noEmit
 pnpm test                     # vitest, egyszeri futás
 pnpm exec vitest run components/waiting-screen.test.tsx   # egy tesztfájl
 pnpm build
+
+# Postgres a teszteknek és a fejlesztéshez (repo gyökeréből; localhost:5433)
+docker compose -f docker-compose.dev.yml up -d
 
 # Backend (backend/ mappából, Python 3.12)
 python3.12 -m venv .venv && source .venv/bin/activate

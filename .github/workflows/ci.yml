@@ -30,11 +30,8 @@ jobs:
       - name: Validate GitHub workflows with actionlint
         run: ~/go/bin/actionlint
 
-      - name: Prepare backend env for compose validation
-        run: cp backend/.env.example backend/.env
-
-      - name: Validate production compose syntax
-        run: docker compose -f docker-compose.swarmsense-backend.yml config
+      - name: Validate dev compose syntax
+        run: docker compose -f docker-compose.dev.yml config
 
   frontend:
     name: Frontend lint/test/build
@@ -78,6 +75,20 @@ jobs:
     name: Backend tests
     runs-on: ubuntu-latest
     needs: workflow_sanity
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: swarmsense
+          POSTGRES_PASSWORD: swarmsense
+          POSTGRES_DB: swarmsense_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U swarmsense"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: backend
@@ -96,4 +107,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Test
+        env:
+          SWARMSENSE_TEST_DATABASE_URL: postgresql://swarmsense:swarmsense@localhost:5432/swarmsense_test
         run: pytest tests -q

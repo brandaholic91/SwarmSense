@@ -32,7 +32,10 @@ class PersonaResponse(BaseModel):
 
 
 class SynthesisResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # Az ismeretlen kulcsot eldobjuk, nem utasítjuk el: a modell időnként visszaírja
+    # a kérés `response_format` mezőjét ("type": "json_object") az öt kért kulcs
+    # mellé. Az öt kulcs és a típusuk továbbra is kötelező.
+    model_config = ConfigDict(extra="ignore")
 
     summary: str
     main_barriers: list[str]

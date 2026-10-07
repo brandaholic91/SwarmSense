@@ -37,7 +37,19 @@ def test_request_shape():
     assert usage == TokenUsage(input_tokens=79, output_tokens=74)
 
 
-@pytest.mark.parametrize("usage", [None, {}, {"prompt_tokens": None}, {"prompt_tokens": "x"}, "nem objektum"])
+@pytest.mark.parametrize(
+    "usage",
+    [
+        None,
+        {},
+        {"prompt_tokens": None},
+        {"prompt_tokens": "x"},
+        {"prompt_tokens": -5, "completion_tokens": -1},
+        {"prompt_tokens": 1.5, "completion_tokens": 2.0},
+        {"prompt_tokens": True, "completion_tokens": False},
+        "nem objektum",
+    ],
+)
 def test_missing_or_malformed_usage_gives_zero_tokens(usage):
     async def fake_transport(url, headers, payload):
         body = {"choices": [{"message": {"content": '{"ok": true}'}}]}
@@ -48,6 +60,33 @@ def test_missing_or_malformed_usage_gives_zero_tokens(usage):
     client = LLMClient(session_id="s", transport=fake_transport)
     _, tokens = asyncio.run(client.generate_json(system_prompt="s", user_prompt="u"))
     assert tokens == TokenUsage(0, 0)
+
+
+def test_valid_field_counted_invalid_field_zero():
+    async def fake_transport(url, headers, payload):
+        return {
+            "choices": [{"message": {"content": '{"ok": true}'}}],
+            "usage": {"prompt_tokens": 42, "completion_tokens": "x"},
+        }
+
+    client = LLMClient(session_id="s", transport=fake_transport)
+    _, tokens = asyncio.run(client.generate_json(system_prompt="s", user_prompt="u"))
+    assert tokens == TokenUsage(42, 0)
+
+
+def test_invalid_json_error_carries_usage():
+    async def fake_transport(url, headers, payload):
+        return {
+            "choices": [{"message": {"content": "nem json"}}],
+            "usage": {"prompt_tokens": 7, "completion_tokens": 3},
+        }
+
+    client = LLMClient(session_id="s", transport=fake_transport)
+    with pytest.raises(LLMProviderError) as exc_info:
+        asyncio.run(client.generate_json(system_prompt="s", user_prompt="u"))
+
+    assert exc_info.value.error_code == "INVALID_JSON"
+    assert exc_info.value.usage == TokenUsage(7, 3)
 
 
 def test_token_usage_adds():

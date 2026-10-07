@@ -26,9 +26,13 @@ class TokenUsage:
 
 
 class LLMProviderError(Exception):
-    def __init__(self, *, error_code: str, message: str) -> None:
+    def __init__(
+        self, *, error_code: str, message: str, usage: TokenUsage | None = None
+    ) -> None:
         super().__init__(message)
         self.error_code = error_code
+        # a hívás tokenjei, ha a szolgáltató válaszolt, de a válasz használhatatlan
+        self.usage = usage or TokenUsage()
 
 
 class TransportError(Exception):
@@ -98,7 +102,12 @@ class LLMClient:
         raw = await self._request_with_retry(
             endpoint=endpoint, headers=headers, payload=payload
         )
-        return _extract_json_content(raw), _extract_usage(raw)
+        usage = _extract_usage(raw)
+        try:
+            return _extract_json_content(raw), usage
+        except LLMProviderError as exc:
+            exc.usage = usage
+            raise
 
     async def _request_with_retry(
         self,

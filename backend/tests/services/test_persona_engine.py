@@ -143,3 +143,65 @@ def test_execute_persona_engine_collects_provider_failures() -> None:
     assert result.successful_count == 0
     assert len(result.failures) == 15
     assert all(item.error_code == "RATE_LIMITED" for item in result.failures)
+
+
+def test_failed_persona_tokens_are_still_counted() -> None:
+    valid = {
+        "name": "Persona",
+        "role": "Role",
+        "stance": "conditional",
+        "primary_argument": "Erv",
+        "change_condition": "Feltetel",
+        "core_concern": "Aggodalom",
+        "buying_trigger": "Trigger",
+    }
+    calls = 0
+
+    class MixedClient:
+        async def generate_json(
+            self, *, system_prompt: str, user_prompt: str, temperature: float = 0.3
+        ):
+            nonlocal calls
+            calls += 1
+            body = {"name": "csak ennyi"} if calls == 1 else valid
+            return body, TokenUsage(10, 5)
+
+    result = asyncio.run(
+        execute_persona_engine(
+            topic="Tema",
+            audience="Kozonseg",
+            llm_client=MixedClient(),
+            blueprints=build_persona_blueprints(total_personas=18),
+        )
+    )
+
+    assert result.successful_count == 17
+    assert len(result.failures) == 1
+    assert result.failures[0].error_code == "MALFORMED_PROVIDER_OUTPUT"
+    assert result.input_tokens == 180
+    assert result.output_tokens == 90
+
+
+def test_provider_error_usage_is_counted_for_failed_persona() -> None:
+    class InvalidJsonClient:
+        async def generate_json(
+            self, *, system_prompt: str, user_prompt: str, temperature: float = 0.3
+        ):
+            raise LLMProviderError(
+                error_code="INVALID_JSON",
+                message="nem json",
+                usage=TokenUsage(10, 5),
+            )
+
+    result = asyncio.run(
+        execute_persona_engine(
+            topic="Tema",
+            audience="Kozonseg",
+            llm_client=InvalidJsonClient(),
+            blueprints=build_persona_blueprints(total_personas=15),
+        )
+    )
+
+    assert len(result.failures) == 15
+    assert result.input_tokens == 150
+    assert result.output_tokens == 75

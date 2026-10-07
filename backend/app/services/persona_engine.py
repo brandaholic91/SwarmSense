@@ -286,6 +286,7 @@ async def execute_persona_engine(
             prompt = build_persona_user_prompt(
                 persona=persona, topic=topic, audience=audience
             )
+            usage = TokenUsage()
             try:
                 raw, usage = await llm_client.generate_json(
                     system_prompt=HUNGARIAN_SYSTEM_PROMPT,
@@ -300,7 +301,7 @@ async def execute_persona_engine(
                         error_code=exc.error_code,
                         error_message=str(exc),
                     ),
-                    TokenUsage(),
+                    exc.usage,
                 )
             except ValueError as exc:
                 return (
@@ -310,7 +311,7 @@ async def execute_persona_engine(
                         error_code="MALFORMED_PROVIDER_OUTPUT",
                         error_message=str(exc),
                     ),
-                    TokenUsage(),
+                    usage,
                 )
 
     tasks = [asyncio.create_task(_run_persona(persona)) for persona in personas]

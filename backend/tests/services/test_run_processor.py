@@ -25,6 +25,9 @@ from app.services.run_processor import (
 from app.services.synthesis_service import SYNTHESIS_SYSTEM_PROMPT
 
 TOTAL = 18
+MARKER = "NYERS-SZOLGALTATOI-UZENET-42"
+TOPIC = "Árazás"
+AUDIENCE = "KKV vezetők"
 
 
 def _stance_for(index: int) -> str:
@@ -48,6 +51,8 @@ def make_fake_llm(
     failing_personas: frozenset[str] = frozenset(),
     synthesis_fails: bool = False,
     blueprint_fails: bool = False,
+    synthesis_invalid: bool = False,
+    blueprint_invalid: bool = False,
 ) -> LLMClient:
     """Hamis LLM: a system prompt alapján dönti el, melyik hívás jött.
 
@@ -65,8 +70,11 @@ def make_fake_llm(
         user_prompt = payload["messages"][1]["content"]
 
         if system_prompt == BLUEPRINT_SYSTEM_PROMPT:
+            if blueprint_invalid:
+                # séma-hibás válasz, benne a téma és a célközönség szövege
+                return _completion({"personas": [{"name": f"{TOPIC} {AUDIENCE}"}]})
             if blueprint_fails:
-                raise TransportError(status_code=400, body=None)
+                raise TransportError(status_code=400, body={"error": MARKER})
             return _completion(
                 {
                     "personas": [
@@ -89,7 +97,7 @@ def make_fake_llm(
             assert match is not None, user_prompt
             name, index = match.group(1), int(match.group(2))
             if name in failing_personas:
-                raise TransportError(status_code=400, body=None)
+                raise TransportError(status_code=400, body={"error": MARKER})
             return _completion(
                 {
                     "name": name,
@@ -103,8 +111,10 @@ def make_fake_llm(
             )
 
         if system_prompt == SYNTHESIS_SYSTEM_PROMPT:
+            if synthesis_invalid:
+                return _completion({"summary": f"{TOPIC}: {AUDIENCE} megosztottak"})
             if synthesis_fails:
-                raise TransportError(status_code=400, body=None)
+                raise TransportError(status_code=400, body={"error": MARKER})
             return _completion(
                 {
                     "summary": "Összefoglaló.",
@@ -192,6 +202,42 @@ def test_summary_log_has_no_topic_text(clean_db, caplog):
         _run(clean_db)
     assert any("completed" in r.getMessage() for r in caplog.records)
     assert "Árazás" not in caplog.text
+
+
+def _assert_clean_log(caplog) -> None:
+    for text in (TOPIC, AUDIENCE, MARKER, "input_value"):
+        assert text not in caplog.text
+
+
+def test_invalid_synthesis_reply_is_not_logged(clean_db, caplog):
+    with caplog.at_level("DEBUG"):
+        run = _run(clean_db, synthesis_invalid=True)
+    assert run["status"] == "partial"
+    assert run["synthesis_summary"] is None
+    _assert_clean_log(caplog)
+
+
+def test_invalid_blueprint_reply_is_not_logged(clean_db, caplog):
+    with caplog.at_level("DEBUG"):
+        run = _run(clean_db, blueprint_invalid=True)
+    assert run["status"] == "failed"
+    assert run["completed_at"] is not None
+    _assert_clean_log(caplog)
+
+
+def test_provider_error_message_is_not_logged(clean_db, caplog):
+    failing = frozenset({"Persona 1", "Persona 2"})
+    with caplog.at_level("DEBUG"):
+        _run(clean_db, failing_personas=failing, synthesis_fails=True)
+        _run(clean_db, blueprint_fails=True)
+    _assert_clean_log(caplog)
+
+
+def test_unexpected_failure_logs_summary_and_provider_usage(clean_db, caplog):
+    with caplog.at_level("INFO", logger="swarmsense.run"):
+        _run(clean_db, blueprint_fails=True)
+    assert any("failed" in r.getMessage() and "elapsed" in r.getMessage()
+               for r in caplog.records)
 
 
 def test_default_llm_client_uses_run_session_id(clean_db, monkeypatch):

@@ -34,14 +34,55 @@ async def process_run(
             llm_client=llm_client,
             started=started,
         )
-    except Exception:
+    except Exception as exc:
         # bármilyen nem várt hiba: a futás ne maradjon running/composing állapotban
-        logger.exception("run %s failed unexpectedly", run_id)
+        # Naplóba csak a kivétel típusa (és a hibakód) kerül: az üzenet és a
+        # lánc LLM-kimenetet, a szolgáltató nyers szövegét, témát tartalmazhat.
+        logger.error("run %s failed unexpectedly: %s", run_id, _describe(exc))
+        usage = exc.usage if isinstance(exc, LLMProviderError) else TokenUsage()
         try:
-            db.update_run(run_id, status="failed", completed_at=datetime.now(UTC))
-        except Exception:
-            logger.exception("run %s could not be marked failed", run_id)
+            db.update_run(
+                run_id,
+                status="failed",
+                completed_at=datetime.now(UTC),
+                input_tokens=usage.input_tokens,
+                output_tokens=usage.output_tokens,
+            )
+        except Exception as update_exc:
+            logger.error(
+                "run %s could not be marked failed: %s", run_id, _describe(update_exc)
+            )
+        _log_summary(
+            run_id=run_id, status="failed", started=started, usage=usage, dropped=None
+        )
         raise
+
+
+def _describe(exc: BaseException) -> str:
+    """Naplózható leírás: kivételtípus, LLMProviderError esetén a hibakód is."""
+    if isinstance(exc, LLMProviderError):
+        return f"{type(exc).__name__} ({exc.error_code})"
+    return type(exc).__name__
+
+
+def _log_summary(
+    *,
+    run_id: str,
+    status: str,
+    started: float,
+    usage: TokenUsage,
+    dropped: int | None,
+) -> None:
+    logger.info(
+        "run %s finished: status=%s elapsed=%.1fs input_tokens=%d "
+        "output_tokens=%d dropped_personas=%s",
+        run_id,
+        status,
+        time.monotonic() - started,
+        usage.input_tokens,
+        usage.output_tokens,
+        "unknown" if dropped is None else dropped,
+    )
 
 
 async def _process_run(
@@ -58,9 +99,9 @@ async def _process_run(
         _ = total_personas
         try:
             db.update_run(run_id, status="running", persona_count=processed_count)
-        except Exception:
+        except Exception as exc:
             # a haladásjelzés nem kritikus, a futás mehet tovább
-            logger.exception("run %s progress update failed", run_id)
+            logger.error("run %s progress update failed: %s", run_id, _describe(exc))
 
     if llm_client is None:
         llm_client = LLMClient(session_id=f"swarmsense-{run_id}")
@@ -97,7 +138,7 @@ async def _process_run(
         )
         usage += synthesis_usage
     except Exception as exc:
-        logger.exception("run %s synthesis failed", run_id)
+        logger.error("run %s synthesis failed: %s", run_id, _describe(exc))
         if isinstance(exc, LLMProviderError):
             usage += exc.usage
 
@@ -147,15 +188,12 @@ def _finish_run(
             synthesis_strategic_recommendation=synthesis.strategic_recommendation,
         )
     db.update_run(run_id, **fields)
-    logger.info(
-        "run %s finished: status=%s elapsed=%.1fs input_tokens=%d "
-        "output_tokens=%d dropped_personas=%d",
-        run_id,
-        status,
-        time.monotonic() - started,
-        usage.input_tokens,
-        usage.output_tokens,
-        len(result.failures),
+    _log_summary(
+        run_id=run_id,
+        status=status,
+        started=started,
+        usage=usage,
+        dropped=len(result.failures),
     )
 
 
@@ -305,5 +343,5 @@ def dispatch_run_processing(
                 llm_client=llm_client,
             )
         )
-    except Exception:
-        logger.debug("run %s background task ended with an error", run_id)
+    except Exception as exc:
+        logger.error("run %s background task ended: %s", run_id, _describe(exc))

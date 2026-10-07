@@ -134,11 +134,14 @@ def test_get_status_unknown_or_malformed_id_is_404(client, run_id):
 def test_startup_applies_schema_on_empty_database(clean_db):
     from app.main import create_app
 
-    with db.connect() as conn:
-        conn.execute("drop table email_requests, run_events, runs")
-    with TestClient(create_app()):
-        pass
-    assert db.create_run(topic="a", audience="b")["status"] == "queued"
+    try:
+        with db.connect() as conn:
+            conn.execute("drop table email_requests, run_events, runs")
+        with TestClient(create_app()):
+            pass
+        assert db.create_run(topic="a", audience="b")["status"] == "queued"
+    finally:
+        db.apply_schema()
 
 
 def test_non_run_endpoints_not_blocked(client):

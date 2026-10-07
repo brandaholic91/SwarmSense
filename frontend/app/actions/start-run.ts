@@ -1,5 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
+
+import { backendFetch, clientIp } from "@/lib/backend";
+
 type StartRunInput = {
   topic: string;
   audience: string;
@@ -22,20 +26,14 @@ export async function startRunAction(input: StartRunInput): Promise<StartRunResu
       return { ok: false, code: "INVALID_INPUT" };
     }
 
-    const apiUrl = process.env.API_URL;
-    const internalSecret = process.env.INTERNAL_SECRET;
-    if (!apiUrl || !internalSecret) {
-      return { ok: false, code: "RUN_START_FAILED" };
-    }
-
-    const response = await fetch(`${apiUrl}/api/v1/runs`, {
+    const forwardedFor = clientIp(await headers());
+    const response = await backendFetch("/api/v1/runs", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-Internal-Secret": internalSecret,
+        ...(forwardedFor ? { "X-Client-IP": forwardedFor } : {}),
       },
       body: JSON.stringify({ topic, audience }),
-      cache: "no-store",
     });
 
     if (!response.ok) {

@@ -1,0 +1,78 @@
+import { render, screen, within } from "@testing-library/react";
+import { axe } from "jest-axe";
+
+import { TraceView } from "@/components/trace-view";
+import { estimateCostUsd, formatCostUsd } from "@/lib/cost";
+import { messages } from "@/lib/messages";
+import { applyEvent, initialTraceState } from "@/lib/trace";
+import { ev, fullRunEvents } from "@/test/trace-fixtures";
+
+const price = { input_per_million_usd: 0.5, output_per_million_usd: 1.5 };
+const NOW = Date.parse("2026-10-07T12:01:00Z");
+const t = messages.trace;
+
+function personaList() {
+  return within(screen.getByRole("list", { name: t.personasAriaLabel }));
+}
+
+describe("TraceView", () => {
+  const done = fullRunEvents().reduce(applyEvent, initialTraceState());
+
+  it("shows 17 completed rows and one failed row with its error code", () => {
+    render(<TraceView topic="Árazás" state={done} now={NOW} price={price} />);
+
+    const list = personaList();
+    expect(list.getAllByText(t.row.completed)).toHaveLength(17);
+    expect(list.getAllByText(t.row.failed)).toHaveLength(1);
+    expect(list.getByText("INVALID_RESPONSE")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Árazás");
+  });
+
+  it("shows attempt 2/3 for the retried persona", () => {
+    render(<TraceView topic="x" state={done} now={NOW} price={price} />);
+
+    expect(personaList().getAllByText(`${t.row.attemptLabel} 2/3`)).toHaveLength(1);
+  });
+
+  it("shows the estimated cost and the estimate marker in the summary", () => {
+    render(<TraceView topic="x" state={done} now={NOW} price={price} />);
+
+    const summary = within(screen.getByLabelText(t.summaryAriaLabel));
+    const expected = formatCostUsd(estimateCostUsd(done.inputTokens, done.outputTokens, price));
+    expect(summary.getByText(expected)).toBeInTheDocument();
+    expect(summary.getByText(new RegExp(t.summary.estimate))).toBeInTheDocument();
+  });
+
+  it("shows 13 queued rows in the personas phase after 5 personas started", () => {
+    const state = [
+      ev(1, "run_started"),
+      ev(2, "personas_generated"),
+      ...[0, 1, 2, 3, 4].map((i) =>
+        ev(3 + i, "persona_started", { persona_index: i, persona_name: `P${i}` })
+      ),
+    ].reduce(applyEvent, initialTraceState());
+
+    render(<TraceView topic="x" state={state} now={NOW} price={price} />);
+
+    expect(personaList().getAllByText(t.row.queued)).toHaveLength(13);
+    expect(personaList().getAllByText(t.row.running)).toHaveLength(5);
+  });
+
+  it("marks the current phase", () => {
+    const state = [ev(1, "run_started"), ev(2, "personas_generated")].reduce(
+      applyEvent,
+      initialTraceState()
+    );
+    render(<TraceView topic="x" state={state} now={NOW} price={price} />);
+
+    const phases = within(screen.getByRole("list", { name: t.phasesAriaLabel }));
+    expect(phases.getByText(t.phases.personas).closest("li")).toHaveAttribute("aria-current", "step");
+  });
+
+  it("has no critical accessibility violations", async () => {
+    const { container } = render(<TraceView topic="Árazás" state={done} now={NOW} price={price} />);
+
+    const results = await axe(container);
+    expect(results.violations.filter((v) => v.impact === "critical")).toEqual([]);
+  });
+});

@@ -109,6 +109,49 @@ describe("Research page", () => {
     expect(startRunMock).toHaveBeenCalledTimes(1);
   });
 
+  it.each(["IP_LIMIT_REACHED", "DAILY_LIMIT_REACHED"])(
+    "links to the sample run when %s is hit",
+    async (code) => {
+      render(<ResearchPage />);
+      startRunMock.mockResolvedValue({ ok: false, code });
+      fillForm("Árazási teszt", "KKV vezetők");
+
+      fireEvent.click(submitButton());
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        errorMessages[code as keyof typeof errorMessages]
+      );
+      expect(screen.getByRole("link", { name: messages.trace.sampleLink })).toHaveAttribute(
+        "href",
+        "/minta"
+      );
+    }
+  );
+
+  it("does not link to the sample run for BUSY", async () => {
+    render(<ResearchPage />);
+    startRunMock.mockResolvedValue({ ok: false, code: "BUSY" });
+    fillForm("Árazási teszt", "KKV vezetők");
+
+    fireEvent.click(submitButton());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(errorMessages.BUSY);
+    expect(screen.queryByRole("link", { name: messages.trace.sampleLink })).not.toBeInTheDocument();
+  });
+
+  it("keeps submit disabled after a successful start and ignores a second submit", async () => {
+    render(<ResearchPage />);
+    startRunMock.mockResolvedValue({ ok: true, run_id: "r-1" });
+    fillForm("Árazási teszt", "KKV vezetők");
+
+    fireEvent.click(submitButton());
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/waiting/r-1"));
+
+    expect(submitButton()).toBeDisabled();
+    fireEvent.submit(submitButton().closest("form") as HTMLFormElement);
+    expect(startRunMock).toHaveBeenCalledTimes(1);
+  });
+
   it("does not navigate when only one field is filled on submit", () => {
     render(<ResearchPage />);
 

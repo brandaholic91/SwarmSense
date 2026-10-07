@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Info } from "lucide-react";
 
@@ -40,6 +41,9 @@ export default function ResearchPage() {
 
   const [startError, setStartError] = React.useState<string | null>(null);
   const [isStarting, startTransition] = React.useTransition();
+  // Sikeres indítás után a gomb letiltva marad, amíg a böngésző át nem lép a trace oldalra.
+  const [submitted, setSubmitted] = React.useState(false);
+  const [startErrorCode, setStartErrorCode] = React.useState<string | null>(null);
 
   const isComplete =
     researchTopic.trim().length > 0 && audienceDescription.trim().length > 0;
@@ -63,7 +67,7 @@ export default function ResearchPage() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (isStarting) {
+    if (isStarting || submitted) {
       return;
     }
 
@@ -81,15 +85,18 @@ export default function ResearchPage() {
 
     setErrors({});
     setStartError(null);
+    setStartErrorCode(null);
     startTransition(async () => {
       const result = await startRunAction({
         topic: researchTopic.trim(),
         audience: audienceDescription.trim(),
       });
       if (result.ok) {
+        setSubmitted(true);
         router.push(`/waiting/${result.run_id}`);
       } else {
         setStartError(getErrorMessageByCode(result.code));
+        setStartErrorCode(result.code);
       }
     });
   };
@@ -204,12 +211,21 @@ export default function ResearchPage() {
                     {startError}
                   </p>
                 ) : null}
+                {startErrorCode === "IP_LIMIT_REACHED" || startErrorCode === "DAILY_LIMIT_REACHED" ? (
+                  <Link
+                    href="/minta"
+                    className="block text-sm font-semibold underline underline-offset-4"
+                    style={{ color: accent }}
+                  >
+                    {messages.trace.sampleLink}
+                  </Link>
+                ) : null}
                 <button
                   type="submit"
                   className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
-                  disabled={!isComplete || isStarting}
-                  aria-disabled={!isComplete || isStarting ? "true" : undefined}
+                  disabled={!isComplete || isStarting || submitted}
+                  aria-disabled={!isComplete || isStarting || submitted ? "true" : undefined}
                 >
                   {form.submitCta}
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />

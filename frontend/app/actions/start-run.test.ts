@@ -1,6 +1,11 @@
 import type { MockInstance } from "vitest";
 
+import { headers } from "next/headers";
+
 import { startRunAction } from "@/app/actions/start-run";
+
+vi.mock("next/headers", () => ({ headers: vi.fn() }));
+const headersMock = vi.mocked(headers);
 
 describe("startRunAction", () => {
   const originalApiUrl = process.env.API_URL;
@@ -11,6 +16,7 @@ describe("startRunAction", () => {
     process.env.API_URL = "http://backend:8000";
     process.env.INTERNAL_SECRET = "s3cret";
     fetchMock = vi.spyOn(global, "fetch");
+    headersMock.mockResolvedValue(new Headers() as never);
   });
 
   afterEach(() => {
@@ -37,7 +43,7 @@ describe("startRunAction", () => {
     expect(result).toEqual({ ok: true, run_id: "r-1" });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://backend:8000/api/v1/runs");
-    expect((init.headers as Record<string, string>)["X-Internal-Secret"]).toBe("s3cret");
+    expect(new Headers(init.headers).get("X-Internal-Secret")).toBe("s3cret");
     expect(JSON.parse(init.body as string)).toEqual({
       topic: "Árazás",
       audience: "KKV vezetők",
@@ -116,5 +122,55 @@ describe("startRunAction", () => {
       code: "RUN_START_FAILED",
     });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("forwards the first x-forwarded-for address as X-Client-IP", async () => {
+    headersMock.mockResolvedValue(
+      new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }) as never
+    );
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ run_id: "r-1" }), { status: 200 }));
+
+    await startRunAction({ topic: "a", audience: "b" });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(new Headers(init.headers).get("X-Client-IP")).toBe("203.0.113.7");
+  });
+
+  it("sends no X-Client-IP without a forwarded header", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ run_id: "r-1" }), { status: 200 }));
+
+    await startRunAction({ topic: "a", audience: "b" });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(new Headers(init.headers).has("X-Client-IP")).toBe(false);
+  });
+
+  it("passes a 429 limit code through", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ code: "DAILY_LIMIT_REACHED" }), { status: 429 })
+    );
+
+    await expect(startRunAction({ topic: "a", audience: "b" })).resolves.toEqual({
+      ok: false,
+      code: "DAILY_LIMIT_REACHED",
+    });
+  });
+
+  it("returns RUN_START_FAILED for a 500 with a non-JSON body", async () => {
+    fetchMock.mockResolvedValue(new Response("<html>oops</html>", { status: 500 }));
+
+    await expect(startRunAction({ topic: "a", audience: "b" })).resolves.toEqual({
+      ok: false,
+      code: "RUN_START_FAILED",
+    });
+  });
+
+  it("returns RUN_START_FAILED on a timeout (AbortError)", async () => {
+    fetchMock.mockRejectedValue(new DOMException("timed out", "AbortError"));
+
+    await expect(startRunAction({ topic: "a", audience: "b" })).resolves.toEqual({
+      ok: false,
+      code: "RUN_START_FAILED",
+    });
   });
 });

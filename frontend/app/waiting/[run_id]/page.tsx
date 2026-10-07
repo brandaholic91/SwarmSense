@@ -1,4 +1,7 @@
-import { WaitingScreen } from "@/components/waiting-screen";
+import { notFound } from "next/navigation";
+
+import { LiveTrace } from "@/components/live-trace";
+import { isRunId } from "@/lib/backend";
 
 type WaitingPageProps = {
   params: Promise<{ run_id: string }>;
@@ -6,7 +9,9 @@ type WaitingPageProps = {
 
 export default async function WaitingPage({ params }: WaitingPageProps) {
   const { run_id } = await params;
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? process.env.API_URL ?? "";
+  if (!isRunId(run_id)) {
+    notFound();
+  }
 
-  return <WaitingScreen runId={run_id} apiBaseUrl={apiBaseUrl} />;
+  return <LiveTrace runId={run_id} />;
 }

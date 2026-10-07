@@ -251,6 +251,14 @@ export const messages = {
     sampleLink: "Nézd meg a mintafutást",
     formLink: "Új elemzés indítása",
   },
+  replay: {
+    eyebrow: "Visszajátszás",
+    recorded: "Rögzített futás",
+    jumpToResult: "Ugrás az eredményre",
+    again: "Újra",
+    error: "A visszajátszás most nem tölthető be.",
+    sampleUnavailable: "A mintafutás most nem érhető el.",
+  },
   result: {
     eyebrow: "Eredmény",
     audienceLabel: "Célközönség",

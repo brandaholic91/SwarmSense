@@ -78,6 +78,25 @@ def create_run(
     )
 
 
+@router.get("/sample", response_model=None)
+def get_sample_run() -> dict[str, str] | JSONResponse:
+    # a `/{run_id}` útvonalak előtt áll, különben a "sample" futásazonosítónak számítana
+    try:
+        run_id = db.get_sample_run_id()
+    except Exception as exc:
+        logger.error("sample lookup failed: %s", type(exc).__name__)
+        return error_response(
+            status_code=503,
+            detail="Service unavailable",
+            code=ErrorCode.SERVICE_UNAVAILABLE,
+        )
+    if run_id is None:
+        return error_response(
+            status_code=404, detail="Sample not found", code=ErrorCode.SAMPLE_NOT_FOUND
+        )
+    return {"run_id": run_id}
+
+
 @router.get("/{run_id}", response_model=RunDetailResponse)
 def get_run_detail(run_id: str) -> RunDetailResponse | JSONResponse:
     try:

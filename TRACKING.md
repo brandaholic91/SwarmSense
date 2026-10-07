@@ -58,6 +58,7 @@ Ha építés közben valami másképp alakul, mint a specben, ide kerül egy sor
 | 2026-10-07 | A landing oldal újraírása bekerült a B terv 5. lépésébe (spec 14. szakasz, frissítve) | Balázs döntése; a spec eddig egyik lépéshez sem rendelte, a mostani szövegben hamis állítások vannak („90 másodperc", „15-20 persona") |
 | 2026-10-07 | A spec 3. szakasza: minden `/api/v1/runs…` végpont `X-Internal-Secret`-et kér, nem csak az írásiak | Az eseményvégpont a futás témáját adja vissza, ezért nem lehet nyitott; a CORS és a `frontend_origin` beállítás megszűnt |
 | 2026-10-07 | A spec 5. szakasza: a polling válasz kiegészült `topic`, `created_at` és `price` mezőkkel; az ár a csúcsidős listaár (0,30 / 1,20 USD / 1M token, forrás a `pricing.py`-ban) | A kijelzőnek kell a téma és a költségbecslés; az ár idősávos, a felső érték a konzervatív becslés |
+| 2026-10-07 | A spec 8. szakasza: a seed fájl nem tartalmaz PDF-et és `ip_hash`-t; a minta PDF-jét az első letöltés generálja | A fájl nyilvános repóba kerül, és egy PDF nagy, bináris tartalom lenne az SQL-ben |
 
 ## Megfigyelések a valódi futásból
 

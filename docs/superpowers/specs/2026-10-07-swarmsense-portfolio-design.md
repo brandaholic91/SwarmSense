@@ -162,7 +162,7 @@ Futás indítása előtt, ebben a sorrendben. Az értékek környezeti változó
 - A `/minta` oldal és az eredményoldal „Futás visszajátszása” linkje ugyanazt a komponenst használja: a kliens egyben megkapja az eseményeket, és az időbélyegek különbsége szerint, eredeti tempóban adagolja az `applyEvent`-nek.
 - Felül címke („Rögzített futás, dátum”) és „Ugrás az eredményre” gomb.
 - A mintának tartalmaznia kell valódi retry-t és legalább egy kiesett personát. Nem hamisítjuk; addig futtatunk, amíg előfordul.
-- A minta SQL-fájlként a repóban van (`backend/seed/sample_run.sql`); a backend induláskor betölti, ha nincs megjelölt minta.
+- A minta SQL-fájlként a repóban van (`backend/seed/sample_run.sql`); a backend induláskor betölti, ha nincs megjelölt minta. A fájl nem tartalmaz `ip_hash`-t és PDF-et (nyilvános repóba kerül); a minta PDF-jét az első letöltési kérés generálja újra.
 
 ## 9. Eredményoldal, PDF, e-mail
 

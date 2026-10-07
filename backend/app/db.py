@@ -273,3 +273,118 @@ def count_email_requests(*, run_id: str | None = None, hours: int | None = None)
         params.append(hours)
     with connect() as conn:
         return conn.execute(query, params).fetchone()["n"]
+
+
+SEED_PATH = Path(__file__).resolve().parent.parent / "seed" / "sample_run.sql"
+
+# A minta exportja ezeket az oszlopokat viszi át. Az `ip_hash` és a `pdf` szándékosan
+# kimarad: a fájl nyilvános repóba kerül.
+_SAMPLE_RUN_COLUMNS = (
+    "id",
+    "topic",
+    "audience",
+    "status",
+    "persona_count",
+    "support_count",
+    "reject_count",
+    "conditional_count",
+    "synthesis_summary",
+    "synthesis_main_barriers",
+    "synthesis_winning_conditions",
+    "synthesis_best_target_segment",
+    "synthesis_strategic_recommendation",
+    "result",
+    "input_tokens",
+    "output_tokens",
+    "created_at",
+    "completed_at",
+)
+_SAMPLE_EVENT_COLUMNS = (
+    "type",
+    "persona_index",
+    "persona_name",
+    "attempt",
+    "error_code",
+    "duration_ms",
+    "input_tokens",
+    "output_tokens",
+    "created_at",
+)
+
+
+def get_sample_run_id() -> str | None:
+    with connect() as conn:
+        row = conn.execute(
+            "select id from runs where is_sample order by created_at desc limit 1"
+        ).fetchone()
+    return None if row is None else str(row["id"])
+
+
+def seed_sample_if_missing() -> bool:
+    """Ha nincs minta és van seed fájl, lefuttatja. Igaz, ha betöltött."""
+    if not SEED_PATH.is_file() or get_sample_run_id() is not None:
+        return False
+    with connect() as conn:
+        conn.execute(SEED_PATH.read_text(encoding="utf-8"))
+    return True
+
+
+def _insert_statement(
+    table: str,
+    columns: tuple[str, ...],
+    values: list[Any],
+    suffix: str,
+    conn: psycopg.Connection,
+) -> str:
+    query = sql.SQL("insert into {} ({}) values ({}){}").format(
+        sql.Identifier(table),
+        sql.SQL(", ").join(sql.Identifier(c) for c in columns),
+        sql.SQL(", ").join(sql.Literal(v) for v in values),
+        sql.SQL(suffix),
+    )
+    return query.as_string(conn)
+
+
+def export_sample_sql(run_id: str) -> str:
+    """A futás és eseményei beszúró SQL-ként, mintának jelölve, `ip_hash` és PDF nélkül."""
+    parsed = uuid.UUID(run_id)
+    columns = sql.SQL(", ").join(sql.Identifier(c) for c in _SAMPLE_RUN_COLUMNS)
+    event_columns = sql.SQL(", ").join(sql.Identifier(c) for c in _SAMPLE_EVENT_COLUMNS)
+    with connect() as conn:
+        run = conn.execute(
+            sql.SQL("select {} from runs where id = %s").format(columns), (parsed,)
+        ).fetchone()
+        if run is None:
+            raise LookupError("run not found")
+        events = conn.execute(
+            sql.SQL("select {} from run_events where run_id = %s order by id").format(
+                event_columns
+            ),
+            (parsed,),
+        ).fetchall()
+
+        run_values = [
+            Jsonb(run[c]) if c == "result" and run[c] is not None else run[c]
+            for c in _SAMPLE_RUN_COLUMNS
+        ]
+        # a kapcsolat csak a literálok formázásához kell
+        statements = [
+            _insert_statement(
+                "runs",
+                (*_SAMPLE_RUN_COLUMNS, "is_sample", "ip_hash"),
+                [*run_values, True, None],
+                " on conflict (id) do nothing",
+                conn,
+            )
+        ]
+        for event in events:
+            statements.append(
+                _insert_statement(
+                    "run_events",
+                    ("run_id", *_SAMPLE_EVENT_COLUMNS),
+                    [parsed, *(event[c] for c in _SAMPLE_EVENT_COLUMNS)],
+                    "",
+                    conn,
+                )
+            )
+    return ";\n".join(statements) + ";\n"

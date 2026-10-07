@@ -20,6 +20,7 @@ class ErrorCode(str, Enum):
     EMAIL_RUN_LIMIT_REACHED = "EMAIL_RUN_LIMIT_REACHED"
     EMAIL_DAILY_LIMIT_REACHED = "EMAIL_DAILY_LIMIT_REACHED"
     EMAIL_SEND_FAILED = "EMAIL_SEND_FAILED"
+    SAMPLE_NOT_FOUND = "SAMPLE_NOT_FOUND"
 
 
 def error_response(status_code: int, detail: str, code: ErrorCode) -> JSONResponse:

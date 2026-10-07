@@ -684,3 +684,35 @@ def test_daily_limit_notification_fires_once_when_the_limit_is_reached(
         assert notices == [1]
         assert client.post("/api/v1/runs", json=body).status_code == 429
         assert notices == [1]
+
+
+def test_sample_without_sample_is_404(client):
+    r = client.get("/api/v1/runs/sample")
+    assert r.status_code == 404
+    assert r.json()["code"] == "SAMPLE_NOT_FOUND"
+
+
+def test_sample_returns_latest_sample_id(client):
+    older = db.create_run(topic="a", audience="b")["id"]
+    newer = db.create_run(topic="a", audience="b")["id"]
+    with db.connect() as conn:
+        conn.execute("update runs set is_sample = true")
+        conn.execute(
+            "update runs set created_at = now() - interval '1 day' where id = %s", (older,)
+        )
+    r = client.get("/api/v1/runs/sample")
+    assert r.status_code == 200
+    assert r.json() == {"run_id": newer}
+
+
+def test_sample_without_secret_is_401(client):
+    r = client.get("/api/v1/runs/sample", headers={"X-Internal-Secret": "rossz"})
+    assert r.status_code == 401
+
+
+def test_sample_events_report_is_sample(client):
+    run = db.create_run(topic="a", audience="b")
+    with db.connect() as conn:
+        conn.execute("update runs set is_sample = true where id = %s", (run["id"],))
+    body = client.get(f"/api/v1/runs/{run['id']}/events").json()
+    assert body["is_sample"] is True

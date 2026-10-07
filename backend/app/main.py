@@ -13,9 +13,18 @@ from app.routers import runs, status
 from app.services import cleanup
 
 
+logger = logging.getLogger("swarmsense.main")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     db.apply_schema()
+    try:
+        if db.seed_sample_if_missing():
+            logger.info("sample run loaded from seed")
+    except Exception as exc:
+        # sérült seed ne állítsa meg az indulást; csak a kivétel típusa kerül a naplóba
+        logger.error("sample seed failed: %s", type(exc).__name__)
     cleanup_task = asyncio.create_task(cleanup.cleanup_loop())
     try:
         yield

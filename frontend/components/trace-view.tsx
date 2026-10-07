@@ -29,6 +29,8 @@ type TraceViewProps = {
   now: number;
   price: Price;
   banner?: ReactNode;
+  /** Alapértelmezetten „Élő futás"; a visszajátszás felülírja. */
+  eyebrow?: string;
 };
 
 const t = messages.trace;
@@ -105,7 +107,7 @@ function QueuedListItem() {
   );
 }
 
-export function TraceView({ topic, state, now, price, banner }: TraceViewProps) {
+export function TraceView({ topic, state, now, price, banner, eyebrow = t.eyebrow }: TraceViewProps) {
   const counts = countByStatus(state);
   const step = currentStep(state.phase);
   const cost = estimateCostUsd(state.inputTokens, state.outputTokens, price);
@@ -133,7 +135,7 @@ export function TraceView({ topic, state, now, price, banner }: TraceViewProps) 
           className="text-xs uppercase tracking-[0.3em]"
           style={{ color: textSecondary, ...labelFont }}
         >
-          {t.eyebrow}
+          {eyebrow}
         </span>
         <h1 className="text-2xl font-semibold md:text-3xl" style={headlineFont}>
           {topic}

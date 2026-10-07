@@ -49,3 +49,14 @@ export async function fetchRun(id: string): Promise<RunDetail | null> {
   }
   return (await response.json()) as RunDetail;
 }
+
+// Csak szerveroldalon használható. `null`: nincs mintafutás (404); más hibánál dob.
+export async function fetchSampleRunId(): Promise<string | null> {
+  const response = await backendFetch("/api/v1/runs/sample");
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`sample request failed with status ${response.status}`);
+  }
+  const body = (await response.json()) as { run_id: string };
+  return body.run_id;
+}

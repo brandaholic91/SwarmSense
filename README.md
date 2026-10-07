@@ -47,7 +47,7 @@ Egy futás 20 LLM-hívás: egy a personák megtervezéséhez, 18 a véleményekh
 
 ## Hibakezelés
 
-- Ha egy persona három kísérlet után sem ad érvényes választ, kiesik; a futás a többivel megy tovább.
+- Hálózati hibát, túlterhelést (429) és szerverhibát a kliens personánként legfeljebb háromszor próbál. Ha a válasz megérkezik, de nem felel meg a sémának, a persona újrapróbálás nélkül kiesik. A futás mindkét esetben a többivel megy tovább.
 - 12-nél kevesebb sikeres persona esetén a futás sikertelen.
 - Ha az összefoglaló nem készül el, az eredmény részlegesként jelenik meg a personák válaszaival.
 - A beragadt futásokat percenként futó takarítás zárja le.

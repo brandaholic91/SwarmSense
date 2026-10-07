@@ -184,7 +184,7 @@ Futás indítása előtt, ebben a sorrendben. Az értékek környezeti változó
 - Feladó: `swarmsense@growthframe.hu`.
 - A React Email sablonok és a három render-route törlődik.
 
-**Óránkénti takarítás:** háttérfeladat a FastAPI `lifespan`-ben. Törli a 14 napnál régebbi `email_requests` sorokat, és `failed`-re állítja a 10 percnél régebben `running` futásokat.
+**Takarítás:** háttérfeladat a FastAPI `lifespan`-ben, két független ütemmel. Percenként `failed`-re állítja a 10 percnél régebben nem végállapotú futásokat; óránként törli a 14 napnál régebbi `email_requests` sorokat. A beragadt futás percenkénti vizsgálata azért kell, mert a `count_active_runs` addig számolja a futást, amíg le nem zárják.
 
 **Adatkezelési tájékoztató:** újraírva. Kimondja, hogy a kérdés szövege megmarad (ne írjanak bele személyes adatot), az e-mail-cím 14 nap után törlődik nálunk, a Resend saját naplója ettől független, és a kérdés szövege az opencode-on át a DeepSeekhez kerül.
 

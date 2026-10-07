@@ -63,6 +63,7 @@ Ha építés közben valami másképp alakul, mint a specben, ide kerül egy sor
 | 2026-10-07 | A szintézis válaszában az ismeretlen kulcsot eldobjuk, nem utasítjuk el; az öt kért kulcs és a típusuk továbbra is kötelező. A persona- és a blueprint-válasz ellenőrzése nem változott | Mért hiba: a modell időnként visszaírja a kérés `response_format` mezőjét (`"type": "json_object"`) a válasz elejére, és a szigorú séma emiatt egy egyébként teljes szintézist dobott el |
 | 2026-10-07 | A futásidőről szóló állítás a nyitóoldalon, az űrlapon és a módszertani oldalon „másfél perc”-ről „másfél-két perc”-re változott (a spec nem rögzít időtartamot) | Mérés: a végigment valódi futások 86–132 mp-ig tartottak, retry nélkül is 86–126 mp-ig |
 | 2026-10-07 | A seed fájl egyetlen SQL-utasítás: az események csak akkor kerülnek be, ha a futás sorát ugyanez a végrehajtás szúrta be | Ha a minta azonosítója közönséges futásként már megvolt (fejlesztői adatbázis), minden backend-indulás újra hozzáfűzte az eseményeket |
+| 2026-10-07 | A beragadt futásokat a takarító percenként zárja le, a lejárt e-mail-kéréseket óránként törli (a spec 9. szakasza „óránkénti takarítás”-t mondott; frissítve) | A backend újraindulása után árván maradt futás az indulási körben még túl fiatal, a következő vizsgálat egy óra múlva jött, és a `count_active_runs` addig számolta: két árva futás ~70 percre minden látogatónak BUSY-t adott |
 
 ## Megfigyelések a valódi futásból
 

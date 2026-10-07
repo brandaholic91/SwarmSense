@@ -1,44 +1,23 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, StringConstraints
+
+MAX_FIELD_LENGTH = 500
+
+# szóközvágás után 1-500 karakter
+RunText = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_FIELD_LENGTH),
+]
 
 
 class RunCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    user_id: str
-    topic: str
-    audience: str
-
-    @field_validator("user_id", mode="before")
-    @classmethod
-    def strip_id(cls, value: str) -> str:
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @field_validator("user_id")
-    @classmethod
-    def require_non_empty_id(cls, value: str) -> str:
-        if not value:
-            raise ValueError("Must not be empty")
-        return value
-
-    @field_validator("topic", "audience", mode="before")
-    @classmethod
-    def strip_text(cls, value: str) -> str:
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @field_validator("topic", "audience")
-    @classmethod
-    def require_non_empty_text(cls, value: str) -> str:
-        if not value:
-            raise ValueError("Must not be empty")
-        return value
+    topic: RunText
+    audience: RunText
 
 
 class RunCreateResponse(BaseModel):

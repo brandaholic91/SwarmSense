@@ -6,10 +6,9 @@ from fastapi.responses import JSONResponse
 
 
 class ErrorCode(str, Enum):
-    COST_LIMIT_REACHED = "COST_LIMIT_REACHED"
-    COST_CHECK_FAILED = "COST_CHECK_FAILED"
     UNAUTHORIZED = "UNAUTHORIZED"
     RUN_NOT_FOUND = "RUN_NOT_FOUND"
+    RUN_START_FAILED = "RUN_START_FAILED"
 
 
 def error_response(status_code: int, detail: str, code: ErrorCode) -> JSONResponse:

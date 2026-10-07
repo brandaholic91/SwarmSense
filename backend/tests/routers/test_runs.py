@@ -1,286 +1,167 @@
 from __future__ import annotations
 
-import importlib
-from datetime import UTC, datetime
+import uuid
 
+import pytest
 from fastapi.testclient import TestClient
 
+from app import db
 from app.core.config import get_settings
-from app.core.database import get_supabase_client
+from app.routers import runs as runs_router
+
+HEADERS = {"X-Internal-Secret": "test-internal-secret"}
 
 
-class FakeResponse:
-    def __init__(self, data):
-        self.data = data
-
-
-class FakeQuery:
-    def __init__(self, supabase, table_name: str):
-        self._supabase = supabase
-        self._table_name = table_name
-        self._payload: dict[str, object] | None = None
-        self._operation = "select"
-        self._eq_value: str | None = None
-
-    def select(self, _fields: str):
-        self._operation = "select"
-        return self
-
-    def eq(self, _field: str, _value: object):
-        if isinstance(_value, str):
-            self._eq_value = _value
-        return self
-
-    def limit(self, _n: int):
-        return self
-
-    def insert(self, payload: dict[str, object]):
-        self._operation = "insert"
-        self._payload = payload
-        return self
-
-    def execute(self):
-        if self._table_name == "cost_tracking" and self._operation == "select":
-            return FakeResponse(self._supabase.cost_rows)
-
-        if self._table_name == "runs" and self._operation == "select":
-            if self._eq_value is None:
-                return FakeResponse([])
-            row = self._supabase.run_rows.get(self._eq_value)
-            if row is None:
-                return FakeResponse([])
-            return FakeResponse([row])
-
-        if self._table_name == "runs" and self._operation == "insert":
-            assert self._payload is not None
-            run_id = f"run-{len(self._supabase.inserted_runs) + 1}"
-            row = {
-                "id": run_id,
-                "user_id": self._payload["user_id"],
-                "topic": self._payload["topic"],
-                "audience": self._payload["audience"],
-                "status": self._payload["status"],
-                "created_at": datetime.now(UTC).isoformat(),
-            }
-            self._supabase.inserted_runs.append(row)
-            self._supabase.run_rows[run_id] = dict(row)
-            return FakeResponse([row])
-
-        return FakeResponse([])
-
-
-class FakeSupabase:
-    def __init__(self, total_usd: str | None):
-        self.cost_rows = [] if total_usd is None else [{"total_usd": total_usd}]
-        self.inserted_runs: list[dict[str, object]] = []
-        self.run_rows: dict[str, dict[str, object]] = {
-            "run-1": {
-                "id": "run-1",
-                "status": "running",
-                "persona_count": 5,
-                "created_at": datetime.now(UTC).isoformat(),
-                "completed_at": None,
-            }
-        }
-
-    def table(self, name: str):
-        return FakeQuery(self, name)
-
-
-TEST_INTERNAL_SECRET = "test-internal-secret"
-INTERNAL_SECRET_HEADER = {"X-Internal-Secret": TEST_INTERNAL_SECRET}
-
-
-def build_client(monkeypatch, fake_supabase: FakeSupabase) -> TestClient:
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "https://example.supabase.co")
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
-    monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
-    monkeypatch.setenv("SWARMSENSE_OPENROUTER_API_KEY", "or_test")
-    monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
-    monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", TEST_INTERNAL_SECRET)
-    monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
-    monkeypatch.setenv("SWARMSENSE_BACKEND_ORIGIN", "https://api.swarmsense.ai")
-    monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
-    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
-
-    get_settings.cache_clear()
-    get_supabase_client.cache_clear()
-    import app.main as main
-    import app.routers.runs as runs_router
-
-    importlib.reload(runs_router)
-    importlib.reload(main)
-
-    monkeypatch.setattr(runs_router, "get_supabase_client", lambda: fake_supabase)
-
-    return TestClient(main.app)
-
-
-def test_run_allowed_below_cap_inserts_row_and_dispatches(monkeypatch):
-    fake_supabase = FakeSupabase("12.34")
-    client = build_client(monkeypatch, fake_supabase)
-
-    import app.routers.runs as runs_router
-
-    captured: list[dict[str, str]] = []
-
-    def fake_dispatch_run_processing(
-        *, run_id: str, user_id: str, topic: str, audience: str
-    ) -> None:
-        captured.append(
-            {
-                "run_id": run_id,
-                "user_id": user_id,
-                "topic": topic,
-                "audience": audience,
-            }
-        )
-
+@pytest.fixture
+def dispatched(monkeypatch) -> list[dict]:
+    calls: list[dict] = []
     monkeypatch.setattr(
-        runs_router, "dispatch_run_processing", fake_dispatch_run_processing
+        runs_router, "dispatch_run_processing", lambda **kwargs: calls.append(kwargs)
     )
+    return calls
 
-    response = client.post(
+
+@pytest.fixture
+def client(clean_db, dispatched):
+    from app.main import create_app
+
+    with TestClient(create_app()) as test_client:
+        yield test_client
+
+
+def _run_count() -> int:
+    with db.connect() as conn:
+        return conn.execute("select count(*) as n from runs").fetchone()["n"]
+
+
+def test_create_run_inserts_row_and_dispatches(client, dispatched):
+    r = client.post(
         "/api/v1/runs",
-        json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
-        headers=INTERNAL_SECRET_HEADER,
+        json={"topic": "  Árazás ", "audience": "KKV vezetők"},
+        headers=HEADERS,
     )
-
-    assert response.status_code == 200
-    body = response.json()
+    assert r.status_code == 200
+    body = r.json()
     assert body["status"] == "queued"
-    assert body["run_id"] == "run-1"
-    assert isinstance(body["created_at"], str)
-    assert len(fake_supabase.inserted_runs) == 1
-    assert captured == [
-        {
-            "run_id": "run-1",
-            "user_id": "user-1",
-            "topic": "Pricing",
-            "audience": "SMB CFO",
-        }
+    assert db.get_run(body["run_id"])["topic"] == "Árazás"
+    assert dispatched == [
+        {"run_id": body["run_id"], "topic": "Árazás", "audience": "KKV vezetők"}
     ]
 
 
-def test_run_payload_validation_failure(monkeypatch):
-    fake_supabase = FakeSupabase("1.00")
-    client = build_client(monkeypatch, fake_supabase)
+@pytest.mark.parametrize("headers", [{}, {"X-Internal-Secret": "rossz"}])
+def test_create_run_without_valid_secret_is_401(client, dispatched, headers):
+    r = client.post(
+        "/api/v1/runs", json={"topic": "a", "audience": "b"}, headers=headers
+    )
+    assert r.status_code == 401
+    assert r.json()["code"] == "UNAUTHORIZED"
+    assert _run_count() == 0
+    assert dispatched == []
 
-    response = client.post(
+
+def test_trailing_slash_still_requires_secret(client, dispatched):
+    r = client.post("/api/v1/runs/", json={"topic": "a", "audience": "b"})
+    assert r.status_code == 401
+    assert dispatched == []
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"topic": "", "audience": "a"},
+        {"topic": "   ", "audience": "a"},
+        {"topic": "a", "audience": ""},
+        {"topic": "x" * 501, "audience": "a"},
+        {"topic": "a", "audience": "x" * 501},
+        {"topic": "a"},
+        {"topic": "a", "audience": "b", "user_id": "u1"},
+    ],
+)
+def test_create_run_invalid_payload_is_422(client, dispatched, payload):
+    r = client.post("/api/v1/runs", json=payload, headers=HEADERS)
+    assert r.status_code == 422
+    assert _run_count() == 0
+    assert dispatched == []
+
+
+def test_create_run_accepts_exactly_500_chars(client, dispatched):
+    r = client.post(
         "/api/v1/runs",
-        json={"user_id": "user-3", "topic": "   ", "audience": "SMB"},
-        headers=INTERNAL_SECRET_HEADER,
+        json={"topic": "x" * 500, "audience": "y" * 500},
+        headers=HEADERS,
     )
+    assert r.status_code == 200
 
-    assert response.status_code == 422
 
+def test_create_run_db_failure_returns_code_and_does_not_dispatch(
+    client, dispatched, monkeypatch
+):
+    def boom(**_):
+        raise RuntimeError("connection refused: postgres://user:titok@host")
 
-def test_run_missing_secret_returns_401(monkeypatch):
-    fake_supabase = FakeSupabase("1.00")
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.post(
-        "/api/v1/runs",
-        json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
+    monkeypatch.setattr(db, "create_run", boom)
+    r = client.post(
+        "/api/v1/runs", json={"topic": "a", "audience": "b"}, headers=HEADERS
     )
-
-    assert response.status_code == 401
-    assert response.json()["code"] == "UNAUTHORIZED"
-
-
-def test_non_run_endpoints_not_blocked(monkeypatch):
-    fake_supabase = FakeSupabase("100.00")
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.get("/api/v1/status")
-
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    assert r.status_code == 500
+    assert r.json()["code"] == "RUN_START_FAILED"
+    assert "titok" not in r.text
+    assert dispatched == []
 
 
-def test_trailing_slash_still_enforced(monkeypatch):
-    fake_supabase = FakeSupabase("50.00")
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.post(
-        "/api/v1/runs/",
-        json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
-    )
-
-    assert response.status_code == 401
-
-
-def test_get_run_status_success(monkeypatch):
-    fake_supabase = FakeSupabase("1.00")
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.get("/api/v1/runs/run-1/status")
-
-    assert response.status_code == 200
-    body = response.json()
+def test_get_status_returns_progress(client):
+    row = db.create_run(topic="a", audience="b")
+    db.update_run(row["id"], status="running", persona_count=7)
+    body = client.get(f"/api/v1/runs/{row['id']}/status").json()
     assert body == {
-        "run_id": "run-1",
+        "run_id": row["id"],
         "status": "running",
-        "persona_count": 5,
+        "persona_count": 7,
         "total_personas": 18,
-        "updated_at": str(fake_supabase.run_rows["run-1"]["created_at"]).replace(
-            "+00:00", "Z"
-        ),
+        "updated_at": body["updated_at"],
     }
+    assert body["updated_at"] is not None
 
 
-def test_get_run_status_not_found(monkeypatch):
-    fake_supabase = FakeSupabase("1.00")
-    client = build_client(monkeypatch, fake_supabase)
+@pytest.mark.parametrize("run_id", [str(uuid.uuid4()), "abc", "x" * 200])
+def test_get_status_unknown_or_malformed_id_is_404(client, run_id):
+    r = client.get(f"/api/v1/runs/{run_id}/status")
+    assert r.status_code == 404
+    assert r.json()["code"] == "RUN_NOT_FOUND"
 
-    response = client.get("/api/v1/runs/missing/status")
 
-    assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Run not found",
-        "code": "RUN_NOT_FOUND",
-    }
+def test_startup_applies_schema_on_empty_database(clean_db):
+    from app.main import create_app
+
+    with db.connect() as conn:
+        conn.execute("drop table email_requests, run_events, runs")
+    with TestClient(create_app()):
+        pass
+    assert db.create_run(topic="a", audience="b")["status"] == "queued"
+
+
+def test_non_run_endpoints_not_blocked(client):
+    r = client.get("/api/v1/status")
+    assert r.status_code == 200
+    assert r.json()["status"] == "ok"
 
 
 def test_docs_disabled_in_production(monkeypatch):
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "https://example.supabase.co")
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
-    monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
-    monkeypatch.setenv("SWARMSENSE_OPENROUTER_API_KEY", "or_test")
-    monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
-    monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", TEST_INTERNAL_SECRET)
+    from app.main import create_app
+
     monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "production")
-    monkeypatch.setenv("SWARMSENSE_BACKEND_ORIGIN", "https://api.swarmsense.ai")
-    monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
-    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
-
     get_settings.cache_clear()
-    get_supabase_client.cache_clear()
-    import app.main as main
-
-    importlib.reload(main)
-
-    client = TestClient(main.app, raise_server_exceptions=False)
+    client = TestClient(create_app(), raise_server_exceptions=False)
     assert client.get("/docs").status_code == 404
     assert client.get("/redoc").status_code == 404
 
 
-def test_cors_allows_frontend_origin(monkeypatch):
-    fake_supabase = FakeSupabase(None)
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.get("/", headers={"Origin": "https://swarmsense.vercel.app"})
-
-    assert (
-        response.headers.get("access-control-allow-origin")
-        == "https://swarmsense.vercel.app"
-    )
+def test_cors_allows_frontend_origin(client):
+    r = client.get("/", headers={"Origin": "http://localhost:3000"})
+    assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
 
 
-def test_cors_blocks_unknown_origin(monkeypatch):
-    fake_supabase = FakeSupabase(None)
-    client = build_client(monkeypatch, fake_supabase)
-
-    response = client.get("/", headers={"Origin": "https://evil.example.com"})
-
-    assert "access-control-allow-origin" not in response.headers
+def test_cors_blocks_unknown_origin(client):
+    r = client.get("/", headers={"Origin": "https://evil.example.com"})
+    assert "access-control-allow-origin" not in r.headers

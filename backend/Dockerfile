@@ -16,6 +16,7 @@ RUN python -m pip install --upgrade pip \
     && rm /tmp/requirements.txt
 
 COPY --chown=app:app app ./app
+COPY --chown=app:app schema.sql ./schema.sql
 
 USER app
 

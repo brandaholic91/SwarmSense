@@ -1,306 +1,284 @@
 from __future__ import annotations
 
 import asyncio
-import importlib
-from datetime import UTC, date, datetime
-from decimal import Decimal
+import json
+import re
 from typing import Any, cast
 
-import pytest
-from fastapi.testclient import TestClient
+from app import db
+from app.models.persona import (
+    PersonaFailure,
+    PersonaResponse,
+    PersonaRunResult,
+    SynthesisResult,
+)
+from app.services import run_processor
+from app.services.blueprint_generator import BLUEPRINT_SYSTEM_PROMPT
+from app.services.llm_client import LLMClient, TransportError
+from app.services.persona_engine import HUNGARIAN_SYSTEM_PROMPT
+from app.services.run_processor import (
+    _build_result_payload,
+    _resolve_final_status,
+    dispatch_run_processing,
+    process_run,
+)
+from app.services.synthesis_service import SYNTHESIS_SYSTEM_PROMPT
 
-from app.core import cost_enforcement
-from app.core.config import get_settings
-from app.core.database import get_supabase_client
-from app.models.persona import PersonaFailure, PersonaResponse, PersonaRunResult
-from app.services.llm_client import TokenUsage
-from app.services.run_processor import MIN_SUCCESSFUL_PERSONAS, process_run
-
-TEST_INTERNAL_SECRET = "test-internal-secret"
-INTERNAL_SECRET_HEADER = {"X-Internal-Secret": TEST_INTERNAL_SECRET}
+TOTAL = 18
 
 
-class FakeResponse:
-    def __init__(self, data):
-        self.data = data
+def _stance_for(index: int) -> str:
+    # 1-10 support, 11-15 reject, 16-18 conditional
+    if index <= 10:
+        return "support"
+    if index <= 15:
+        return "reject"
+    return "conditional"
 
 
-class FakeQuery:
-    def __init__(self, supabase, table_name: str):
-        self._supabase = supabase
-        self._table_name = table_name
-        self._payload: dict[str, Any] | None = None
-        self._operation = "select"
-        self._eq_value: str | None = None
-        self._on_conflict: str | None = None
+def _completion(content: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "choices": [{"message": {"content": json.dumps(content)}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+    }
 
-    def select(self, _fields: str):
-        self._operation = "select"
-        return self
 
-    def eq(self, _field: str, value: object):
-        if isinstance(value, str):
-            self._eq_value = value
-        return self
+def make_fake_llm(
+    *,
+    failing_personas: frozenset[str] = frozenset(),
+    synthesis_fails: bool = False,
+    blueprint_fails: bool = False,
+) -> LLMClient:
+    """Hamis LLM: a system prompt alapján dönti el, melyik hívás jött.
 
-    def limit(self, _n: int):
-        return self
+    - blueprint-hívás: 18 personát ad vissza "Persona 1" ... "Persona 18" névvel
+    - persona-hívás: érvényes választ ad a user promptban szereplő névvel;
+      ha a név benne van a failing_personas-ban, TransportError(status_code=400)
+    - szintézis-hívás: érvényes SynthesisResult-ot ad
+    Minden sikeres válasz usage-e: prompt_tokens=10, completion_tokens=5.
+    """
 
-    def insert(self, payload: dict[str, Any]):
-        self._operation = "insert"
-        self._payload = payload
-        return self
+    async def transport(
+        url: str, headers: dict[str, str], payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        system_prompt = payload["messages"][0]["content"]
+        user_prompt = payload["messages"][1]["content"]
 
-    def update(self, payload: dict[str, Any]):
-        self._operation = "update"
-        self._payload = payload
-        return self
-
-    def upsert(self, payload: dict[str, Any], **kwargs):
-        self._operation = "upsert"
-        self._payload = payload
-        self._on_conflict = kwargs.get("on_conflict")
-        return self
-
-    def execute(self):
-        if self._table_name == "cost_tracking" and self._operation == "select":
-            if self._eq_value is None:
-                return FakeResponse(self._supabase.cost_rows)
-            rows = [
-                row
-                for row in self._supabase.cost_rows
-                if row.get("month") == self._eq_value
-            ]
-            return FakeResponse(rows)
-
-        if self._table_name == "cost_tracking" and self._operation == "insert":
-            assert self._payload is not None
-            self._supabase.cost_rows.append(dict(self._payload))
-            return FakeResponse([dict(self._payload)])
-
-        if self._table_name == "cost_tracking" and self._operation == "update":
-            assert self._payload is not None
-            for row in self._supabase.cost_rows:
-                if row.get("month") == self._eq_value:
-                    row.update(self._payload)
-            return FakeResponse(self._supabase.cost_rows)
-
-        if self._table_name == "cost_tracking" and self._operation == "upsert":
-            assert self._payload is not None
-            month = self._payload.get("month")
-            existing = [r for r in self._supabase.cost_rows if r.get("month") == month]
-            if existing:
-                existing[0].update(self._payload)
-            else:
-                self._supabase.cost_rows.append(dict(self._payload))
-            return FakeResponse([dict(self._payload)])
-
-        if self._table_name == "users" and self._operation == "select":
-            if self._eq_value is None:
-                return FakeResponse([])
-            email = self._supabase.users_by_id.get(self._eq_value)
-            if email is None:
-                return FakeResponse([])
-            return FakeResponse([{"email": email}])
-
-        if self._table_name == "runs" and self._operation == "select":
-            if self._eq_value is None:
-                return FakeResponse([])
-            row = self._supabase.run_rows.get(self._eq_value)
-            if row is None:
-                return FakeResponse([])
-            return FakeResponse([dict(row)])
-
-        if self._table_name == "runs" and self._operation == "insert":
-            assert self._payload is not None
-            run_id = f"run-{len(self._supabase.inserted_runs) + 1}"
-            row = {
-                "id": run_id,
-                "user_id": self._payload["user_id"],
-                "topic": self._payload["topic"],
-                "audience": self._payload["audience"],
-                "status": self._payload["status"],
-                "created_at": datetime.now(UTC).isoformat(),
-                "persona_count": None,
-                "completed_at": None,
-                "cost_usd": None,
-            }
-            self._supabase.inserted_runs.append(row)
-            self._supabase.run_rows[run_id] = dict(row)
-            return FakeResponse([row])
-
-        if self._table_name == "qualifier_responses" and self._operation == "insert":
-            assert self._payload is not None
-            row = {
-                "id": f"qualifier-{len(self._supabase.inserted_qualifiers) + 1}",
-                "run_id": self._payload["run_id"],
-                "user_id": self._payload["user_id"],
-                "role_answer": self._payload["role_answer"],
-                "use_case_answer": self._payload["use_case_answer"],
-                "created_at": datetime.now(UTC).isoformat(),
-            }
-            self._supabase.inserted_qualifiers.append(row)
-            return FakeResponse([row])
-
-        if self._table_name == "runs" and self._operation == "update":
-            assert self._payload is not None
-            run_id = self._eq_value
-            self._supabase.updates.append(
+        if system_prompt == BLUEPRINT_SYSTEM_PROMPT:
+            if blueprint_fails:
+                raise TransportError(status_code=400, body=None)
+            return _completion(
                 {
-                    "run_id": run_id,
-                    "payload": dict(self._payload),
+                    "personas": [
+                        {
+                            "name": f"Persona {i}",
+                            "role": "vezető",
+                            "risk_appetite": "közepes",
+                            "decision_style": "adatvezérelt",
+                            "organizational_role": "döntéshozó",
+                            "price_sensitivity": "közepes",
+                            "technology_adoption_curve": "korai többség",
+                        }
+                        for i in range(1, TOTAL + 1)
+                    ]
                 }
             )
-            if run_id and run_id in self._supabase.run_rows:
-                self._supabase.run_rows[run_id].update(self._payload)
-            return FakeResponse([{"id": run_id, **self._payload}])
 
-        return FakeResponse([])
-
-
-class FakeRpcQuery:
-    """Simulates supabase.rpc() for increment_monthly_cost."""
-
-    def __init__(self, supabase: "FakeSupabase", func_name: str, params: dict[str, Any]):
-        self._supabase = supabase
-        self._func_name = func_name
-        self._params = params
-
-    def execute(self) -> FakeResponse:
-        if self._func_name == "increment_monthly_cost":
-            p_month: str = self._params["p_month"]
-            p_run_cost = Decimal(str(self._params.get("p_run_cost", 0)))
-            p_threshold_usd = Decimal(str(self._params.get("p_threshold_usd", "40.00")))
-
-            existing = [r for r in self._supabase.cost_rows if r.get("month") == p_month]
-            if existing:
-                old_total = Decimal(str(existing[0].get("total_usd", "0")))
-                old_alert: str | None = existing[0].get("alert_80_sent_at")
-            else:
-                old_total = Decimal("0")
-                old_alert = None
-                new_row: dict[str, Any] = {"month": p_month, "total_usd": "0"}
-                self._supabase.cost_rows.append(new_row)
-                existing = [new_row]
-
-            new_total = old_total + p_run_cost
-            alert_triggered = (
-                old_total < p_threshold_usd
-                and new_total >= p_threshold_usd
-                and old_alert is None
+        if system_prompt == HUNGARIAN_SYSTEM_PROMPT:
+            match = re.search(r"- Név: (Persona (\d+))\n", user_prompt)
+            assert match is not None, user_prompt
+            name, index = match.group(1), int(match.group(2))
+            if name in failing_personas:
+                raise TransportError(status_code=400, body=None)
+            return _completion(
+                {
+                    "name": name,
+                    "role": "vezető",
+                    "stance": _stance_for(index),
+                    "primary_argument": f"Érv {index}.",
+                    "change_condition": "Feltétel.",
+                    "core_concern": "Aggodalom.",
+                    "buying_trigger": "Trigger.",
+                }
             )
 
-            existing[0]["total_usd"] = str(new_total)
-            if alert_triggered:
-                existing[0]["alert_80_sent_at"] = datetime.now(UTC).isoformat()
+        if system_prompt == SYNTHESIS_SYSTEM_PROMPT:
+            if synthesis_fails:
+                raise TransportError(status_code=400, body=None)
+            return _completion(
+                {
+                    "summary": "Összefoglaló.",
+                    "main_barriers": ["Ár.", "Bizalom."],
+                    "winning_conditions": "Referenciák.",
+                    "best_target_segment": "Növekvő KKV-k.",
+                    "strategic_recommendation": "Pilot indítása.",
+                }
+            )
 
-            return FakeResponse({"total_usd": float(new_total), "alert_triggered": alert_triggered})
+        raise AssertionError("ismeretlen system prompt")
 
-        return FakeResponse({})
+    async def no_sleep(_: float) -> None:
+        return None
+
+    return LLMClient(session_id="test-session", transport=transport, sleep=no_sleep)
 
 
-class FakeSupabase:
-    def __init__(self, total_usd: str | None = "1.00"):
-        current_month = datetime.now(UTC).strftime("%Y-%m")  # P7: match UTC month key
-        self.cost_rows = (
-            []
-            if total_usd is None
-            else [{"month": current_month, "total_usd": total_usd}]
+def _run(clean_db, **fake_kwargs):
+    row = db.create_run(topic="Árazás", audience="KKV vezetők")
+    dispatch_run_processing(
+        run_id=row["id"],
+        topic="Árazás",
+        audience="KKV vezetők",
+        llm_client=make_fake_llm(**fake_kwargs),
+    )
+    return db.get_run(row["id"])
+
+
+def test_completed_run_stores_counts_synthesis_and_tokens(clean_db):
+    run = _run(clean_db)
+    assert run["status"] == "completed"
+    assert run["persona_count"] == 18
+    assert (run["support_count"], run["reject_count"], run["conditional_count"]) == (
+        10,
+        5,
+        3,
+    )
+    assert run["synthesis_summary"]
+    assert isinstance(run["synthesis_main_barriers"], list)
+    assert (run["input_tokens"], run["output_tokens"]) == (200, 100)  # 20 hívás
+    assert run["completed_at"] is not None
+
+
+def test_partial_when_some_personas_fail(clean_db):
+    run = _run(
+        clean_db, failing_personas=frozenset({"Persona 1", "Persona 2", "Persona 3"})
+    )
+    assert run["status"] == "partial"
+    assert run["persona_count"] == 15
+    assert run["support_count"] == 7
+    assert (run["input_tokens"], run["output_tokens"]) == (170, 85)  # 17 sikeres hívás
+
+
+def test_failed_below_threshold_skips_synthesis(clean_db):
+    failing = frozenset(f"Persona {i}" for i in range(1, 8))  # 11 marad
+    run = _run(clean_db, failing_personas=failing)
+    assert run["status"] == "failed"
+    assert run["persona_count"] == 11
+    assert run["synthesis_summary"] is None
+    assert run["completed_at"] is not None
+
+
+def test_exactly_threshold_is_not_failed(clean_db):
+    failing = frozenset(f"Persona {i}" for i in range(1, 7))  # 12 marad
+    assert _run(clean_db, failing_personas=failing)["status"] == "partial"
+
+
+def test_partial_when_synthesis_fails(clean_db):
+    run = _run(clean_db, synthesis_fails=True)
+    assert run["status"] == "partial"
+    assert run["persona_count"] == 18
+    assert run["synthesis_summary"] is None
+    assert run["support_count"] == 10
+
+
+def test_failed_when_persona_generation_fails(clean_db):
+    run = _run(clean_db, blueprint_fails=True)  # a dispatch nem dobhat
+    assert run["status"] == "failed"
+    assert run["completed_at"] is not None
+
+
+def test_summary_log_has_no_topic_text(clean_db, caplog):
+    with caplog.at_level("INFO", logger="swarmsense.run"):
+        _run(clean_db)
+    assert any("completed" in r.getMessage() for r in caplog.records)
+    assert "Árazás" not in caplog.text
+
+
+def test_default_llm_client_uses_run_session_id(clean_db, monkeypatch):
+    created: list[dict[str, Any]] = []
+
+    def recorder(**kwargs: Any) -> LLMClient:
+        created.append(kwargs)
+        return make_fake_llm()
+
+    monkeypatch.setattr(run_processor, "LLMClient", recorder)
+    row = db.create_run(topic="Árazás", audience="KKV vezetők")
+    dispatch_run_processing(
+        run_id=row["id"], topic="Árazás", audience="KKV vezetők"
+    )
+    assert created == [{"session_id": f"swarmsense-{row['id']}"}]
+    assert db.get_run(row["id"])["status"] == "completed"
+
+
+def test_client_configuration_error_marks_run_failed(clean_db, monkeypatch):
+    def broken(**_: Any) -> LLMClient:
+        raise RuntimeError("hibás konfiguráció")
+
+    monkeypatch.setattr(run_processor, "LLMClient", broken)
+    row = db.create_run(topic="Árazás", audience="KKV vezetők")
+    dispatch_run_processing(  # nem dobhat
+        run_id=row["id"], topic="Árazás", audience="KKV vezetők"
+    )
+    run = db.get_run(row["id"])
+    assert run["status"] == "failed"
+    assert run["completed_at"] is not None
+
+
+def test_process_run_returns_engine_result(clean_db):
+    row = db.create_run(topic="Árazás", audience="KKV vezetők")
+    result = asyncio.run(
+        process_run(
+            run_id=row["id"],
+            topic="Árazás",
+            audience="KKV vezetők",
+            llm_client=make_fake_llm(),
         )
-        self.users_by_id: dict[str, str] = {"user-1": "test@example.com"}
-        self.run_rows: dict[str, dict[str, Any]] = {
-            "run-1": {
-                "id": "run-1",
-                "status": "queued",
-                "cost_usd": None,
-                "persona_count": None,
-                "completed_at": None,
-            }
-        }
-        self.inserted_runs: list[dict[str, Any]] = []
-        self.inserted_qualifiers: list[dict[str, Any]] = []
-        self.updates: list[dict[str, Any]] = []
-
-    def table(self, name: str) -> FakeQuery:
-        return FakeQuery(self, name)
-
-    def rpc(self, func_name: str, params: dict[str, Any]) -> FakeRpcQuery:
-        return FakeRpcQuery(self, func_name, params)
+    )
+    assert result.successful_count == 18
 
 
-class _SentryScopeRecorder:
-    def __init__(self) -> None:
-        self.tags: dict[str, str] = {}
-        self.extras: dict[str, Any] = {}
-
-    def set_tag(self, key: str, value: str) -> None:
-        self.tags[key] = value
-
-    def set_extra(self, key: str, value: Any) -> None:
-        self.extras[key] = value
-
-
-class _SentryScopeContext:
-    def __init__(self, recorder: _SentryScopeRecorder) -> None:
-        self._recorder = recorder
-
-    def __enter__(self) -> _SentryScopeRecorder:
-        return self._recorder
-
-    def __exit__(self, exc_type, exc, tb) -> bool:
-        return False
-
-
-def _seed_env(monkeypatch) -> None:
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_URL", "https://example.supabase.co")
-    monkeypatch.setenv("SWARMSENSE_SUPABASE_SERVICE_KEY", "service-key")
-    monkeypatch.setenv("SWARMSENSE_KIMI_API_KEY", "kimi-key")
-    monkeypatch.setenv("SWARMSENSE_OPERATOR_API_KEY", "operator-key")
-    monkeypatch.setenv("SWARMSENSE_INTERNAL_SECRET", TEST_INTERNAL_SECRET)
-    monkeypatch.setenv("SWARMSENSE_ENVIRONMENT", "development")
-    monkeypatch.setenv("SWARMSENSE_BACKEND_ORIGIN", "https://api.swarmsense.ai")
-    monkeypatch.setenv("SWARMSENSE_FRONTEND_ORIGIN", "https://swarmsense.vercel.app")
-    monkeypatch.setenv("SWARMSENSE_RESEND_API_KEY", "re_test")
-    monkeypatch.setenv("SWARMSENSE_OPENROUTER_API_KEY", "or_test")
-    get_settings.cache_clear()
-    get_supabase_client.cache_clear()
-
-
-def _build_result(
-    *, successful_count: int, total_personas: int
-) -> PersonaRunResult:
+def _result(*, successful: int, total: int) -> PersonaRunResult:
     responses = [
         PersonaResponse(
-            name=f"Persona-{idx}",
+            name=f"Persona-{i}",
             role="Role",
-            stance="support" if idx % 2 == 0 else "conditional",
-            primary_argument=f"Erv-{idx % 3}",
+            stance="support",
+            primary_argument="Erv",
             change_condition="Feltetel",
             core_concern="Aggodalom",
             buying_trigger="Trigger",
         )
-        for idx in range(successful_count)
+        for i in range(successful)
     ]
     failures = [
-        PersonaFailure(
-            persona_name=f"Missing-{idx}",
-            error_code="OPENROUTER_UPSTREAM_ERROR",
-            error_message="failed",
-        )
-        for idx in range(total_personas - successful_count)
+        PersonaFailure(persona_name=f"Missing-{i}", error_code="X", error_message="x")
+        for i in range(total - successful)
     ]
     return PersonaRunResult(
-        total_personas=total_personas,
-        successful_count=successful_count,
+        total_personas=total,
+        successful_count=successful,
         responses=responses,
         failures=failures,
-        handoff_payload=[item.model_dump() for item in responses],
+        handoff_payload=[r.model_dump() for r in responses],
     )
 
 
-def _build_result_with_stances(
-    *, stances: list[str]
-) -> PersonaRunResult:
+def test_resolve_final_status_matrix():
+    synthesis = SynthesisResult(
+        summary="s",
+        main_barriers=["b"],
+        winning_conditions="w",
+        best_target_segment="t",
+        strategic_recommendation="r",
+    )
+    full, missing = _result(successful=18, total=18), _result(successful=15, total=18)
+    assert _resolve_final_status(result=full, synthesis=synthesis) == "completed"
+    assert _resolve_final_status(result=full, synthesis=None) == "partial"
+    assert _resolve_final_status(result=missing, synthesis=synthesis) == "partial"
+    assert _resolve_final_status(result=missing, synthesis=None) == "partial"
+
+
+def _build_result_with_stances(*, stances: list[str]) -> PersonaRunResult:
     responses = [
         PersonaResponse(
             name=f"Persona-{idx}",
@@ -322,526 +300,19 @@ def _build_result_with_stances(
     )
 
 
-def _patch_fake_engine(monkeypatch, run_processor, result: PersonaRunResult) -> None:
-    async def fake_engine(*, topic: str, audience: str, llm_client=None, on_persona_completed=None):
-        _ = (topic, audience)
-        if on_persona_completed is not None:
-            on_persona_completed(result.total_personas, result.total_personas)
-        return result
-
-    async def fake_synthesis(*, personas, topic, audience, llm_client=None):
-        return None, TokenUsage()
-
-    monkeypatch.setattr(run_processor, "execute_persona_engine", fake_engine)
-    monkeypatch.setattr(run_processor, "execute_synthesis", fake_synthesis)
-
-
-def test_process_run_marks_partial_and_dispatches_email(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=12, total_personas=15),
+def _payload_for(stances: list[str]) -> dict[str, Any]:
+    return _build_result_payload(
+        run_id="run-1",
+        result=_build_result_with_stances(stances=stances),
+        final_status="completed",
+        topic="Tema",
+        audience="Kozonseg",
+        synthesis=None,
     )
 
-    email_calls: list[dict[str, Any]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
-            {"recipient_email": recipient_email, "result_payload": result_payload}
-        ),
-    )
 
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    assert fake_supabase.updates[0]["payload"]["status"] == "running"
-    assert fake_supabase.updates[0]["payload"]["persona_count"] == 0
-    running_updates = [
-        item
-        for item in fake_supabase.updates
-        if item["payload"].get("status") == "running"
-    ]
-    assert running_updates[-1]["payload"]["persona_count"] == 15
-    assert fake_supabase.updates[-2]["payload"]["status"] == "composing"
-    assert fake_supabase.updates[-1]["payload"]["status"] == "partial"
-    assert fake_supabase.updates[-1]["payload"]["persona_count"] == 12
-    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0"
-    assert isinstance(fake_supabase.updates[-1]["payload"]["completed_at"], str)
-    assert email_calls[0]["recipient_email"] == "test@example.com"
-    assert email_calls[0]["result_payload"]["persona_count_label"] == "12/15 persona"
-    assert (
-        email_calls[0]["result_payload"]["persona_count_header_display"]
-        == "12/15 persona valaszolt"
-    )
-    assert email_calls[0]["result_payload"]["topic"] == "Tema"
-    assert email_calls[0]["result_payload"]["audience"] == "Kozonseg"
-    assert fake_supabase.cost_rows[0]["total_usd"] == "1.00"
-
-
-def test_process_run_marks_completed_and_dispatches_email(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("2.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=15, total_personas=15),
-    )
-
-    email_calls: list[dict[str, Any]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
-            {"recipient_email": recipient_email, "result_payload": result_payload}
-        ),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    assert fake_supabase.updates[-2]["payload"]["status"] == "composing"
-    assert fake_supabase.updates[-1]["payload"]["status"] == "completed"
-    assert fake_supabase.updates[-1]["payload"]["persona_count"] == 15
-    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0"
-    assert email_calls[0]["result_payload"]["persona_count_label"] == "15/15 persona"
-    assert (
-        email_calls[0]["result_payload"]["persona_count_header_display"]
-        == "15/15 persona"
-    )
-    assert fake_supabase.cost_rows[0]["total_usd"] == "2.00"
-
-
-def test_extract_provider_error_metadata_prefers_error_code_attribute(
-    monkeypatch,
-) -> None:
-    _seed_env(monkeypatch)
-    import app.services.run_processor as run_processor
-
-    class FakeResendErrorWithErrorCode(Exception):
-        error_code = "rate_limit_exceeded"
-        status_code = 200
-
-    code, message = run_processor._extract_provider_error_metadata(
-        FakeResendErrorWithErrorCode("daily limit reached")
-    )
-    assert code == "rate_limit_exceeded"
-    assert message == "daily limit reached"
-
-
-def test_extract_provider_error_metadata_falls_back_to_code_attribute(
-    monkeypatch,
-) -> None:
-    _seed_env(monkeypatch)
-    import app.services.run_processor as run_processor
-
-    class FakeResendErrorWithCode(Exception):
-        code = "authentication_failed"
-
-    code, message = run_processor._extract_provider_error_metadata(
-        FakeResendErrorWithCode("invalid API key")
-    )
-    assert code == "authentication_failed"
-    assert message == "invalid API key"
-
-
-def test_extract_provider_error_metadata_falls_back_to_status_code(
-    monkeypatch,
-) -> None:
-    _seed_env(monkeypatch)
-    import app.services.run_processor as run_processor
-
-    class FakeResendErrorWithStatusCode(Exception):
-        status_code = 503
-
-    code, message = run_processor._extract_provider_error_metadata(
-        FakeResendErrorWithStatusCode("service unavailable")
-    )
-    assert code == "503"
-    assert message == "service unavailable"
-
-
-def test_process_run_logs_email_failure_and_preserves_partial_status(
-    monkeypatch,
-) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=12, total_personas=15),
-    )
-
-    class FakeResendError(Exception):
-        status_code = 503
-
-    def _raise_send_error(
-        *,
-        recipient_email: str,
-        result_payload: dict[str, Any],
-        user_id: str | None = None,
-    ) -> None:
-        _ = (recipient_email, result_payload, user_id)
-        raise FakeResendError("provider unavailable")
-
-    sentry_scope = _SentryScopeRecorder()
-    sentry_exceptions: list[str] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        _raise_send_error,
-    )
-    monkeypatch.setattr(
-        run_processor.sentry_sdk,
-        "push_scope",
-        lambda: _SentryScopeContext(sentry_scope),
-    )
-    monkeypatch.setattr(
-        run_processor.sentry_sdk,
-        "capture_exception",
-        lambda exc: sentry_exceptions.append(str(exc)),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    final_status_updates = [
-        item["payload"]["status"]
-        for item in fake_supabase.updates
-        if item["payload"].get("status") in {"partial", "completed", "failed"}
-    ]
-    assert final_status_updates[-1] == "partial"
-    assert "failed" not in final_status_updates
-    assert sentry_scope.tags["error_code"] == "RESULT_EMAIL_DISPATCH_FAILED"
-    assert sentry_scope.extras["provider_error_code"] == "503"
-    assert sentry_scope.extras["provider_error_message"] == "provider unavailable"
-    assert isinstance(sentry_scope.extras["timestamp"], str)
-    assert sentry_exceptions == ["provider unavailable"]
-
-
-def test_process_run_fails_when_successful_personas_below_threshold(
-    monkeypatch,
-) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=11, total_personas=15),
-    )
-
-    captured_sentry: list[str] = []
-    monkeypatch.setattr(
-        run_processor.sentry_sdk,
-        "capture_message",
-        lambda msg, level=None: captured_sentry.append(msg),
-    )
-
-    email_calls: list[dict[str, Any]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
-            {"recipient_email": recipient_email, "result_payload": result_payload}
-        ),
-    )
-
-    result = asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    assert result.successful_count == 11
-    assert fake_supabase.updates[0]["payload"]["status"] == "running"
-    assert fake_supabase.updates[0]["payload"]["persona_count"] == 0
-    assert fake_supabase.updates[-1]["payload"]["status"] == "failed"
-    assert fake_supabase.updates[-1]["payload"]["persona_count"] == 11
-    assert fake_supabase.updates[-1]["payload"]["cost_usd"] == "0"
-    assert isinstance(fake_supabase.updates[-1]["payload"]["completed_at"], str)
-    assert captured_sentry
-    assert not email_calls
-    assert fake_supabase.cost_rows[0]["total_usd"] == "1.00"
-
-
-@pytest.mark.skip(reason="a 4. feladat törli: a költségkövetés megszűnik")
-def test_monthly_cost_tracking_creates_missing_month_row(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase(total_usd=None)
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=15, total_personas=15),
-    )
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload: None,
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    assert len(fake_supabase.cost_rows) == 1
-    assert fake_supabase.cost_rows[0]["month"] == datetime.now(UTC).strftime("%Y-%m")
-    assert fake_supabase.cost_rows[0]["total_usd"] == "0.42"
-
-
-@pytest.mark.skip(reason="a 4. feladat törli: a költségkövetés megszűnik")
-def test_monthly_cost_threshold_alert_emits_once_per_month(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("39.90")
-    fake_supabase.run_rows["run-2"] = {
-        "id": "run-2",
-        "status": "queued",
-        "cost_usd": None,
-        "persona_count": None,
-        "completed_at": None,
-    }
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=15, total_personas=15),
-    )
-
-    warning_messages: list[tuple[str, str | None]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: None,
-    )
-    monkeypatch.setattr(
-        run_processor.sentry_sdk,
-        "capture_message",
-        lambda message, level=None: warning_messages.append((message, level)),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=15, total_personas=15),
-    )
-    asyncio.run(
-        process_run(
-            run_id="run-2",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    current_month = datetime.now(UTC).strftime("%Y-%m")
-    month_rows = [
-        row for row in fake_supabase.cost_rows if row.get("month") == current_month
-    ]
-    assert len(month_rows) == 1
-    assert month_rows[0]["total_usd"] == "40.20"
-    assert isinstance(month_rows[0].get("alert_80_sent_at"), str)
-    assert len(warning_messages) == 1
-    assert warning_messages[0][1] == "warning"
-
-
-@pytest.mark.skip(reason="a 4. feladat törli: a költségkövetés megszűnik")
-def test_monthly_cost_threshold_alert_resets_with_new_month(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase(total_usd=None)
-    fake_supabase.cost_rows.append(
-        {
-            "month": "1900-01",
-            "total_usd": "45.00",
-            "alert_80_sent_at": "1900-01-15T10:00:00+00:00",
-        }
-    )
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result(successful_count=15, total_personas=15),
-    )
-
-    warning_messages: list[tuple[str, str | None]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: None,
-    )
-    monkeypatch.setattr(
-        run_processor.sentry_sdk,
-        "capture_message",
-        lambda message, level=None: warning_messages.append((message, level)),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    current_month = datetime.now(UTC).strftime("%Y-%m")
-    current_rows = [
-        row for row in fake_supabase.cost_rows if row.get("month") == current_month
-    ]
-    assert len(current_rows) == 1
-    assert current_rows[0]["total_usd"] == "40.0"
-    assert isinstance(current_rows[0].get("alert_80_sent_at"), str)
-    assert len(warning_messages) == 1
-
-
-def test_runs_endpoint_dispatches_into_real_run_processor(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.main as main
-    import app.routers.runs as runs_router
-    import app.services.run_processor as run_processor
-
-    importlib.reload(run_processor)
-    importlib.reload(runs_router)
-    importlib.reload(main)
-
-    monkeypatch.setattr(cost_enforcement, "get_supabase_client", lambda: fake_supabase)
-    monkeypatch.setattr(runs_router, "get_supabase_client", lambda: fake_supabase)
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-
-    captured: list[dict[str, str]] = []
-
-    async def fake_process_run(*, run_id: str, user_id: str, topic: str, audience: str):
-        captured.append(
-            {
-                "run_id": run_id,
-                "user_id": user_id,
-                "topic": topic,
-                "audience": audience,
-            }
-        )
-        return PersonaRunResult(
-            total_personas=15,
-            successful_count=MIN_SUCCESSFUL_PERSONAS,
-            responses=[],
-            failures=[],
-            handoff_payload=[],
-        )
-
-    monkeypatch.setattr(run_processor, "process_run", fake_process_run)
-
-    client = TestClient(main.app)
-    response = client.post(
-        "/api/v1/runs",
-        json={"user_id": "user-1", "topic": "Pricing", "audience": "SMB CFO"},
-        headers=INTERNAL_SECRET_HEADER,
-    )
-
-    assert response.status_code == 200
-    assert captured == [
-        {
-            "run_id": "run-1",
-            "user_id": "user-1",
-            "topic": "Pricing",
-            "audience": "SMB CFO",
-        }
-    ]
-
-
-def test_result_payload_sets_consensus_for_15_of_15_support(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result_with_stances(stances=["support"] * 15),
-    )
-
-    email_calls: list[dict[str, Any]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
-            {"recipient_email": recipient_email, "result_payload": result_payload}
-        ),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    payload = email_calls[0]["result_payload"]
+def test_result_payload_sets_consensus_for_15_of_15_support() -> None:
+    payload = _payload_for(["support"] * 15)
     assert payload["aggregate_score"]["support_count"] == 15
     assert payload["aggregate_score"]["reject_count"] == 0
     assert payload["aggregate_score"]["conditional_count"] == 0
@@ -855,40 +326,8 @@ def test_result_payload_sets_consensus_for_15_of_15_support(monkeypatch) -> None
     assert payload["consensus_flag_display"] == "15 persona támogatja"
 
 
-def test_result_payload_sets_consensus_for_15_of_18_reject(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result_with_stances(
-            stances=["reject"] * 15 + ["support", "support", "support"],
-        ),
-    )
-
-    email_calls: list[dict[str, Any]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
-            {"recipient_email": recipient_email, "result_payload": result_payload}
-        ),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    payload = email_calls[0]["result_payload"]
+def test_result_payload_sets_consensus_for_15_of_18_reject() -> None:
+    payload = _payload_for(["reject"] * 15 + ["support", "support", "support"])
     assert payload["aggregate_score"]["support_count"] == 3
     assert payload["aggregate_score"]["reject_count"] == 15
     assert payload["aggregate_score"]["conditional_count"] == 0
@@ -898,40 +337,8 @@ def test_result_payload_sets_consensus_for_15_of_18_reject(monkeypatch) -> None:
     assert payload["consensus_flag_display"] == "15 persona elutasítja"
 
 
-def test_result_payload_no_consensus_for_14_of_18_support(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result_with_stances(
-            stances=["support"] * 14 + ["reject"] * 4,
-        ),
-    )
-
-    email_calls: list[dict[str, Any]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
-            {"recipient_email": recipient_email, "result_payload": result_payload}
-        ),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    payload = email_calls[0]["result_payload"]
+def test_result_payload_no_consensus_for_14_of_18_support() -> None:
+    payload = _payload_for(["support"] * 14 + ["reject"] * 4)
     assert payload["aggregate_score"]["support_count"] == 14
     assert payload["aggregate_score"]["reject_count"] == 4
     assert payload["aggregate_score"]["conditional_count"] == 0
@@ -941,38 +348,8 @@ def test_result_payload_no_consensus_for_14_of_18_support(monkeypatch) -> None:
     assert payload["consensus_flag_display"] is None
 
 
-def test_result_payload_no_consensus_when_all_conditional(monkeypatch) -> None:
-    _seed_env(monkeypatch)
-    fake_supabase = FakeSupabase("1.00")
-
-    import app.services.run_processor as run_processor
-
-    monkeypatch.setattr(run_processor, "get_supabase_client", lambda: fake_supabase)
-    _patch_fake_engine(
-        monkeypatch,
-        run_processor,
-        _build_result_with_stances(stances=["conditional"] * 18),
-    )
-
-    email_calls: list[dict[str, Any]] = []
-    monkeypatch.setattr(
-        run_processor,
-        "send_run_result_email",
-        lambda *, recipient_email, result_payload, user_id=None: email_calls.append(
-            {"recipient_email": recipient_email, "result_payload": result_payload}
-        ),
-    )
-
-    asyncio.run(
-        process_run(
-            run_id="run-1",
-            user_id="user-1",
-            topic="Tema",
-            audience="Kozonseg",
-        )
-    )
-
-    payload = email_calls[0]["result_payload"]
+def test_result_payload_no_consensus_when_all_conditional() -> None:
+    payload = _payload_for(["conditional"] * 18)
     assert payload["aggregate_score"]["support_count"] == 0
     assert payload["aggregate_score"]["reject_count"] == 0
     assert payload["aggregate_score"]["conditional_count"] == 18

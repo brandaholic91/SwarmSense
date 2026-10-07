@@ -2,7 +2,7 @@
 
 A cél és a teljesítési kritériumok a `CLAUDE.md`-ben, a részletek a `docs/superpowers/specs/2026-10-07-swarmsense-portfolio-design.md` specben vannak. Ez a fájl csak azt rögzíti, hol tartunk.
 
-**Most:** az A terv (új alap) kész (2026-10-07). A B terv megírása következik. Az A terv végén egy valódi futás helyben: 18/18 persona, `completed`, 86,5 mp, 16 134 bemeneti és 36 335 kimeneti token.
+**Most:** az A terv (új alap) kész (2026-10-07). A B terv meg van írva, Balázs jóváhagyására vár. Az A terv végén egy valódi futás helyben: 18/18 persona, `completed`, 86,5 mp, 16 134 bemeneti és 36 335 kimeneti token.
 
 ## Lépések
 
@@ -25,7 +25,7 @@ A cél és a teljesítési kritériumok a `CLAUDE.md`-ben, a részletek a `docs/
 | Terv | Fájl | Állapot |
 |---|---|---|
 | A | `docs/superpowers/plans/2026-10-07-swarmsense-a-uj-alap.md` | kész |
-| B | még nincs megírva | az A terv után |
+| B | `docs/superpowers/plans/2026-10-07-swarmsense-b-a-darab.md` | megírva, jóváhagyásra vár |
 | C | még nincs megírva | a B terv után |
 
 ## A 0. lépés mérései

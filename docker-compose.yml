@@ -1,0 +1,85 @@
+# Éles telepítés (Dokploy). A változókat a Dokploy Environment füle adja,
+# a nevek a gyökér .env.example fájlban vannak.
+#
+# Kívülről egyedül a frontend érhető el: a címet a Dokploy Domains füle
+# rendeli hozzá (3000-es port). A backend és a Postgres csak a belső hálón
+# van, portot a gazdagépre egyik sem nyit.
+name: swarmsense
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    environment:
+      API_URL: http://backend:8000
+      INTERNAL_SECRET: ${INTERNAL_SECRET:?}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+    expose:
+      - "3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    # A PDF-et headless Chromium készíti: kell neki init folyamat és nagyobb /dev/shm.
+    init: true
+    shm_size: 512mb
+    environment:
+      SWARMSENSE_ENVIRONMENT: production
+      SWARMSENSE_DATABASE_URL: postgresql://swarmsense:${POSTGRES_PASSWORD:?}@postgres:5432/swarmsense
+      SWARMSENSE_INTERNAL_SECRET: ${INTERNAL_SECRET:?}
+      SWARMSENSE_IP_HASH_SECRET: ${IP_HASH_SECRET:?}
+      SWARMSENSE_LLM_API_KEY: ${LLM_API_KEY:?}
+      SWARMSENSE_PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?}
+      SWARMSENSE_RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SWARMSENSE_EMAIL_FROM: ${EMAIL_FROM:-}
+      SWARMSENSE_DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      SWARMSENSE_MAX_CONCURRENT_RUNS: ${MAX_CONCURRENT_RUNS:-2}
+      SWARMSENSE_RUNS_PER_IP_PER_DAY: ${RUNS_PER_IP_PER_DAY:-3}
+      SWARMSENSE_RUNS_PER_DAY: ${RUNS_PER_DAY:-20}
+      SWARMSENSE_EMAILS_PER_RUN: ${EMAILS_PER_RUN:-3}
+      SWARMSENSE_EMAILS_PER_DAY: ${EMAILS_PER_DAY:-30}
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/status', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: swarmsense
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: swarmsense
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swarmsense -d swarmsense"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  internal:

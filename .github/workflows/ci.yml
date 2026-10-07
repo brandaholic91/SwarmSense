@@ -33,6 +33,15 @@ jobs:
       - name: Validate dev compose syntax
         run: docker compose -f docker-compose.dev.yml config
 
+      - name: Validate production compose syntax
+        env:
+          POSTGRES_PASSWORD: ci
+          INTERNAL_SECRET: ci
+          IP_HASH_SECRET: ci
+          LLM_API_KEY: ci
+          PUBLIC_BASE_URL: https://example.com
+        run: docker compose -f docker-compose.yml config -q
+
   frontend:
     name: Frontend lint/test/build
     runs-on: ubuntu-latest

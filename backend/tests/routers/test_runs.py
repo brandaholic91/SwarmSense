@@ -49,7 +49,14 @@ def test_create_run_inserts_row_and_dispatches(client, dispatched):
     ]
 
 
-@pytest.mark.parametrize("headers", [{}, {"X-Internal-Secret": "rossz"}])
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {},
+        {"X-Internal-Secret": "rossz"},
+        {"X-Internal-Secret": "titok-é".encode("utf-8")},  # nem-ASCII érték
+    ],
+)
 def test_create_run_without_valid_secret_is_401(client, dispatched, headers):
     r = client.post(
         "/api/v1/runs", json={"topic": "a", "audience": "b"}, headers=headers

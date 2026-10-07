@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hmac
+
 from fastapi import Request
 
 from app.core.config import get_settings
@@ -21,7 +23,10 @@ async def internal_auth_middleware(request: Request, call_next):
 
     settings = get_settings()
     secret = request.headers.get("X-Internal-Secret", "")
-    if not secret or secret != settings.internal_secret:
+    # állandó idejű összehasonlítás; bájtokon, mert a str-változat nem-ASCII-ra hibázik
+    if not secret or not hmac.compare_digest(
+        secret.encode(), settings.internal_secret.encode()
+    ):
         return error_response(
             status_code=401,
             detail="Unauthorized",

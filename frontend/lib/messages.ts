@@ -20,7 +20,7 @@ type PreviewCard = {
 export const messages = {
   landing: {
     nav: {
-      cta: "Ingyen kipróbálom",
+      cta: "Kipróbálom",
     },
     hero: {
       headline: "Tudd meg, mit gondol a piacod,",
@@ -28,13 +28,13 @@ export const messages = {
       headlineSuffix: "alatt.",
       subheadline:
         "Írd le a kérdésed és a célközönséged: 18 szintetikus persona válaszol rá, nagyjából másfél-két perc alatt, regisztráció nélkül. A futást élőben követheted, az eredményt PDF-ben letöltheted.",
-      cta: "Ingyen kipróbálom",
+      cta: "Kipróbálom",
       sampleCta: "Minta megtekintése",
       cardLabel: "Illusztráció",
       cardAriaLabel: "Illusztráció: példaeredmény",
     },
     painBridge: {
-      heading: "Mit csinál a darab",
+      heading: "Mit tud a demó?",
       closing:
         "A SwarmSense portfóliódarab: a válaszokat egy nyelvi modell szimulálja, nem valódi megkérdezettek. Valódi piackutatást nem vált ki.",
       methodologyLink: "A módszertanról bővebben",
@@ -58,7 +58,7 @@ export const messages = {
     },
     preview: {
       eyebrow: "Illusztráció",
-      heading: "Így nézhet ki egy eredmény",
+      heading: "Így néz ki egy eredmény",
       illustrationNote:
         "Kitalált példaadat, nem egy valódi futás eredménye. Alább egy valódi futást is megnézhetsz.",
       sampleLink: "Nézz meg egy valódi mintafutást",
@@ -177,7 +177,7 @@ export const messages = {
     },
     closingCta: {
       heading: "Próbáld ki a demót.",
-      cta: "Ingyen kipróbálom",
+      cta: "Kipróbálom",
       helper: "Regisztráció nélkül, napi keretekkel.",
     },
     footer: {

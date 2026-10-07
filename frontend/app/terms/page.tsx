@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getContactLine } from "@/lib/contact";
 import { messages } from "@/lib/messages";
 import { accent, onSurface, textSecondary } from "@/lib/tokens";
 
@@ -8,17 +9,20 @@ type TermsSection = {
   paragraphs: string[];
   list?: string[];
   linkPrivacy?: boolean;
+  methodologyLink?: boolean;
+  contact?: boolean;
 };
 
-export default function TermsPage() {
+export default async function TermsPage() {
   const legal = messages.legal;
   const sections = legal.termsSections as TermsSection[];
+  const contactLine = await getContactLine();
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16" style={{ color: onSurface }}>
       <h1 className="text-3xl font-semibold">{legal.termsTitle}</h1>
       <p className="mt-2 text-xs tracking-wide" style={{ color: textSecondary }}>
-        {legal.termsEffectiveDate}
+        {legal.effectiveDate}
       </p>
       <div className="mt-6 space-y-4 text-sm leading-relaxed">
         {legal.termsIntroParagraphs.map((paragraph, i) => (
@@ -39,6 +43,7 @@ export default function TermsPage() {
               ))}
             </ul>
           ) : null}
+          {section.contact ? <p>{contactLine}</p> : null}
           {section.linkPrivacy ? (
             <p className="pt-1">
               <Link
@@ -47,6 +52,17 @@ export default function TermsPage() {
                 style={{ color: accent }}
               >
                 {legal.privacyTitle}
+              </Link>
+            </p>
+          ) : null}
+          {section.methodologyLink ? (
+            <p className="pt-1">
+              <Link
+                href="/modszertan"
+                className="font-medium underline underline-offset-2"
+                style={{ color: accent }}
+              >
+                {legal.methodologyLinkLabel}
               </Link>
             </p>
           ) : null}

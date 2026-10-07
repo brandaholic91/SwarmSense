@@ -24,22 +24,41 @@ export const messages = {
       highlight: "pár perc",
       headlineSuffix: "alatt.",
       subheadline:
-        "Töltsd fel a kérdésed, és perceken belül látod, hogyan reagál rá a célközönséged — ügynökség és várakozás nélkül.",
+        "Írd le a kérdésed és a célközönséged: 18 szintetikus persona válaszol rá, nagyjából másfél perc alatt, regisztráció nélkül. A futást élőben követheted, az eredményt PDF-ben letöltheted.",
       cta: "Ingyen kipróbálom",
+      sampleCta: "Minta megtekintése",
+      cardLabel: "Illusztráció",
+      cardAriaLabel: "Illusztráció: példaeredmény",
     },
     painBridge: {
-      heading: "A piackutatás még sosem volt ilyen egyszerű",
+      heading: "Mit csinál a darab",
       closing:
-        "A SwarmSense szintetikus piackutatással ad választ — AI personák döntéshozatala alapján.",
+        "A SwarmSense portfóliódarab: a válaszokat egy nyelvi modell által szimulált személyek adják, nem valódi megkérdezettek. Valódi piackutatást nem vált ki.",
+      methodologyLink: "A módszertanról bővebben",
       items: [
-        { before: "Hetek, hónapok", after: "Pár perc" },
-        { before: "Ügynökségi büdzsé", after: "Megfizethető ár" },
-        { before: "Csak nagyvállalatoknak", after: "Bárki számára" },
+        {
+          title: "Élő trace",
+          description:
+            "Minden persona állapotát, kísérletszámát és idejét látod, ahogy a futás halad.",
+        },
+        {
+          title: "18 persona, 5-ös párhuzamossággal",
+          description:
+            "Egy hívás elkészíti a leírásokat, utána a personák külön hívásokban válaszolnak, egyszerre legfeljebb 5.",
+        },
+        {
+          title: "PDF az eredményről",
+          description:
+            "Az összefoglaló és a personák válaszai letölthetők PDF-ben, kérésre levélben is megkapod.",
+        },
       ],
     },
     preview: {
-      eyebrow: "Így néz ki egy eredmény",
-      heading: "Konkrét reakciók, különböző attitűdök",
+      eyebrow: "Illusztráció",
+      heading: "Így nézhet ki egy eredmény",
+      illustrationNote:
+        "Kitalált példaadat, nem egy valódi futás eredménye. Alább egy valódi futást is megnézhetsz.",
+      sampleLink: "Nézd meg egy valódi mintafutást",
       researchLabel: "Kutatási téma",
       researchValue: "Meggyőző-e ez az üzenet B2B döntéshozóknak: Csökkentsd a sales ciklust 40%-kal automatizálással?",
       audienceLabel: "Célközönség",
@@ -70,7 +89,7 @@ export const messages = {
           "45–150 fős tech-barát B2B cégek sales és marketing vezetői, ahol már van CRM-rendszer.",
         recommendationLabel: "Stratégiai javaslat",
         recommendation:
-          "Adj hozzá 1 konkrét esettanulmányt és egy ingyenes próbalehetőséget — ez a két elem a feltételes szavazókat is átbillenti.",
+          "Adj hozzá 1 konkrét esettanulmányt és egy kipróbálható pilotot — ez a két elem a feltételes szavazókat is átbillenti.",
       },
       cards: ([
         {
@@ -131,36 +150,37 @@ export const messages = {
         {
           title: "Beküldöd",
           description:
-            "Add meg a kérdésed és határozd meg a célközönséged.",
+            "Add meg a kérdésed és a célközönséged. Két mező, regisztráció nélkül.",
         },
         {
-          title: "A kutatás fut",
+          title: "A futás élőben követhető",
           description:
-            "15-20 egyedi AI persona szimulálja a döntéshozatali folyamatot valós időben.",
+            "18 szintetikus persona válaszol, egyszerre legfeljebb 5. Az élő trace-en látod, hol tart a futás.",
         },
         {
           title: "Megkapod az eredményt",
           description:
-            "Az összefoglaló és a personák válaszai az oldalon jelennek meg.",
+            "Az eredményoldalon elolvasod az összefoglalót és a personák válaszait, és letöltheted PDF-ben.",
         },
       ],
     },
     stats: {
       items: [
-        { value: "Ingyenes próba", label: "regisztráció nélkül" },
-        { value: "90 másodperc", label: "átlagos várakozás" },
-        { value: "Strukturált elemzés", label: "az oldalon, azonnal" },
-        { value: "15–20 persona", label: "különböző nézőpont" },
+        { value: "18 persona", label: "szintetikus, nyelvi modellel" },
+        { value: "Másfél perc", label: "egy futás nagyjából" },
+        { value: "Regisztráció nélkül", label: "két mezős űrlap" },
+        { value: "PDF", label: "letölthető eredmény" },
       ],
     },
     closingCta: {
-      heading: "Teszteld le a következő feltételezésed még ma.",
+      heading: "Próbáld ki a demót.",
       cta: "Ingyen kipróbálom",
-      helper: "Regisztráció nélkül.",
+      helper: "Regisztráció nélkül, napi keretekkel.",
     },
     footer: {
       privacy: "Adatkezelési tájékoztató",
       terms: "Felhasználási feltételek",
+      methodology: "Módszertan",
     },
   },
   research: {
@@ -270,168 +290,186 @@ export const messages = {
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",
     termsTitle: "Felhasználási feltételek",
-    termsEffectiveDate: "Hatálybalépés: 2026. március 23. · Verzió: 1.0",
+    effectiveDate: "Hatálybalépés: 2026. október 7. · Verzió: 2.0",
+    contactFallback: "Kapcsolat: a repo issue-követőjén.",
+    contactLabel: "Kapcsolat",
     termsIntroParagraphs: [
-      "A jelen Felhasználási feltételek (a továbbiakban: Feltételek) szabályozzák a SwarmSense elérhető online szolgáltatás igénybevételét.",
-      "A szolgáltatás használatával — különösen a kutatási folyamat megkezdésével, az e-mail cím megadásával és az adatkezeléshez szükséges jelölőnégyzet elfogadásával — a Feltételeket elfogadod, és tudomásul veszed az Adatkezelési tájékoztató tartalmát.",
+      "A jelen Felhasználási feltételek (a továbbiakban: Feltételek) a SwarmSense nevű webes demó használatát szabályozzák.",
     ],
     termsSections: [
       {
-        title: "1. Hatály és szerződő felek",
+        title: "1. Hatály és szolgáltató",
         paragraphs: [
-          "A Feltételek vonatkoznak minden olyan természetes személyre (a továbbiakban: felhasználó), aki a SwarmSense webes felületét vagy kapcsolódó szolgáltatásait igénybe veszi.",
-          "Szolgáltató: a SwarmSense szolgáltatást üzemeltető. A kapcsolattartási elérhetőségeket — amint azok közzétételre kerülnek — az Adatkezelési tájékoztató és ezen az oldalon tesszük közzé.",
+          "A Feltételek mindenkire vonatkoznak, aki a SwarmSense webes felületét használja.",
+          "Szolgáltató: a SwarmSense demót üzemeltető.",
         ],
+        contact: true,
       },
       {
         title: "2. A szolgáltatás jellege",
         paragraphs: [
-          "A SwarmSense szintetikus piackutatást nyújt: a megadott kutatási kérdés és célközönség-leírás alapján a rendszer AI által generált, fiktív personák (szintetikus döntéshozói profilok) reakcióit és összefoglaló elemzését állítja elő, és az eredményt e-mailben kézbesíti.",
-          "A szolgáltatás tartalma, elérhetősége és funkciói változhatnak (beleértve a próba- vagy ingyenes futtatások korlátait); a lényeges változásokról ésszerűen tájékoztatunk (például ezen az oldalon vagy a szolgáltatás felületén).",
+          "A SwarmSense egy bemutató célú, ingyenes demó. A megadott kérdés és célközönség alapján egy nyelvi modell fiktív personák (szintetikus döntéshozói profilok) válaszait és egy összefoglalót állít elő. Az eredményt az oldalon mutatjuk meg, és PDF-ben le lehet tölteni.",
+          "A demó napi keretekkel működik: korlátozott az egyidejű futások, az IP-címenkénti és az összes futás száma. Rendelkezésre állást nem vállalunk, és a demó tartalma vagy működése előzetes értesítés nélkül változhat vagy megszűnhet.",
         ],
       },
       {
-        title: "3. Regisztráció, e-mail, hitelesítés",
+        title: "3. Felhasználói magatartás és tiltott tartalom",
         paragraphs: [
-          "A szolgáltatás egyes lépéseihez érvényes e-mail cím megadása és — ahol kérjük — a Felhasználási feltételek és az Adatkezelési tájékoztató elfogadása szükséges. A megadott e-mail címért felelsz: azt csak jogosultságodban álló címre add meg.",
-          "Ahol a folyamat mágikus linkes vagy hasonló hitelesítést használ, a linket tartsd bizalmasan; a linken keresztül történő hozzáférésért te felelsz.",
-        ],
-      },
-      {
-        title: "4. Felhasználói magatartás és tiltott tartalom",
-        paragraphs: [
-          "Kötelezed magad, hogy a szolgáltatást jogszerűen, mások jogait és a vonatkozó szabályokat nem sértve veszed igénybe. Különösen tilos:",
+          "Kötelezed magad, hogy a szolgáltatást jogszerűen, mások jogait és a vonatkozó szabályokat nem sértve használod. Különösen tilos:",
         ],
         list: [
-          "a kutatási témába vagy bármely mezőbe valós személyek azonosítására alkalmas adat, különleges kategóriájú személyes adat, illetve jogellenes vagy mások jogát sértő tartalom megadása;",
-          "a szolgáltatás visszaélésszerű használata (pl. automatizált visszaélésszerű terhelés, mások zaklatása, rosszindulatú tartalom terjesztése);",
-          "megkísérelni a szolgáltatás, más felhasználók adatainak vagy háttérrendszerek jogosulatlan elérését.",
+          "a kérdés vagy a célközönség mezőjébe valós személyek azonosítására alkalmas adatot, különleges kategóriájú személyes adatot, illetve jogellenes vagy mások jogát sértő tartalmat írni;",
+          "a szolgáltatással visszaélni (például automatizált, terhelő kérések küldése, mások zaklatása, rosszindulatú tartalom terjesztése);",
+          "megkísérelni a szolgáltatás vagy a háttérrendszerek jogosulatlan elérését.",
         ],
       },
       {
-        title: "5. Szellemi alkotások és licence a bemenetekre",
+        title: "4. Szellemi alkotások és a megadott szövegek",
         paragraphs: [
-          "A SwarmSense megjelenése, logói, szövegei és szoftverkomponensei a szolgáltató vagy partnerei jogosultságát képezik; ezeket a felhasználó nem másolhatja, nem terjesztheti és nem módosíthatja a jogszabály által megengedett szűk kör kivételével.",
-          "A kutatási témaként, célközönség-leírásként és egyéb mezőkben általad megadott tartalomért te felelsz; a szolgáltató részére nem kizárólagos, a szolgáltatás nyújtásához szükséges felhasználási jogot adsz (feldolgozás, tárolás, elemzés előállítása és kézbesítés).",
+          "A SwarmSense megjelenése, szövegei és szoftverkomponensei a szolgáltató vagy partnerei tulajdonában vannak. A jogszabály által megengedett szűk kör kivételével nem másolhatod, nem terjesztheted és nem módosíthatod őket.",
+          "A kérdésért és a célközönség leírásáért te felelsz. A szolgáltatónak nem kizárólagos felhasználási jogot adsz arra, hogy ezeket a demó működtetéséhez feldolgozza, tárolja, és az eredményt előállítsa és megjelenítse.",
         ],
       },
       {
-        title: "6. Szintetikus eredmény — nem tanácsadás, nem reprezentatív felmérés",
+        title: "5. Szintetikus eredmény: nem tanácsadás, nem reprezentatív felmérés",
         paragraphs: [
-          "Az előállított elemzés, personák és összefoglalók tájékoztató jellegűek, piaci vagy termékhipotézisek gyors előtesztelésére; nem minősülnek szakmai, pénzügyi, jogi vagy egyéb szakértői tanácsadásnak, és nem helyettesítik a valós piaci vagy fogyasztói kutatást.",
+          "Az előállított elemzés, a personák és az összefoglalók tájékoztató jellegűek, piaci vagy termékhipotézisek gyors előszűrésére valók. Nem minősülnek szakmai, pénzügyi, jogi vagy egyéb szakértői tanácsadásnak, és nem helyettesítik a valós piaci vagy fogyasztói kutatást.",
           "A szolgáltató nem vállal felelősséget azért, hogy az eredmény bármely üzleti vagy jogi döntéshez megfelelő vagy teljes lenne; a döntéseket saját felelősségre hozod.",
         ],
+        methodologyLink: true,
       },
       {
-        title: "7. Elérhetőség, változtatás, szünet",
+        title: "6. Elérhetőség",
         paragraphs: [
-          "A szolgáltatást igyekszünk folyamatosan rendelkezésre bocsátani, de nem garantáljuk a megszakításmentes működést. Karbantartás, frissítés, harmadik felek hibái vagy vis maior esetén szünet előfordulhat; erről ésszerűen törekszünk tájékoztatni, ha az indokolt.",
+          "A demó nem garantál megszakításmentes működést. Karbantartás, hiba, a napi keretek betelése vagy külső szolgáltatók kiesése miatt bármikor elérhetetlenné válhat.",
         ],
       },
       {
-        title: "8. Díjazás",
+        title: "7. Felelősség korlátozása",
         paragraphs: [
-          "A szolgáltatás egyes funkciói — a felületen feltüntetett módon — ingyenes próba vagy korlátozott futtatás keretében érhetők el. Későbbi fizetős csomagok vagy előfizetés bevezetése esetén a díjakat és feltételeket külön, előzetesen közöljük.",
+          "A szolgáltatást „ahogy van” (as-is) biztosítjuk, a jogszabályok által megkövetelt kötelező szavatossági szabályok alkalmazásával. A szolgáltató a jogszabály által kizárni nem engedett mértékig nem felel a közvetett kárért, az elmaradt haszonért, illetve a szolgáltatáson kívüli körülményből fakadó kárért.",
         ],
       },
       {
-        title: "9. Felelősség korlátozása",
-        paragraphs: [
-          "A szolgáltatást „ahogy van” (as-is) biztosítjuk, a jogszabályok által megkövetelt kötelező szavatossági és kellékszavatossági szabályok alkalmazásával. A szolgáltató — a jogszabály által kizárni nem engedett mértékig — nem felel a közvetett kárért, elmaradt haszonért vagy olyan kárért, amely a szolgáltatáson kívüli körülményből fakad.",
-          "Ha a felelősség valamilyen formában fennáll, a szolgáltató díjazás esetén — a jogszabály által megengedett keretek között — általában a vonatkozó szolgáltatásért az adott ügyben ténylegesen megfizetett összeggel arányosított mértékben felel.",
-        ],
-      },
-      {
-        title: "10. Adatvédelem",
+        title: "8. Adatvédelem",
         paragraphs: [
           "A személyes adatok kezelését az Adatkezelési tájékoztató részletezi; kérjük, azt külön olvasd el.",
         ],
         linkPrivacy: true,
       },
       {
-        title: "11. Panasz, vitarendezés",
+        title: "9. Panasz, vitarendezés",
         paragraphs: [
-          "Panaszodat először a szolgáltató felé — a közzétett kapcsolattartási csatornán — jelezheted, amint az elérhető. Fogyasztói jogvita esetén élni lehet a lakóhely szerinti békéltető testület vagy a szolgáltató székhelye szerinti testület eljárása iránti igénnyel, valamint az online vitarendezési platform (ODR) lehetőségével, ha alkalmazható.",
+          "Panaszodat a kapcsolattartási elérhetőségen jelezheted. Fogyasztói jogvita esetén élni lehet a lakóhely szerinti békéltető testület eljárásának kezdeményezésével, valamint az online vitarendezési platform (ODR) lehetőségével, ha alkalmazható.",
         ],
+        contact: true,
       },
       {
-        title: "12. Alkalmazandó jog",
+        title: "10. Alkalmazandó jog",
         paragraphs: [
           "A Feltételekre a magyar jog irányadó; az Európai Unió fogyasztóvédelmi előírásai a fogyasztóval szemben alkalmazandó szabályok szerint érvényesülhetnek.",
         ],
       },
       {
-        title: "13. A Feltételek módosítása",
+        title: "11. A Feltételek módosítása",
         paragraphs: [
-          "A Feltételeket időről időre módosíthatjuk. A hatályos szöveg mindig ezen az oldalon érhető el; lényeges változásnál — ha indokolt — külön is felhívjuk a figyelmet (például a szolgáltatás felületén vagy e-mailben). A módosítás közzététele után a szolgáltatás további használata a módosítás elfogadásának minősül, kivéve, ha a jogszabály másként rendelkezik.",
+          "A Feltételeket időről időre módosíthatjuk. A hatályos szöveg mindig ezen az oldalon érhető el. A módosítás közzététele után a demó további használata a módosítás elfogadásának minősül, kivéve, ha a jogszabály másként rendelkezik.",
         ],
       },
     ],
-    privacyEffectiveDate: "Hatálybalépés: 2026. március 23. · Verzió: 1.0",
+    methodologyLinkLabel: "Módszertan",
     privacyIntroParagraphs: [
-      "A SwarmSense egy szintetikus piackutatási szolgáltatás: a feltöltött kutatási kérdésre és célközönség-leírásra a rendszer szintetikus personák (AI által generált, fiktív döntéshozói profilok) reakcióit és összefoglaló elemzését állítja elő, majd az eredményt e-mailben eljuttatja a megadott címre.",
-      "Személyes adataidat az Európai Parlament és a Tanács (EU) 2016/679 rendelete (GDPR) szerint, valamint az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvény (Infotv.) előírásai szerint kezeljük.",
+      "A SwarmSense egy bemutató célú demó: a megadott kérdésre és célközönségre egy nyelvi modell szintetikus personák (fiktív döntéshozói profilok) válaszait és egy összefoglalót állítja elő. Regisztráció és fiók nincs.",
+      "Személyes adataidat az Európai Parlament és a Tanács (EU) 2016/679 rendelete (GDPR), valamint az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvény (Infotv.) előírásai szerint kezeljük.",
     ],
     controllerTitle: "1. Adatkezelő és elérhetőség",
-    controllerBody:
-      "Adatkezelő: a SwarmSense szolgáltatást üzemeltető. Dedikált általános és adatvédelmi e-mail címek egyelőre nem állnak rendelkezésre; a pontos elérhetőséget ezen a tájékoztató oldalon tesszük közzé, amint elérhetővé válik.",
-    processedDataTitle: "2. Kezelt személyes adatok köre",
+    controllerBody: "Adatkezelő: a SwarmSense demót üzemeltető.",
+    processedDataTitle: "2. Kezelt adatok",
     processedDataItems: [
-      "e-mail cím (azonosítás, eredmény és értesítések kézbesítése)",
-      "a GDPR-hozzájárulás ténye és időbélyege (consent_timestamp)",
-      "kutatási téma és célközönség szöveges leírása (futáshoz kötve)",
-      "futáshoz kapcsolódó elemzési eredmények és szintézis mezők (összefoglalók, támogató / elutasító / feltételes arányok, stratégiai javaslat szövegek)",
-      "futás státusza, technikai és költség jellegű metaadatok, időbélyegek",
-      "marketing / follow-up e-mailek küldésének státusza (pl. nap 1 / 3 / 7 jelölések), valamint leiratkozás időpontja (unsubscribed_at), ha leiratkoztál",
-      "Pro várólistára felvett e-mail cím, ha a szolgáltatás ezt igénybe veszed",
-      "mágikus linkes hitelesítéshez kapcsolódó technikai token metaadatok (érvényesség szerint kezelve)",
+      "a kérdés és a célközönség szövege, valamint a futás eredménye (a personák válaszai, az összefoglaló és a PDF);",
+      "a futás állapota, időbélyegei, tokenszámai és hibakódja;",
+      "az IP-címed kulcsolt lenyomata (HMAC), a visszaélések korlátozásához. Az IP-cím nyersen nem tárolódik;",
+      "az e-mail-cím, de csak akkor, ha a PDF-et levélben kéred.",
     ],
-    legalBasisTitle: "3. Az adatkezelés jogalapja és célja",
+    cookiesTitle: "3. Sütik és webanalitika",
+    cookiesBody: "Az oldal nem használ sütit és webanalitikát, és regisztrációt sem kér.",
+    visibilityTitle: "4. A futás szövege és láthatósága",
+    visibilityBody:
+      "A kérdés és a célközönség szövege, valamint a futás eredménye korlátlan ideig megmarad. A futás linkjének birtokában bárki láthatja őket, ezért a linket kezeld úgy, mintha nyilvános lenne. Ne írj a mezőkbe személyes adatot vagy üzleti titkot.",
+    processorsTitle: "5. Külső szolgáltatók",
+    processorsItems: [
+      "A kérdés és a célközönség szövege az opencode szolgáltatáson keresztül a DeepSeek nyelvi modelljéhez kerül feldolgozásra. A feldolgozás az Európai Gazdasági Térségen kívül is történhet.",
+      "Ha a PDF-et levélben kéred, a levelet a Resend küldi. Egyetlen levél megy, a címet 14 nap után töröljük az adatbázisunkból. A Resend saját naplója ettől független, arra a törlésünk nem terjed ki.",
+      "Ha egy futás hibával leáll, egy Discord-csatornára értesítés megy a futás azonosítójával és a hibakóddal. A kérdés szövege és az e-mail-cím nem kerül bele.",
+    ],
+    legalBasisTitle: "6. Jogalap",
     legalBasisBody:
-      "Az e-mail cím és a szolgáltatás nyújtásához szükséges tartalom kezelésének jogalapja a GDPR 6. cikk (1) bekezdés b) pontja (szerződés vagy az arra való előkészület — szolgáltatás nyújtása). A külön megadott, egyértelmű hozzájárulás (a tájékoztató és a felhasználási feltételek elfogadása az e-mail beküldésekor) a GDPR 6. cikk (1) bekezdés a) pontja szerinti jogalapot teremti a hozzájáruláshoz kötött elemekre. A szolgáltatás biztonságos működtetése, visszaélések megelőzése és minőségbiztosítás céljából szükséges, mértékű adatkezelés jogalapja a GDPR 6. cikk (1) bekezdés f) pontja szerinti jogos érdek; ilyenkor figyelembe vesszük az érdekmérlegelést. Marketing jellegű (nem tranzakciós) e-mailek küldéséhez — ha alkalmazunk ilyet — a hozzájárulásod vagy jogos érdekünk és a leiratkozási jog biztosítása a mérvadó.",
-    aiProcessingTitle: "4. Szintetikus kutatás és automatizált feldolgozás",
-    aiProcessingBody:
-      "A SwarmSense nem valós személyeket kérdez meg; a válaszokat és összefoglalókat nagy nyelvi modellek és kapcsolódó automatizmusok állítják elő a megadott bemenetek alapján. Az eredmény tájékoztató jellegű, piaci hipotézisek gyors tesztelésére szolgál — nem minősül valós fogyasztói vagy iparági reprezentatív felmérésnek, és nem helyettesíti a szakmai vagy jogi tanácsadást. Kérjük, a kutatási témában ne adj meg különleges kategóriájú személyes adatot vagy bizalmas vállalati titkot.",
-    cookiesTitle: "5. Cookie-k és látogatás-statisztika",
-    cookiesBody:
-      "A webes felületen elsősorban a működéshez szükséges (pl. munkamenet / bejelentkezéshez kötött) technikai jellegű tárolást használhatunk. Látogatás-statisztikára — ha beépítésre kerül — olyan megoldást részesítünk előnyben, amely személyazonosításra nem alkalmas, és lehetőség szerint nem igényel külön sütihozzájáruló bannert (pl. cookie-mentes, aggregált analitika). Konkrét eszközök listáját e tájékoztató frissítésekor tesszük közzé.",
-    processorsTitle: "6. Adatfeldolgozók, tárolás, harmadik felek",
-    processorsBody:
-      "Az adatokat elsősorban az Európai Gazdasági Térségben (EGT) elhelyezett vagy ahhoz megfelelőségi döntés / megfelelő garanciák (pl. szerződéses záradékok) mellett kezelt felhőszolgáltatásokban tároljuk (adatbázis, alkalmazás-hosztolás). E-mail kézbesítéshez megbízott levelezési szolgáltatót veszünk igénybe. A pontos alvállalkozók és szolgáltatók neve, valamint az adattovábbítás részletei változáskor ezen az oldalon frissülnek. Harmadik országba csak megfelelő garanciák mellett továbbítunk adatot.",
-    retentionTitle: "7. Megőrzési időtartamok",
-    retentionBody:
-      "A személyes adatokat csak addig őrizzük meg, ameddig a szolgáltatás nyújtásához, jogi kötelezettség teljesítéséhez (pl. számviteli, vitarendezési igény) vagy jogos érdek érvényesítéséhez szükséges — ezután töröljük vagy anonimizáljuk. Technikai naplók és biztonsági másolatok megőrzése rövidebb, szigorúan szükséges ideig történhet.",
-    marketingCommsTitle: "8. Tájékoztató és marketing jellegű e-mailek, leiratkozás",
-    marketingCommsBody:
-      "A szolgáltatáshoz kapcsolódó tranzakciós üzenetek (pl. eredmény, hitelesítő link) a szolgáltatás részeként kerülnek kiküldésre. Ettől elkülönülő, tájékoztató vagy promóciós jellegű e-maileket csak akkor küldünk, ha azt a jogszabályoknak megfelelően megtehetjük; ilyenkor minden levélben biztosítjuk a leiratkozás lehetőségét (pl. link). A leiratkozás után marketing célú üzenetet nem küldünk a megadott címre.",
-    userRightsTitle: "9. Érintetti jogok és felügyeleti hatóság",
+      "A futás adatainak és az IP-cím lenyomatának kezelése a GDPR 6. cikk (1) bekezdés f) pontja szerinti jogos érdeken alapul: ez a demó működtetése és a visszaélések korlátozása. Az e-mail-cím kezelésének jogalapja a b) pont: a kért levél elküldése.",
+    retentionTitle: "7. Megőrzési idő",
+    retentionItems: [
+      "A kérdés, a célközönség és az eredmény korlátlan ideig megmarad, amíg törlést nem kérsz.",
+      "Az IP-cím lenyomata a futás mellett marad.",
+      "Az e-mail-cím 14 nap után törlődik az adatbázisból.",
+    ],
+    userRightsTitle: "8. Érintetti jogok és felügyeleti hatóság",
     userRightsBody:
-      "Jogosult vagy tájékoztatást kérni az általunk kezelt adataidról, kérheted azok helyesbítését, törlését, az adatkezelés korlátozását, valamint — a jogalaptól függően — tiltakozhatsz az adatkezelés ellen, és kérheted az adathordozhatóságot, ha az alkalmazható. Az érintetti kérelmek benyújtására szolgáló dedikált kapcsolattartási cím bevezetés alatt áll; a pontos elérhetőséget ezen a tájékoztató oldalon frissítjük.",
+      "Tájékoztatást kérhetsz az általunk kezelt adataidról, kérheted azok helyesbítését, törlését és az adatkezelés korlátozását, illetve tiltakozhatsz az adatkezelés ellen. A kérelmeket a kapcsolattartási elérhetőségen fogadjuk.",
     userRightsSupervisoryBody:
       "Panaszoddal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH) fordulhatsz:",
     userRightsSupervisoryLinkLabel: "www.naih.hu",
     userRightsSupervisoryHref: "https://www.naih.hu/",
-    deletionTitle: "10. Törlési kérelem (GDPR 17. cikk)",
-    deletionContactLabel: "Kérelem benyújtása",
-    deletionContactEmail:
-      "Dedikált e-mail cím a törlési kérelmekhez: bevezetés alatt — a pontos címet ezen a tájékoztató oldalon tesszük közzé.",
-    deletionAckSlaLabel: "Tervezett visszaigazolás (a kérelemfogadó csatorna elindításától)",
-    deletionAckSlaValue: "15 percen belül",
-    deletionCompletionSlaLabel: "Tervezett törlés teljesítése (a kérelemfogadó csatorna elindításától)",
-    deletionCompletionSlaValue: "7 naptári napon belül",
-    deletionMvpScope:
-      "Önkiszolgáló törlőportál nem áll rendelkezésre. Amint a törlési és adatvédelmi kérelmek fogadására dedikált e-mail elérhető, a kérelmet onnan lehet benyújtani; a kérelemben egyértelműen jelöld meg az érintett e-mail címet. A törlés a vonatkozó adatbázis-rekordokra és a szolgáltatás keretében tárolt tartalmakra terjed ki, a jogszabály által megengedett kivételekkel (pl. számviteli bizonylat).",
-    updatesTitle: "11. A tájékoztató módosítása",
+    deletionTitle: "9. Törlési kérelem (GDPR 17. cikk)",
+    deletionBody:
+      "Egy futás törléséhez küldd el a futás linkjét a kapcsolattartási elérhetőségre. A futás szövegét és eredményét töröljük az adatbázisból. Az e-mail-cím 14 nap után magától törlődik; korábbi törlését ugyanitt kérheted.",
+    updatesTitle: "10. A tájékoztató módosítása",
     updatesBody:
-      "A tájékoztatót a szolgáltatás vagy a jogszabályi környezet változásakor frissíthetjük. A hatályos verzió mindig ezen az oldalon érhető el; jelentős változásnál — ha szükséges — külön is felhívjuk a figyelmet (pl. e-mailben vagy a szolgáltatás felületén).",
-    deletionEmailTemplates: {
-      acknowledgementSubject: "SwarmSense adattörlési kérelem – visszaigazolás",
-      acknowledgementBody:
-        "Köszönjük, hogy jelezted adattörlési igényedet. A kérelmet rögzítettük, és legkésőbb 15 percen belül visszaigazoljuk. A törlést legkésőbb 7 naptári napon belül elvégezzük, majd külön megerősítő e-mailt küldünk.",
-      completionSubject: "SwarmSense adattörlési kérelem – teljesítve",
-      completionBody:
-        "Ezúton megerősítjük, hogy a kapcsolódó személyes adataid törlését elvégeztük a kérelem beadásától számított 7 naptári napon belül.",
-    },
+      "A tájékoztatót a demó vagy a jogszabályi környezet változásakor frissíthetjük. A hatályos verzió mindig ezen az oldalon érhető el.",
+  },
+  methodology: {
+    title: "Módszertan",
+    intro:
+      "Ez az oldal leírja, mit csinál a SwarmSense egy futás alatt, és mire nem használható az eredmény. A SwarmSense portfóliódarab, nem kutatási szolgáltatás.",
+    sections: [
+      {
+        title: "Mi történik egy futásban",
+        paragraphs: [],
+        list: [
+          "Egy LLM-hívás 18 persona-leírást készít a megadott célközönségre.",
+          "Mind a 18 persona külön hívásban válaszol a kérdésre, egyszerre legfeljebb 5.",
+          "Egy utolsó hívás szintézist ír a válaszokból.",
+        ],
+        after:
+          "Ez összesen 20 hívás. A modell a DeepSeek flash modellje, az opencode szolgáltatáson keresztül. Egy futás nagyjából másfél percig tart, de ez a modell terhelésétől függ.",
+      },
+      {
+        title: "Mi történik, ha valami nem sikerül",
+        paragraphs: [],
+        list: [
+          "Sikertelen hívásnál legfeljebb 3 kísérlet történik.",
+          "Ha egy persona válasza a megadott séma szerint érvénytelen, a persona kiesik az eredményből.",
+          "Ha 12-nél kevesebb persona válaszol érvényesen, a futás sikertelen.",
+          "Ha a szintézis hívása nem sikerül, az eredmény szintézis nélkül készül el. A personák válaszai ilyenkor is megvannak.",
+        ],
+      },
+      {
+        title: "Mit jelentenek a számok",
+        paragraphs: [
+          "A tokenszám a szolgáltató által jelentett érték. A költség listaárból számolt becslés: a demó előfizetéses kereten fut, ezért futásonkénti tényleges költség nincs.",
+        ],
+      },
+      {
+        title: "Mire nem jó",
+        paragraphs: [],
+        list: [
+          "A personák nem valódi emberek, a válaszok egy nyelvi modell kimenetei.",
+          "Az eredmény nem reprezentatív, és ugyanarra a kérdésre futásonként más jöhet ki.",
+          "Hipotézisek előszűrésére való. Döntést megalapozó piackutatást nem vált ki.",
+        ],
+      },
+    ],
+    sampleHeading: "Mintafutás",
+    sampleText: "A mintafutás egy valódi futás: végigkövethető és visszajátszható.",
+    sampleLink: "Nézd meg a mintafutást",
   },
   piiWarning: "Ne adj meg személyes adatot vagy bizalmas információt.",
   genericError: "Váratlan hiba történt. Kérjük, próbáld újra.",

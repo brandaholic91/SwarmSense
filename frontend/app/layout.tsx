@@ -18,13 +18,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SwarmSense - Szintetikus piackutatás percek alatt",
+  title: "SwarmSense - Szintetikus piackutatás-demó",
   description:
-    "Validald az üzenetedet szintetikus AI personákkal. Tedd fel a kérdésedet, és perceken belül strukturált kutatási eredményt kapsz.",
+    "Portfóliódarab: 18 szintetikus AI persona válaszol a kérdésedre, regisztráció nélkül. A futás élőben követhető, az eredmény PDF-ben letölthető. Valódi piackutatást nem vált ki.",
   openGraph: {
-    title: "SwarmSense - Szintetikus piackutatás percek alatt",
+    title: "SwarmSense - Szintetikus piackutatás-demó",
     description:
-      "Gyors piaci visszajelzés AI personákkal: üzenetek, árazás és pozicionálás tesztelése várakozás nélkül.",
+      "Üzenetek, árazás és pozicionálás előszűrése 18 szintetikus persona válaszaival. Portfóliódarab, nem valódi piackutatás.",
     type: "website",
     locale: "hu_HU",
   },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SwarmSense",
     description:
-      "Piaci visszajelzés percek alatt szintetikus personákkal.",
+      "Szintetikus personák válaszai egy kérdésre: portfóliódarab, regisztráció nélkül.",
   },
 };
 

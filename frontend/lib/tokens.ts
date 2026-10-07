@@ -1,4 +1,4 @@
-// Hardcoded hex values for React Email compatibility (no CSS custom property / Tailwind dependency).
+// Hardcoded hex values, used in inline styles.
 // Must stay in sync with the CSS custom properties in globals.css.
 export const trueBlack = "#000000";
 export const background = "#09090b"; // zinc-950
@@ -19,8 +19,3 @@ export const onPrimary = "#5c3800";
 export const outlineVariant = "#47474e";
 export const errorDim = "#ba573f";
 export const tertiaryContainer = "#f8a010";
-export const emailCanvas = "#09090b";
-export const emailSurface = "#18181b";
-export const emailBorder = "#27272a";
-export const emailTextPrimary = "#fafafa";
-export const emailTextSecondary = "#a1a1aa";

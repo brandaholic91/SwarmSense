@@ -50,10 +50,10 @@ function IconPulse() {
   );
 }
 
-function IconMail() {
+function IconDocument() {
   return (
     <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
-      <path d="M4 7h16v10H4zM4.5 8l7.5 5.2L19.5 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12h6M9.5 15.5h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -122,26 +122,26 @@ export default function Home() {
                   {landing.hero.cta}
                   <IconArrowRight />
                 </Link>
-                <a
-                  href="#sample"
+                <Link
+                  href="/minta"
                   className="inline-flex w-full items-center justify-center rounded-lg border px-8 py-4 text-sm transition-colors sm:w-auto"
                   style={{ borderColor: outlineVariant, color: textSecondary, ...labelFont }}
                 >
-                  Minta megtekintése
-                </a>
+                  {landing.hero.sampleCta}
+                </Link>
               </div>
             </div>
 
             <article
               className="hero-card sr-d1 relative rounded-3xl border p-6 text-left"
               style={{ backgroundColor: surfaceContainerHigh, borderColor: outlineVariant }}
-              aria-label="Gyors eredmény minta"
+              aria-label={landing.hero.cardAriaLabel}
             >
               <span
                 className="hero-card-label text-[11px] uppercase tracking-[0.2em]"
                 style={{ color: accent, ...labelFont }}
               >
-                Gyors eredmény
+                {landing.hero.cardLabel}
               </span>
               <h2
                 className="hero-card-title mt-3 text-xl font-semibold leading-tight"
@@ -194,7 +194,7 @@ export default function Home() {
             <div className="mt-12 grid w-full grid-cols-1 gap-6 md:grid-cols-3">
               {landing.painBridge.items.map((item, i) => (
                 <div
-                  key={item.before}
+                  key={item.title}
                   className={`${(['sr', 'sr-d1', 'sr-d2'] as const)[i]} group relative flex flex-col overflow-hidden rounded-2xl border p-7 text-left transition-all duration-500 hover:-translate-y-2`}
                   style={{
                     backgroundColor: surfaceContainerHigh,
@@ -212,39 +212,15 @@ export default function Home() {
                   >
                     0{i + 1}
                   </span>
-                  <div className="mt-5">
-                    <p
-                      className="text-[11px] uppercase tracking-[0.2em]"
-                      style={{ color: textSecondary, ...labelFont }}
-                    >
-                      Korabban
-                    </p>
-                    <p
-                      className="mt-2 text-sm line-through"
-                      style={{ color: textSecondary, opacity: 0.8 }}
-                    >
-                      {item.before}
-                    </p>
-                  </div>
-                  <div
-                    className="my-5 h-px w-full"
-                    style={{ backgroundColor: outlineVariant }}
-                    aria-hidden="true"
-                  />
-                  <div>
-                    <p
-                      className="text-[11px] uppercase tracking-[0.2em]"
-                      style={{ color: accent, ...labelFont }}
-                    >
-                      Most
-                    </p>
-                    <p
-                      className="mt-2 text-2xl font-bold"
-                      style={{ color: accent, ...headlineFont }}
-                    >
-                      {item.after}
-                    </p>
-                  </div>
+                  <h3
+                    className="mt-5 text-xl font-bold"
+                    style={{ color: accent, ...headlineFont }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed" style={{ color: textSecondary }}>
+                    {item.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -252,7 +228,14 @@ export default function Home() {
               className="sr-d3 mt-10 max-w-xl text-sm leading-relaxed"
               style={{ color: textSecondary }}
             >
-              {landing.painBridge.closing}
+              {landing.painBridge.closing}{" "}
+              <Link
+                href="/modszertan"
+                className="underline underline-offset-2"
+                style={{ color: accent }}
+              >
+                {landing.painBridge.methodologyLink}
+              </Link>
             </p>
           </div>
         </section>
@@ -272,6 +255,9 @@ export default function Home() {
               >
                 {landing.preview.heading}
               </h2>
+              <p className="mt-3 max-w-2xl text-sm" style={{ color: textSecondary }}>
+                {landing.preview.illustrationNote}
+              </p>
             </div>
 
             <div
@@ -520,6 +506,16 @@ export default function Home() {
                 })}
               </div>
             </details>
+
+            <p className="mt-6 text-sm">
+              <Link
+                href="/minta"
+                className="font-medium underline underline-offset-2"
+                style={{ color: accent }}
+              >
+                {landing.preview.sampleLink}
+              </Link>
+            </p>
           </div>
         </section>
 
@@ -541,7 +537,7 @@ export default function Home() {
 
               <div className="space-y-8">
                 {landing.howItWorks.steps.map((step, index) => {
-                  const icon = index === 0 ? <IconUpload /> : index === 1 ? <IconPulse /> : <IconMail />;
+                  const icon = index === 0 ? <IconUpload /> : index === 1 ? <IconPulse /> : <IconDocument />;
 
                   return (
                     <article
@@ -638,7 +634,7 @@ export default function Home() {
 
       <footer className="border-t px-6 py-12" style={{ borderColor: outlineVariant }}>
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-6">
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-3">
             <Link
               href="/privacy"
               className="text-[11px] uppercase tracking-[0.3em]"
@@ -652,6 +648,13 @@ export default function Home() {
               style={{ color: textSecondary, ...labelFont }}
             >
               {landing.footer.terms}
+            </Link>
+            <Link
+              href="/modszertan"
+              className="text-[11px] uppercase tracking-[0.3em]"
+              style={{ color: textSecondary, ...labelFont }}
+            >
+              {landing.footer.methodology}
             </Link>
           </div>
           <span

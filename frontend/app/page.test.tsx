@@ -43,4 +43,49 @@ describe("Landing page", () => {
 
     expect(cards).toHaveLength(messages.landing.preview.cards.length);
   });
+
+  it("makes none of the removed claims", () => {
+    const { container } = render(<Home />);
+    const text = (container.textContent ?? "").toLowerCase();
+    const forbidden = [
+      "90 másodperc",
+      "15-20",
+      "15–20",
+      "Megfizethető ár",
+      "Ügynökségi büdzsé",
+      "A piackutatás még sosem volt ilyen egyszerű",
+      "e-mailben",
+      "Ingyenes próba",
+    ];
+
+    const present = forbidden.filter((phrase) => text.includes(phrase.toLowerCase()));
+
+    expect(present).toEqual([]);
+  });
+
+  it("states what the piece is", () => {
+    const { container } = render(<Home />);
+    const text = (container.textContent ?? "").toLowerCase();
+
+    const required = ["18", "portfólió", "másfél perc", "regisztráció nélkül", "pdf"];
+    const missing = required.filter((phrase) => !text.includes(phrase));
+
+    expect(missing).toEqual([]);
+  });
+
+  it("links to the sample, methodology, privacy and terms pages", () => {
+    const { container } = render(<Home />);
+    const hrefs = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href"));
+
+    for (const href of ["/minta", "/modszertan", "/privacy", "/terms"]) {
+      expect(hrefs).toContain(href);
+    }
+    expect(hrefs).not.toContain("#sample");
+  });
+
+  it("marks the example result as an illustration", () => {
+    const { container } = render(<Home />);
+
+    expect(container.querySelector("#sample")?.textContent).toContain("Illusztráció");
+  });
 });

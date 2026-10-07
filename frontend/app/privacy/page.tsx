@@ -1,16 +1,18 @@
 import Link from "next/link";
 
+import { getContactLine } from "@/lib/contact";
 import { messages } from "@/lib/messages";
 import { accent, onSurface, textSecondary } from "@/lib/tokens";
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
   const legal = messages.legal;
+  const contactLine = await getContactLine();
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16" style={{ color: onSurface }}>
       <h1 className="text-3xl font-semibold">{legal.privacyTitle}</h1>
       <p className="mt-2 text-xs tracking-wide" style={{ color: textSecondary }}>
-        {legal.privacyEffectiveDate}
+        {legal.effectiveDate}
       </p>
       <div className="mt-6 space-y-4 text-sm leading-relaxed">
         {legal.privacyIntroParagraphs.map((paragraph, i) => (
@@ -21,6 +23,7 @@ export default function PrivacyPage() {
       <section className="mt-10 space-y-2 text-sm leading-relaxed">
         <h2 className="text-xl font-semibold">{legal.controllerTitle}</h2>
         <p>{legal.controllerBody}</p>
+        <p>{contactLine}</p>
       </section>
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">
@@ -33,38 +36,42 @@ export default function PrivacyPage() {
       </section>
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">
-        <h2 className="text-xl font-semibold">{legal.legalBasisTitle}</h2>
-        <p>{legal.legalBasisBody}</p>
-      </section>
-
-      <section className="mt-8 space-y-2 text-sm leading-relaxed">
-        <h2 className="text-xl font-semibold">{legal.aiProcessingTitle}</h2>
-        <p>{legal.aiProcessingBody}</p>
-      </section>
-
-      <section className="mt-8 space-y-2 text-sm leading-relaxed">
         <h2 className="text-xl font-semibold">{legal.cookiesTitle}</h2>
         <p>{legal.cookiesBody}</p>
       </section>
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">
+        <h2 className="text-xl font-semibold">{legal.visibilityTitle}</h2>
+        <p>{legal.visibilityBody}</p>
+      </section>
+
+      <section className="mt-8 space-y-2 text-sm leading-relaxed">
         <h2 className="text-xl font-semibold">{legal.processorsTitle}</h2>
-        <p>{legal.processorsBody}</p>
+        <ul className="list-disc space-y-1.5 pl-5">
+          {legal.processorsItems.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="mt-8 space-y-2 text-sm leading-relaxed">
+        <h2 className="text-xl font-semibold">{legal.legalBasisTitle}</h2>
+        <p>{legal.legalBasisBody}</p>
       </section>
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">
         <h2 className="text-xl font-semibold">{legal.retentionTitle}</h2>
-        <p>{legal.retentionBody}</p>
-      </section>
-
-      <section className="mt-8 space-y-2 text-sm leading-relaxed">
-        <h2 className="text-xl font-semibold">{legal.marketingCommsTitle}</h2>
-        <p>{legal.marketingCommsBody}</p>
+        <ul className="list-disc space-y-1.5 pl-5">
+          {legal.retentionItems.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
       </section>
 
       <section className="mt-8 space-y-3 text-sm leading-relaxed">
         <h2 className="text-xl font-semibold">{legal.userRightsTitle}</h2>
         <p>{legal.userRightsBody}</p>
+        <p>{contactLine}</p>
         <p>
           {legal.userRightsSupervisoryBody}{" "}
           <Link
@@ -81,18 +88,8 @@ export default function PrivacyPage() {
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">
         <h2 className="text-xl font-semibold">{legal.deletionTitle}</h2>
-        <p>{legal.deletionMvpScope}</p>
-        <ul className="list-disc space-y-1.5 pl-5">
-          <li>
-            {legal.deletionContactLabel}: {legal.deletionContactEmail}
-          </li>
-          <li>
-            {legal.deletionAckSlaLabel}: {legal.deletionAckSlaValue}
-          </li>
-          <li>
-            {legal.deletionCompletionSlaLabel}: {legal.deletionCompletionSlaValue}
-          </li>
-        </ul>
+        <p>{legal.deletionBody}</p>
+        <p>{contactLine}</p>
       </section>
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed">

@@ -31,7 +31,6 @@ describe("WaitingScreen", () => {
     render(
       <WaitingScreen
         runId="run-1"
-        email="teszt@example.com"
         apiBaseUrl="https://api.example.com"
       />
     );
@@ -68,7 +67,6 @@ describe("WaitingScreen", () => {
     render(
       <WaitingScreen
         runId="run-1"
-        email="teszt@example.com"
         apiBaseUrl="https://api.example.com"
       />
     );
@@ -93,7 +91,6 @@ describe("WaitingScreen", () => {
     render(
       <WaitingScreen
         runId="run-1"
-        email="teszt@example.com"
         apiBaseUrl="https://api.example.com"
       />
     );
@@ -101,6 +98,8 @@ describe("WaitingScreen", () => {
     await waitFor(() => {
       expect(screen.getByText(messages.waiting.states.completed)).toBeInTheDocument();
     });
+
+    expect(document.body.textContent ?? "").not.toMatch(/e-mail/i);
   });
 
   it("renders failed-state retry guidance", async () => {
@@ -117,7 +116,6 @@ describe("WaitingScreen", () => {
     render(
       <WaitingScreen
         runId="run-1"
-        email="teszt@example.com"
         apiBaseUrl="https://api.example.com"
       />
     );

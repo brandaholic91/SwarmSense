@@ -1,131 +1,59 @@
 "use server";
 
-import { cookies } from "next/headers";
-
 type StartRunInput = {
-  role_answer: string;
-  use_case_answer: string;
-  company_size?: string;
-  marketing_problem?: string;
-};
-
-type StartRunSuccess = {
-  ok: true;
-  run_id: string;
-};
-
-type StartRunFailure = {
-  ok: false;
-  code: string;
-  detail: string;
-};
-
-type RunContext = {
   topic: string;
   audience: string;
 };
 
-type RunSessionResponse = {
-  run_id: string;
-  status: string;
-  created_at: string;
-};
+type StartRunResult = { ok: true; run_id: string } | { ok: false; code: string };
 
-type ErrorResponse = {
-  detail: string;
-  code: string;
-};
+const MAX_FIELD_LENGTH = 500;
 
-function parseRunContext(raw: string | undefined): RunContext | null {
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<RunContext>;
-    if (
-      typeof parsed.topic === "string" &&
-      parsed.topic.trim().length > 0 &&
-      typeof parsed.audience === "string" &&
-      parsed.audience.trim().length > 0
-    ) {
-      return {
-        topic: parsed.topic.trim(),
-        audience: parsed.audience.trim(),
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
+function isValidField(value: string): boolean {
+  return value.length > 0 && value.length <= MAX_FIELD_LENGTH;
 }
 
-export async function startRunAction({
-  role_answer,
-  use_case_answer,
-  company_size,
-  marketing_problem,
-}: StartRunInput): Promise<StartRunSuccess | StartRunFailure> {
-  const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) {
-    throw new Error("API_URL is not configured");
+// Soha nem dob: a hívó (böngésző) mindig egy hibakódot kap, nyers hibaüzenetet nem.
+export async function startRunAction(input: StartRunInput): Promise<StartRunResult> {
+  try {
+    const topic = String(input.topic ?? "").trim();
+    const audience = String(input.audience ?? "").trim();
+    if (!isValidField(topic) || !isValidField(audience)) {
+      return { ok: false, code: "INVALID_INPUT" };
+    }
+
+    const apiUrl = process.env.API_URL;
+    const internalSecret = process.env.INTERNAL_SECRET;
+    if (!apiUrl || !internalSecret) {
+      return { ok: false, code: "RUN_START_FAILED" };
+    }
+
+    const response = await fetch(`${apiUrl}/api/v1/runs`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "X-Internal-Secret": internalSecret,
+      },
+      body: JSON.stringify({ topic, audience }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      if (response.status === 422) {
+        return { ok: false, code: "INVALID_INPUT" };
+      }
+      const payload = (await response.json().catch(() => null)) as { code?: unknown } | null;
+      const code = typeof payload?.code === "string" ? payload.code : "RUN_START_FAILED";
+      return { ok: false, code };
+    }
+
+    const data = (await response.json()) as { run_id?: unknown };
+    if (typeof data.run_id !== "string" || data.run_id.length === 0) {
+      return { ok: false, code: "RUN_START_FAILED" };
+    }
+
+    return { ok: true, run_id: data.run_id };
+  } catch {
+    return { ok: false, code: "RUN_START_FAILED" };
   }
-
-  const internalSecret = process.env.INTERNAL_SECRET;
-  if (!internalSecret) {
-    throw new Error("INTERNAL_SECRET is not configured");
-  }
-
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("swarmsense_verified_user")?.value;
-  const runContext = parseRunContext(cookieStore.get("swarmsense_run_context")?.value);
-
-  if (!userId || !runContext) {
-    return {
-      ok: false,
-      code: "RUN_CONTEXT_MISSING",
-      detail: "Run context is missing",
-    };
-  }
-
-  const response = await fetch(`${apiUrl}/api/v1/run-sessions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "X-Internal-Secret": internalSecret,
-    },
-    body: JSON.stringify({
-      user_id: userId,
-      topic: runContext.topic,
-      audience: runContext.audience,
-      role_answer: role_answer.trim(),
-      use_case_answer: use_case_answer.trim(),
-      ...(company_size ? { company_size } : {}),
-      ...(marketing_problem?.trim() ? { marketing_problem: marketing_problem.trim() } : {}),
-    }),
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    const errorPayload = (await response.json().catch(() => null)) as ErrorResponse | null;
-    return {
-      ok: false,
-      code: errorPayload?.code ?? "RUN_START_FAILED",
-      detail: errorPayload?.detail ?? "Failed to start run",
-    };
-  }
-
-  const data = (await response.json()) as RunSessionResponse;
-  if (!data.run_id || typeof data.run_id !== "string") {
-    return {
-      ok: false,
-      code: "RUN_START_FAILED",
-      detail: "Failed to start run",
-    };
-  }
-
-  return {
-    ok: true,
-    run_id: data.run_id,
-  };
 }

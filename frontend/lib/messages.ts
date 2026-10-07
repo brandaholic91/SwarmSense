@@ -139,9 +139,9 @@ export const messages = {
             "15-20 egyedi AI persona szimulálja a döntéshozatali folyamatot valós időben.",
         },
         {
-          title: "E-mail érkezik",
+          title: "Megkapod az eredményt",
           description:
-            "Az eredményeket és a részletes elemzést azonnal megkapod a fiókodba.",
+            "Az összefoglaló és a personák válaszai az oldalon jelennek meg.",
         },
       ],
     },
@@ -149,14 +149,14 @@ export const messages = {
       items: [
         { value: "Ingyenes próba", label: "regisztráció nélkül" },
         { value: "90 másodperc", label: "átlagos várakozás" },
-        { value: "Strukturált elemzés", label: "e-mailben, azonnal" },
+        { value: "Strukturált elemzés", label: "az oldalon, azonnal" },
         { value: "15–20 persona", label: "különböző nézőpont" },
       ],
     },
     closingCta: {
       heading: "Teszteld le a következő feltételezésed még ma.",
       cta: "Ingyen kipróbálom",
-      helper: "Egy ingyenes futtatás. Regisztráció nélkül.",
+      helper: "Regisztráció nélkül.",
     },
     footer: {
       privacy: "Adatkezelési tájékoztató",
@@ -168,7 +168,7 @@ export const messages = {
       eyebrow: "Új kutatás",
       headline: "Mi a hipotézised?",
       subheadline:
-        "Írd le a kutatási kérdést és a célcsoportot. Pár perc múlva a postaládádban van az eredmény.",
+        "Írd le a kutatási kérdést és a célcsoportot. Az elemzés nagyjából másfél perc alatt lefut.",
       researchLabel: "Mit vizsgálsz?",
       audienceLabel: "Kinek szól?",
       researchExamples: [
@@ -183,116 +183,22 @@ export const messages = {
       ],
       piiWarning:
         "Ne adj meg személyes adatokat a kutatási témában",
-      submitCta: "Tovább",
-      helper: "Egy ingyenes elemzés e-mail címenként.",
+      submitCta: "Elemzés indítása",
+      helper: "Regisztráció és e-mail-cím nélkül.",
       errors: {
         researchTopic: "Add meg a kutatási témát.",
         audienceDescription: "Add meg a célközönség leírását.",
-        email: "Adj meg érvényes e-mail címet.",
-      },
-      email: {
-        heading: "Hova küldjük az eredményt?",
-        subheadline: "Az eredményed erre az e-mailre érkezik",
-        successHeading: "Link elküldve",
-        successEyebrow: "Következő lépés",
-        successBodyPrefix:
-          "Elküldtük a kutatás indításához szükséges linket erre az e-mail címre:",
-        successHint:
-          "Nyisd meg az e-mailed, kattints a linkre, és a kutatás elindul.",
-        label: "E-mail cím",
-        placeholder: "pelda@email.hu",
-        cta: "Küldés",
-        privacyNote: "Adataid biztonságban vannak.",
-        consentPrefix: "Elfogadom az ",
-        privacyPolicyLink: "Adatkezelési tájékoztatót",
-        consentConnector: " és a ",
-        termsOfServiceLink: "Felhasználási feltételeket",
-      },
-    },
-  },
-  qualifier: {
-    intro: "Mesélj egy kicsit magadról",
-    form: {
-      roleLabel: "Mi jellemzi legjobban a munkakörödet?",
-      rolePlaceholder: "Válassz szerepkört",
-      companySizeLabel: "Hány fős cégnél dolgozol?",
-      companySizePlaceholder: "Válassz cégméretet",
-      companySizeOptions: [
-        { value: "1_10", label: "1–10 fő" },
-        { value: "11_50", label: "11–50 fő" },
-        { value: "51_200", label: "51–200 fő" },
-        { value: "200_plus", label: "200+ fő" },
-      ],
-      marketingProblemLabel: "Mi jelenleg a legnagyobb marketing problémád?",
-      marketingProblemPlaceholder: "Pl. nem konvertálnak a landing page-eim, drága az ügyfélszerzés, nem érem el a döntéshozókat, nem tudom, mi tartja vissza az érdeklődőket a vásárlástól...",
-      roleOptions: [
-        { value: "founder_ceo", label: "Alapító / Ügyvezető" },
-        { value: "marketing_lead", label: "Marketing vezető" },
-        { value: "product_manager", label: "Termékmenedzser" },
-        { value: "sales_lead", label: "Sales vezető" },
-        { value: "cfo_finance", label: "CFO / Pénzügy" },
-        { value: "consultant_agency", label: "Tanácsadó / Ügynökség" },
-        { value: "other", label: "Egyéb" },
-      ],
-      useCaseLabel:
-        "Milyen célra szeretnéd leginkább használni a szintetikus kutatást?",
-      useCaseOptions: [
-        {
-          value: "message_validation",
-          label: "Üzenetek és pozicionálás validálása",
-          description: "Kampányüzenetek és értékajánlat gyors tesztelése.",
-        },
-        {
-          value: "pricing_decisions",
-          label: "Árazási döntések előkészítése",
-          description: "Árérzékenység és várható reakciók felmérése.",
-        },
-        {
-          value: "feature_prioritization",
-          label: "Termékfeature priorizálás",
-          description: "Mely fejlesztések hoznak valódi üzleti értéket.",
-        },
-        {
-          value: "launch_feedback",
-          label: "Go-to-market és launch visszajelzés",
-          description: "Piaci fogadtatás és kockázatok előzetes becslése.",
-        },
-        {
-          value: "sales_enablement",
-          label: "Értékesítési érvek tesztelése",
-          description: "Sales pitchek és kifogáskezelés előzetes validálása.",
-        },
-        {
-          value: "investor_pitch",
-          label: "Befektetői / pitch deck validálás",
-          description: "Narratíva és értékajánlat tesztelése befektetői szemmel.",
-        },
-        {
-          value: "competitor_positioning",
-          label: "Versenytárs pozicionálás megértése",
-          description: "Hogyan látja a célközönség a piaci alternatívákat.",
-        },
-        {
-          value: "churn_retention",
-          label: "Lemorzsolódás okok és megtartás",
-          description: "Miért maradnak vagy miért mennek el az ügyfelek.",
-        },
-      ],
-      submitCta: "Elemzés indítása",
-      errors: {
-        roleAnswer: "Válaszd ki a szerepkörödet.",
-        useCaseAnswer: "Válassz egy elsődleges felhasználási célt.",
       },
     },
   },
   waiting: {
     eyebrow: "Futó elemzés",
     subheadline:
-      "A szintetikus personák a háttérben futnak. A kész összefoglalót a megadott e-mailre küldjük.",
+      "A szintetikus personák a háttérben futnak. Ez nagyjából másfél percig tart.",
     personaSectionLabel: "Persona",
     progressAriaLabel: "Elemzés folyamata",
     completedStatusHint: "Minden persona lefutott",
-    partialStatusHint: "Részleges lefutás — részletek az e-mailben",
+    partialStatusHint: "Részleges lefutás: nem minden persona válaszolt",
     states: {
       queued: "Sorban...",
       generating: "Personák generálása...",
@@ -303,93 +209,9 @@ export const messages = {
       partial: "Részleges eredmény elkészült",
       failed: "Hiba történt a feldolgozás közben.",
     },
-    canCloseNotice: "Nem kell itt várnod, bezárhatod ezt az ablakot. Az eredmény e-mailben érkezik.",
-    /** Interpolate {email} before rendering. */
-    emailDeliveryNotice: "Az eredményed erre az e-mailre érkezik: {email}",
     delayedNotice:
       "A feldolgozás a szokásosnál tovább tart, még dolgozunk rajta.",
     retrySuggestion: "Próbáld újra egy új elemzés indításával.",
-  },
-  blockingScreen: {
-    heading: "Ez az e-mail cím már igénybe vette az ingyenes próbát",
-    body: "Ehhez az e-mail címhez már tartozik lezárt futás, ezért új ingyenes elemzést most nem tudunk indítani.",
-    cta: "Iratkozz fel az értesítőre",
-    submitted: "Köszönjük! Felírtunk az értesítőre. A Pro hozzáférés indulása előtt e-mailben szólunk.",
-    invalidEmail:
-      "A várólista-feliratkozáshoz érvényes e-mail átadása szükséges. Menj vissza a kutatási űrlapra, majd próbáld újra.",
-    emailPrefix: "Értesítést erre az e-mailre küldünk:",
-  },
-  verify: {
-    title: "A link nem használható",
-    descriptionPrefix: "A bejelentkezési linkkel probléma történt:",
-    requestNewLinkCta: "Új link kérése",
-    verifying: "Link ellenőrzése…",
-  },
-  email: {
-    magicLink: {
-      subject: "SwarmSense – indítsd el a kutatást",
-      heading: "Egy kattintás, és indul a kutatás",
-      intro: "Kattints a gombra, és a kutatás azonnal elindul.",
-      buttonLabel: "Kutatás indítása",
-      expiry: "Ez a link 24 órán belül lejár.",
-    },
-    result: {
-      subject: "A SwarmSense elemzésed elkészült",
-      preview: "A SwarmSense eredményed megérkezett",
-      title: "Itt van a SwarmSense eredményed",
-      intro:
-        "A személyek lefutottak, az összefoglaló kész. Alább látod a fő jelzéseket és a részleteket.",
-      topicLabel: "Kutatási téma",
-      audienceLabel: "Célközönség",
-      personaCountLabel: "Lefutott személyek",
-      aggregateScoreLabel: "Aggregált támogatási arány",
-      consensusIcon: "⚠",
-      consensusLabel: "Konszenzus jelzés",
-      consensusPending: "Nincs megadott konszenzus jelzés",
-      personasTitle: "Persona visszajelzések",
-      stanceLabelPrefix: "Álláspont",
-      primaryArgumentLabel: "Elsődleges érv",
-      changeConditionLabel: "Mi változtatná meg a véleményét",
-      coreConcernLabel: "Mélyebb aggodalom",
-      buyingTriggerLabel: "Vásárlási trigger",
-      synthesisTitle: "Összefoglalás",
-      synthesisSummaryLabel: "Összefoglalás",
-      synthesisBarriersLabel: "Fő akadályok",
-      synthesisWinningConditionsLabel: "Sikerhez szükséges",
-      synthesisBestTargetLabel: "Kire érdemes fókuszálni",
-      synthesisRecommendationLabel: "Stratégiai ajánlás",
-      sentToPrefix: "Erre a címre küldtük:",
-      unsubscribeLabel: "Leiratkozás",
-      reflectionQuestion: "Mit tennél másképp ennek alapján?",
-      reflectionCtaLabel: "Feliratkozás a Pro várólistára",
-      reflectionHelper:
-        "Jelentkezz a várólistára, hogy első körben kapj értesítést a Pro tier nyitásáról.",
-      reflectionCtaHref: "/blocked",
-      footerNote: "Ez az e-mail automatikusan lett küldve, kérjük ne válaszolj rá.",
-      interpretiveDisclaimer:
-        "Fontos: az itt látható eredmények AI-alapú szintetikus szimulációból származnak, nem valós emberi kutatásból.",
-    },
-    followup: {
-      day1: {
-        preview: "Tetszett az eredmény? Tudunk többet is mutatni.",
-        title: "Egy futtatás csak a kezdet.",
-        body: "Képzeld el, hogy minden kampányüzeneted, árazási döntésed és go-to-market hipotézised előtt lefuttatod ezt. A Pro hozzáférés hamarosan nyílik — iratkozz fel, hogy ne maradj le róla.",
-      },
-      day3: {
-        preview: "A többiek már várják a Pro hozzáférést.",
-        title: "Feliratkoztál már a várólistára?",
-        body: "Az ingyenes próba megmutatta, mire képes a szintetikus kutatás. A Pro verzióval teljes hozzáférést kaphatsz — kampányonként, termékenként, piaconként. Iratkozz fel a várólistára, és első körben értesítünk.",
-      },
-      day7: {
-        preview: "Utolsó emlékeztető a Pro várólistáról.",
-        title: "Egy hete gondolkodsz — itt az ideje dönteni.",
-        body: "A Pro hozzáférés korlátozott létszámmal indul. Ha szeretnél az elsők között lenni, most érdemes feliratkozni — utána már csak a sorban állás marad.",
-      },
-      ctaLabel: "Feliratkozás a Pro várólistára",
-      ctaHref: "/blocked",
-      unsubscribeLabel: "Leiratkozás",
-      footerNote: "Ez egy automatikus marketing levél. Bármikor leiratkozhatsz.",
-    },
   },
   legal: {
     privacyTitle: "Adatkezelési tájékoztató",
@@ -504,7 +326,6 @@ export const messages = {
       "e-mail cím (azonosítás, eredmény és értesítések kézbesítése)",
       "a GDPR-hozzájárulás ténye és időbélyege (consent_timestamp)",
       "kutatási téma és célközönség szöveges leírása (futáshoz kötve)",
-      "qualifier kérdőív válaszok: szerepkör, use case, valamint — ha megadod — cégméret és marketing probléma",
       "futáshoz kapcsolódó elemzési eredmények és szintézis mezők (összefoglalók, támogató / elutasító / feltételes arányok, stratégiai javaslat szövegek)",
       "futás státusza, technikai és költség jellegű metaadatok, időbélyegek",
       "marketing / follow-up e-mailek küldésének státusza (pl. nap 1 / 3 / 7 jelölések), valamint leiratkozás időpontja (unsubscribed_at), ha leiratkoztál",

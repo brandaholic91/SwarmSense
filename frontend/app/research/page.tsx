@@ -5,7 +5,9 @@ import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Info } from "lucide-react";
 
+import { startRunAction } from "@/app/actions/start-run";
 import { RotatingPlaceholder } from "@/components/rotating-placeholder";
+import { getErrorMessageByCode } from "@/lib/errors";
 import { messages } from "@/lib/messages";
 import {
   accent,
@@ -36,6 +38,9 @@ export default function ResearchPage() {
     audienceDescription?: string;
   }>({});
 
+  const [startError, setStartError] = React.useState<string | null>(null);
+  const [isStarting, startTransition] = React.useTransition();
+
   const isComplete =
     researchTopic.trim().length > 0 && audienceDescription.trim().length > 0;
 
@@ -58,6 +63,10 @@ export default function ResearchPage() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (isStarting) {
+      return;
+    }
+
     if (!isComplete) {
       setErrors({
         researchTopic: researchTopic.trim()
@@ -71,9 +80,18 @@ export default function ResearchPage() {
     }
 
     setErrors({});
-    router.push(
-      `/research/email?topic=${encodeURIComponent(researchTopic.trim())}&audience=${encodeURIComponent(audienceDescription.trim())}`
-    );
+    setStartError(null);
+    startTransition(async () => {
+      const result = await startRunAction({
+        topic: researchTopic.trim(),
+        audience: audienceDescription.trim(),
+      });
+      if (result.ok) {
+        router.push(`/waiting/${result.run_id}`);
+      } else {
+        setStartError(getErrorMessageByCode(result.code));
+      }
+    });
   };
 
   return (
@@ -181,12 +199,17 @@ export default function ResearchPage() {
               </div>
 
               <div className="space-y-3">
+                {startError ? (
+                  <p role="alert" className="text-sm font-semibold" style={{ color: errorDim }}>
+                    {startError}
+                  </p>
+                ) : null}
                 <button
                   type="submit"
                   className="flex w-full items-center justify-center gap-3 rounded-lg px-6 py-4 text-base font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                   style={{ backgroundColor: accent, color: onPrimary, ...headlineFont }}
-                  disabled={!isComplete}
-                  aria-disabled={!isComplete ? "true" : undefined}
+                  disabled={!isComplete || isStarting}
+                  aria-disabled={!isComplete || isStarting ? "true" : undefined}
                 >
                   {form.submitCta}
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />

@@ -1,7 +1,25 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
+import { startRunAction } from "@/app/actions/start-run";
 import ResearchPage from "@/app/research/page";
+import { errorMessages } from "@/lib/errors";
 import { messages } from "@/lib/messages";
+
+vi.mock("@/app/actions/start-run", () => ({ startRunAction: vi.fn() }));
+const startRunMock = vi.mocked(startRunAction);
+
+function fillForm(topic: string, audience: string) {
+  fireEvent.change(screen.getByLabelText(messages.research.form.researchLabel), {
+    target: { value: topic },
+  });
+  fireEvent.change(screen.getByLabelText(messages.research.form.audienceLabel), {
+    target: { value: audience },
+  });
+}
+
+function submitButton() {
+  return screen.getByRole("button", { name: messages.research.form.submitCta });
+}
 
 const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -11,6 +29,7 @@ vi.mock("next/navigation", () => ({
 describe("Research page", () => {
   beforeEach(() => {
     mockPush.mockReset();
+    startRunMock.mockReset();
   });
 
   it("keeps submit disabled when only one field is filled", () => {
@@ -50,41 +69,44 @@ describe("Research page", () => {
     ).toBeInTheDocument();
   });
 
-  it("navigates to /research/email with encoded query params on submit", () => {
+  it("starts a run and navigates to the waiting screen", async () => {
     render(<ResearchPage />);
+    startRunMock.mockResolvedValue({ ok: true, run_id: "r-1" });
+    fillForm("  Árazási teszt ", " KKV vezetők  ");
 
-    fireEvent.change(screen.getByLabelText(messages.research.form.researchLabel), {
-      target: { value: "Árazási teszt" },
+    fireEvent.click(submitButton());
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/waiting/r-1"));
+    expect(startRunMock).toHaveBeenCalledWith({
+      topic: "Árazási teszt",
+      audience: "KKV vezetők",
     });
-    fireEvent.change(screen.getByLabelText(messages.research.form.audienceLabel), {
-      target: { value: "Középvállalati CFO-k" },
-    });
-
-    fireEvent.click(
-      screen.getByRole("button", { name: messages.research.form.submitCta })
-    );
-
-    expect(mockPush).toHaveBeenCalledWith(
-      `/research/email?topic=${encodeURIComponent("Árazási teszt")}&audience=${encodeURIComponent("Középvállalati CFO-k")}`
-    );
   });
 
-  it("navigates to /research/email on submit with trimmed values", () => {
+  it("shows the mapped error message and re-enables submit when start fails", async () => {
     render(<ResearchPage />);
+    startRunMock.mockResolvedValue({ ok: false, code: "RUN_START_FAILED" });
+    fillForm("Árazási teszt", "KKV vezetők");
 
-    fireEvent.change(screen.getByLabelText(messages.research.form.researchLabel), {
-      target: { value: "  Csomagár teszt  " },
-    });
-    fireEvent.change(screen.getByLabelText(messages.research.form.audienceLabel), {
-      target: { value: "  SaaS termékvezetők  " },
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: messages.research.form.submitCta })
-    );
+    fireEvent.click(submitButton());
 
-    expect(mockPush).toHaveBeenCalledWith(
-      `/research/email?topic=${encodeURIComponent("Csomagár teszt")}&audience=${encodeURIComponent("SaaS termékvezetők")}`
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      errorMessages.RUN_START_FAILED
     );
+    await waitFor(() => expect(submitButton()).toBeEnabled());
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("disables submit while the run is starting", async () => {
+    render(<ResearchPage />);
+    startRunMock.mockReturnValue(new Promise(() => {}));
+    fillForm("Árazási teszt", "KKV vezetők");
+
+    fireEvent.click(submitButton());
+
+    await waitFor(() => expect(submitButton()).toBeDisabled());
+    fireEvent.click(submitButton());
+    expect(startRunMock).toHaveBeenCalledTimes(1);
   });
 
   it("does not navigate when only one field is filled on submit", () => {

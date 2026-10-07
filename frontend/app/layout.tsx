@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist_Mono, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -37,8 +36,6 @@ export const metadata: Metadata = {
   },
 };
 
-const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -51,13 +48,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
-        {plausibleDomain ? (
-          <Script
-            src="https://plausible.io/js/script.js"
-            data-domain={plausibleDomain}
-            strategy="afterInteractive"
-          />
-        ) : null}
       </body>
     </html>
   );

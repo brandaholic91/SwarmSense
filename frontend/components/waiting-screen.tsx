@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CheckCircle2, Mail } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 
 import { messages } from "@/lib/messages";
@@ -31,7 +31,6 @@ type RunStatusResponse = {
 
 type WaitingScreenProps = {
   runId: string;
-  email: string | null;
   apiBaseUrl: string;
 };
 
@@ -128,7 +127,7 @@ function buildUiState(payload: RunStatusResponse | undefined): UiState {
   };
 }
 
-function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) {
+function WaitingScreenContent({ runId, apiBaseUrl }: WaitingScreenProps) {
   const waiting = messages.waiting;
   const [showDelayedNotice, setShowDelayedNotice] = React.useState(false);
   const hasShownNoticeRef = React.useRef(false);
@@ -286,22 +285,6 @@ function WaitingScreenContent({ runId, email, apiBaseUrl }: WaitingScreenProps) 
                 </div>
               </div>
             </div>
-
-            <p className="text-center text-sm leading-relaxed" style={{ color: textSecondary }}>
-              {waiting.canCloseNotice}
-            </p>
-
-            {email ? (
-              <div
-                className="flex items-start gap-3 rounded-lg px-5 py-4 text-left"
-                style={{ backgroundColor: surfaceContainerLow }}
-              >
-                <Mail className="mt-0.5 h-5 w-5 shrink-0" style={{ color: accent }} aria-hidden="true" />
-                <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
-                  {interpolate(waiting.emailDeliveryNotice, { email })}
-                </p>
-              </div>
-            ) : null}
 
             {showDelayedNotice ? (
               <div className="rounded-lg border-l-2 px-5 py-4" style={{ borderColor: accent, backgroundColor: surfaceContainerLow }}>

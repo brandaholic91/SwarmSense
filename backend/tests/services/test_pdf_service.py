@@ -168,6 +168,8 @@ def test_generate_pdf_smoke():
         pdf_service.generate_pdf(make_run(topic="Árvíztűrő tükörfúrógép"))
     )
     assert pdf.startswith(b"%PDF-") and len(pdf) > 10_000
+    # a becsomagolt betűtípus (JavaScript nélkül is) bekerült a PDF-be
+    assert b"IBMPlexSans" in pdf
 
 
 def test_generate_pdf_times_out(monkeypatch):
@@ -179,3 +181,69 @@ def test_generate_pdf_times_out(monkeypatch):
     monkeypatch.setattr(pdf_service, "PDF_TIMEOUT_SECONDS", 0.05)
     with pytest.raises(asyncio.TimeoutError):
         asyncio.run(pdf_service.generate_pdf(make_run()))
+
+
+def test_html_from_a_real_run_payload_shows_the_organizational_role(
+    clean_db, monkeypatch
+):
+    from app import db
+    from app.services import run_processor
+    from tests.services.test_run_processor import AUDIENCE, TOPIC, make_fake_llm
+
+    async def fake_pdf(run: dict[str, Any]) -> bytes:
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", fake_pdf)
+    row = db.create_run(topic=TOPIC, audience=AUDIENCE)
+    asyncio.run(
+        run_processor.process_run(
+            run_id=row["id"],
+            topic=TOPIC,
+            audience=AUDIENCE,
+            llm_client=make_fake_llm(),
+        )
+    )
+
+    html = pdf_service.render_report_html(db.get_run(row["id"]))
+
+    # a fake LLM blueprintjeiben az organizational_role "döntéshozó"
+    assert "Szervezeti szerep: döntéshozó" in html
+
+
+def test_persona_without_organizational_role_has_no_role_label():
+    run = make_run()
+    for persona in run["result"]["personas"]:
+        del persona["organizational_role"]
+
+    html = pdf_service.render_report_html(run)
+
+    assert "Szervezeti szerep" not in html
+    assert "Kockázatvállalás" in html
+
+
+def test_html_to_pdf_makes_no_external_request():
+    import http.server
+    import threading
+
+    hits: list[str] = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            hits.append(self.path)
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/kep.png"
+        html = f'<!doctype html><html><body><p>Szia</p><img src="{url}"></body></html>'
+        pdf = asyncio.run(pdf_service.html_to_pdf(html))
+    finally:
+        server.shutdown()
+
+    assert pdf.startswith(b"%PDF-")
+    assert hits == []

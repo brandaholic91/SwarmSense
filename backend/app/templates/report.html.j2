@@ -138,7 +138,7 @@
     <div class="traits">
       Kockázatvállalás: {{ persona.risk_appetite }} ·
       Döntési stílus: {{ persona.decision_style }} ·
-      Szervezeti szerep: {{ persona.organizational_role }} ·
+      {% if persona.organizational_role %}Szervezeti szerep: {{ persona.organizational_role }} ·{% endif %}
       Árérzékenység: {{ persona.price_sensitivity }} ·
       Technológia-adaptáció: {{ persona.technology_adoption_curve }}
     </div>

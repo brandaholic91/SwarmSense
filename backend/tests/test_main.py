@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.services import cleanup
@@ -10,11 +11,8 @@ from app.services import cleanup
 
 def test_cleanup_runs_once_at_startup(clean_db, monkeypatch):
     calls: list[int] = []
-    monkeypatch.setattr(
-        cleanup,
-        "run_cleanup_once",
-        lambda: calls.append(1) or {"deleted_emails": 0, "failed_runs": 0},
-    )
+    monkeypatch.setattr(cleanup, "fail_stuck_runs_once", lambda: calls.append(1) or 0)
+    monkeypatch.setattr(cleanup, "delete_old_emails_once", lambda: 0)
     from app.main import create_app
 
     with TestClient(create_app()):
@@ -41,3 +39,26 @@ def test_cleanup_task_is_cancelled_on_shutdown(clean_db, monkeypatch):
     with TestClient(create_app()):
         pass
     assert events == ["started", "cancelled"]
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "max_concurrent_runs",
+        "runs_per_ip_per_day",
+        "runs_per_day",
+        "emails_per_run",
+        "emails_per_day",
+    ],
+)
+def test_negative_limit_setting_is_rejected(monkeypatch, name):
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    monkeypatch.setenv(f"SWARMSENSE_{name.upper()}", "-1")
+    with pytest.raises(ValidationError):
+        Settings()
+
+    monkeypatch.setenv(f"SWARMSENSE_{name.upper()}", "0")
+    assert getattr(Settings(), name) == 0

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import Any
 
@@ -16,6 +17,8 @@ from app.models.persona import (
 from app.services.blueprint_generator import generate_persona_blueprints
 from app.services.events import EventSink, safe_emit
 from app.services.llm_client import LLMClient, LLMProviderError, TokenUsage
+
+logger = logging.getLogger("swarmsense.run")
 
 DEFAULT_PERSONA_COUNT = 18
 MIN_PERSONA_COUNT = 15
@@ -337,8 +340,12 @@ async def execute_persona_engine(
                 error_code, usage = exc.error_code, exc.usage
             except ValueError:
                 error_code = "MALFORMED_PROVIDER_OUTPUT"
-            except Exception:
+            except Exception as exc:
                 error_code = "UNEXPECTED_ENGINE_ERROR"
+                # csak a kivétel típusa: a szöveg titkot vagy kérdésrészletet hordozhat
+                logger.error(
+                    "persona %s failed unexpectedly: %s", index, type(exc).__name__
+                )
 
             outcome: PersonaResponse | PersonaFailure
             if response is not None:
@@ -412,6 +419,7 @@ async def execute_persona_engine(
                     blueprint_attrs = {
                         "risk_appetite": persona_blueprint.risk_appetite,
                         "decision_style": persona_blueprint.decision_style,
+                        "organizational_role": persona_blueprint.organizational_role,
                         "price_sensitivity": persona_blueprint.price_sensitivity,
                         "technology_adoption_curve": persona_blueprint.technology_adoption_curve,
                     }

@@ -72,6 +72,27 @@ def test_create_run_without_client_ip_header_has_no_hash(client):
         assert conn.execute("select ip_hash from runs").fetchone()["ip_hash"] is None
 
 
+def test_create_run_whitespace_client_ip_has_no_hash(client):
+    client.post(
+        "/api/v1/runs",
+        json={"topic": "a", "audience": "b"},
+        headers={**HEADERS, "X-Client-IP": "   "},
+    )
+    with db.connect() as conn:
+        assert conn.execute("select ip_hash from runs").fetchone()["ip_hash"] is None
+
+
+def test_create_run_strips_client_ip_before_hashing(client):
+    client.post(
+        "/api/v1/runs",
+        json={"topic": "a", "audience": "b"},
+        headers={**HEADERS, "X-Client-IP": " 203.0.113.7 "},
+    )
+    with db.connect() as conn:
+        row = conn.execute("select ip_hash from runs").fetchone()
+    assert row["ip_hash"] == limits.hash_ip("203.0.113.7")
+
+
 @pytest.mark.parametrize(
     "code", [ErrorCode.BUSY, ErrorCode.IP_LIMIT_REACHED, ErrorCode.DAILY_LIMIT_REACHED]
 )
@@ -646,6 +667,44 @@ def test_email_unexpected_send_error_is_502(client, monkeypatch, caplog):
     r = _request_email(client, _ready_run())
     assert r.status_code == 502
     assert ADDRESS not in r.text and ADDRESS not in caplog.text
+
+
+def test_email_db_failure_after_send_is_still_200(client, mails, monkeypatch, caplog):
+    def broken(_request_id):
+        raise RuntimeError("postgres://user:titok@host")
+
+    monkeypatch.setattr(db, "mark_email_sent", broken)
+    r = _request_email(client, _ready_run())
+    assert r.status_code == 200
+    assert r.json()["status"] == "sent"
+    assert len(mails) == 1
+    assert "RuntimeError" in caplog.text
+    assert "titok" not in caplog.text
+
+
+def test_concurrent_requests_generate_the_pdf_once(clean_db, monkeypatch):
+    import asyncio
+
+    run_id = _run_with_status("completed")
+    calls: list[str] = []
+
+    async def slow_generate(run: dict) -> bytes:
+        calls.append(run["id"])
+        await asyncio.sleep(0.05)
+        return b"%PDF-generated"
+
+    monkeypatch.setattr(pdf_service, "generate_pdf", slow_generate)
+    run = db.get_run(run_id)
+
+    async def scenario():
+        return await asyncio.gather(
+            runs_router._ensure_pdf(run, None), runs_router._ensure_pdf(run, None)
+        )
+
+    results = asyncio.run(scenario())
+
+    assert results == [b"%PDF-generated", b"%PDF-generated"]
+    assert calls == [run_id]
 
 
 def test_email_requires_secret(client, mails):

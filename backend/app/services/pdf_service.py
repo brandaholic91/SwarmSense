@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
-from playwright.async_api import async_playwright
+from playwright.async_api import Route, async_playwright
 
 from app.core import pricing
 
@@ -92,6 +92,16 @@ def render_report_html(run: dict[str, Any]) -> str:
     return _env.get_template("report.html.j2").render(**context)
 
 
+_ALLOWED_SCHEMES = ("file:", "data:", "about:")
+
+
+async def _block_external_request(route: Route) -> None:
+    if route.request.url.startswith(_ALLOWED_SCHEMES):
+        await route.continue_()
+    else:
+        await route.abort()
+
+
 async def html_to_pdf(html: str) -> bytes:
     """Hívásonként indít és zár le egy Chromiumot: a futás saját event loopban
     megy, és egy Playwright-böngésző csak a létrehozó loopjából használható."""
@@ -102,9 +112,13 @@ async def html_to_pdf(html: str) -> bytes:
         async with async_playwright() as playwright:
             browser = await playwright.chromium.launch()
             try:
-                page = await browser.new_page()
+                # A jelentésnek nincs szüksége JavaScriptre és hálózatra: a szöveg
+                # a futás adata, ezért semmit nem futtatunk és nem töltünk be kívülről.
+                page = await browser.new_page(java_script_enabled=False)
+                await page.route("**/*", _block_external_request)
+                # JavaScript nélkül nem várhatunk a `document.fonts.ready`-re; a
+                # betűtípust a `load` esemény előtt kéri le az elrendezés.
                 await page.goto(page_path.as_uri(), wait_until="load")
-                await page.evaluate("document.fonts.ready")
                 return await page.pdf(format="A4", print_background=True)
             finally:
                 await browser.close()

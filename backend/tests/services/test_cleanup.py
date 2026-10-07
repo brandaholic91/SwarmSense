@@ -262,29 +262,61 @@ def test_one_failing_run_does_not_skip_the_others(
     assert (second["id"], "RUN_TIMED_OUT") in failed_notices
 
 
-def test_cleanup_loop_survives_a_failing_round(monkeypatch, caplog):
-    calls: list[int] = []
+async def _run_loop_for(seconds: float, **kwargs: Any) -> None:
+    task = asyncio.create_task(cleanup.cleanup_loop(**kwargs))
+    await asyncio.sleep(seconds)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
 
-    def flaky() -> dict[str, int]:
-        calls.append(1)
-        if len(calls) == 1:
-            raise RuntimeError("nyers")
-        return {"deleted_emails": 0, "failed_runs": 0}
 
-    monkeypatch.setattr(cleanup, "run_cleanup_once", flaky)
+def test_stuck_sweep_runs_often_and_email_deletion_rarely(monkeypatch):
+    stuck: list[int] = []
+    emails: list[int] = []
+    monkeypatch.setattr(cleanup, "fail_stuck_runs_once", lambda: stuck.append(1) or 0)
+    monkeypatch.setattr(cleanup, "delete_old_emails_once", lambda: emails.append(1) or 0)
 
-    async def scenario() -> None:
-        task = asyncio.create_task(cleanup.cleanup_loop(interval_seconds=0))
-        for _ in range(200):
-            if len(calls) >= 2:
-                break
-            await asyncio.sleep(0.01)
-        task.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await task
+    asyncio.run(
+        _run_loop_for(0.3, interval_seconds=3600, stuck_interval_seconds=0.02)
+    )
+
+    assert len(stuck) >= 3
+    assert emails == [1]
+
+
+def test_failing_stuck_sweep_does_not_stop_email_deletion(monkeypatch, caplog):
+    emails: list[int] = []
+
+    def broken() -> int:
+        raise RuntimeError("nyers")
+
+    monkeypatch.setattr(cleanup, "fail_stuck_runs_once", broken)
+    monkeypatch.setattr(cleanup, "delete_old_emails_once", lambda: emails.append(1) or 0)
 
     with caplog.at_level("INFO", logger="swarmsense.cleanup"):
-        asyncio.run(scenario())
-    assert len(calls) >= 2
+        asyncio.run(
+            _run_loop_for(0.3, interval_seconds=0.02, stuck_interval_seconds=0.02)
+        )
+
+    assert len(emails) >= 3
+    assert "RuntimeError" in caplog.text
+    assert "nyers" not in caplog.text
+
+
+def test_failing_email_deletion_does_not_stop_stuck_sweep(monkeypatch, caplog):
+    stuck: list[int] = []
+
+    def broken() -> int:
+        raise RuntimeError("nyers")
+
+    monkeypatch.setattr(cleanup, "fail_stuck_runs_once", lambda: stuck.append(1) or 0)
+    monkeypatch.setattr(cleanup, "delete_old_emails_once", broken)
+
+    with caplog.at_level("INFO", logger="swarmsense.cleanup"):
+        asyncio.run(
+            _run_loop_for(0.3, interval_seconds=0.02, stuck_interval_seconds=0.02)
+        )
+
+    assert len(stuck) >= 3
     assert "RuntimeError" in caplog.text
     assert "nyers" not in caplog.text

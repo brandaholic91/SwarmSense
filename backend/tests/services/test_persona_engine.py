@@ -442,3 +442,23 @@ def test_provider_error_is_wrapped_with_usage() -> None:
         _generate(Failing())
     assert excinfo.value.usage == TokenUsage(7, 3)
     assert excinfo.value.__cause__ is None
+
+
+def test_unexpected_persona_error_logs_type_name_only(caplog) -> None:
+    class BrokenClient:
+        async def generate_json(
+            self, *, system_prompt, user_prompt, temperature=0.3, on_retry=None
+        ):
+            raise TypeError("NYERS")
+
+    events, sink = _collecting_sink()
+    with caplog.at_level("ERROR", logger="swarmsense.run"):
+        _run_engine(
+            BrokenClient(), sink, blueprints=build_persona_blueprints(total_personas=15)
+        )
+
+    failed = [f for t, f in events if t == "persona_failed"]
+    assert len(failed) == 15
+    assert all(f["error_code"] == "UNEXPECTED_ENGINE_ERROR" for f in failed)
+    assert "TypeError" in caplog.text
+    assert "NYERS" not in caplog.text

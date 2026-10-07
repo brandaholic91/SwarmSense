@@ -28,6 +28,10 @@ from app.services.run_processor import dispatch_run_processing
 router = APIRouter(prefix="/api/v1/runs", tags=["runs"])
 logger = logging.getLogger("swarmsense.run")
 
+# A tartalék PDF-generálás egyszerre egy futhat: egy Chromium PDF-enként indul,
+# és két egyidejű kérés ugyanarra a futásra kétszer generálna.
+_pdf_lock = asyncio.Lock()
+
 
 def _daily_limit_just_reached() -> bool:
     """Igaz, ha a most létrehozott futás töltötte be a napi keretet (így a
@@ -46,7 +50,8 @@ def create_run(
     x_client_ip: str | None = Header(default=None),
 ) -> RunCreateResponse | JSONResponse:
     try:
-        ip_hash = limits.hash_ip(x_client_ip) if x_client_ip else None
+        client_ip = (x_client_ip or "").strip()
+        ip_hash = limits.hash_ip(client_ip) if client_ip else None
         limit_code = limits.check_run_limits(ip_hash)
         if limit_code is None:
             row = db.create_run(
@@ -149,12 +154,17 @@ async def _ensure_pdf(run: dict[str, Any], stored: bytes | None) -> bytes | None
     if stored is not None:
         return stored
     # a futás közben nem sikerült PDF-et első kérésre újrapróbáljuk
-    try:
-        pdf = await pdf_service.generate_pdf(run)
-        db.save_pdf(run["id"], pdf)
-    except Exception as exc:
-        logger.error("run %s pdf failed: %s", run["id"], type(exc).__name__)
-        return None
+    async with _pdf_lock:
+        try:
+            # a zár megszerzése után újra nézzük: közben más kérés elkészíthette
+            existing = db.get_pdf(run["id"])
+            if existing is not None:
+                return existing
+            pdf = await pdf_service.generate_pdf(run)
+            db.save_pdf(run["id"], pdf)
+        except Exception as exc:
+            logger.error("run %s pdf failed: %s", run["id"], type(exc).__name__)
+            return None
     return pdf
 
 
@@ -305,7 +315,6 @@ async def send_run_email(run_id: str, request: Request) -> EmailSentResponse | J
             run_id=run_id,
             pdf=pdf,
         )
-        db.mark_email_sent(request_id)
     except Exception as exc:
         # a cím és a szolgáltató üzenete nem kerül a naplóba: csak a típus és a kód
         logger.error(
@@ -319,6 +328,11 @@ async def send_run_email(run_id: str, request: Request) -> EmailSentResponse | J
             detail="Email send failed",
             code=ErrorCode.EMAIL_SEND_FAILED,
         )
+    try:
+        db.mark_email_sent(request_id)
+    except Exception as exc:
+        # a levél elment: az adatbázis-hiba nem lehet „küldés sikertelen”
+        logger.error("run %s mark email sent failed: %s", run_id, type(exc).__name__)
     return EmailSentResponse(
         status="sent", emails_remaining=max(0, settings.emails_per_run - run_count - 1)
     )

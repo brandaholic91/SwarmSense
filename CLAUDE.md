@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Hol tart a projekt
 
-A repo átalakítás alatt áll: a freemium funnelből portfóliódarab lesz. **A backend és a frontend magja már az új alapon áll** (Postgres, opencode Go, regisztráció nélküli űrlap); a trace, az eredményoldal, a PDF, az e-mail és a keretek még hiányoznak. Ez a fájl a célállapotot rögzíti.
+A repo átalakítás alatt áll: a freemium funnelből portfóliódarab lesz. **A darab helyben működik** (űrlap, élő trace, eredményoldal, PDF, visszajátszás, keretek, mintafutás), és valódi futásokkal végig van ellenőrizve. A B terv kódja le van zárva; két dolog maradt nyitva (a rögzített mintafutásban nincs szintézis, és a levél kézbesítése nincs ellenőrizve; lásd a `TRACKING.md` „Nyitott pontok” részét). A kiadás (deploy, publikálás) a C terv. Ez a fájl a célállapotot rögzíti.
 
 - **Részletes design:** `docs/superpowers/specs/2026-10-07-swarmsense-portfolio-design.md`. Ha ez a fájl és a spec eltér, a spec az irányadó.
 - **Aktuális állás:** `TRACKING.md`. Munka előtt olvasd el, lépés lezárásakor frissítsd.
@@ -45,15 +45,17 @@ Böngésző → Next.js frontend (egyedül ez nyilvános) → FastAPI backend �
 
 **B terv: A darab** (3–6. lépés)
 
-- [ ] Helyben egy futás végigvihető az űrlaptól a PDF-letöltésig úgy, hogy a böngésző hálózati forgalmában csak a Next címe szerepel.
-- [ ] A trace personánként mutatja az állapotot, a kísérletszámot, az időt és a tokeneket; egyszerre legfeljebb 5 persona „fut”.
-- [ ] Minden keret betelése a megfelelő üzenetet adja, és a mintafutásra mutat.
-- [ ] Kiesett persona, elbukott szintézis és beragadt futás a spec 10. szakasza szerint viselkedik.
+- [x] Helyben egy futás végigvihető az űrlaptól a PDF-letöltésig úgy, hogy a böngésző hálózati forgalmában csak a Next címe szerepel.
+- [x] A trace personánként mutatja az állapotot, a kísérletszámot, az időt és a tokeneket; egyszerre legfeljebb 5 persona „fut”.
+- [x] Minden keret betelése a megfelelő üzenetet adja, és a mintafutásra mutat.
+- [x] Kiesett persona, elbukott szintézis és beragadt futás a spec 10. szakasza szerint viselkedik.
 - [ ] Az e-mail megérkezik a PDF-fel; a 14 napnál régebbi cím a takarítás után nincs az adatbázisban.
-- [ ] A `/minta` valódi futást játszik vissza, amelyben van retry és kiesett persona; üres adatbázisra a seed betölti.
-- [ ] Az eredményoldalról a futás visszajátszható.
-- [ ] Az adatkezelési és a módszertani oldal a spec szerinti tartalommal él.
-- [ ] A landing oldal szövege az új folyamatot írja le; nincs rajta olyan állítás, ami a darabra nem igaz.
+- [x] A `/minta` valódi futást játszik vissza, amelyben van retry és kiesett persona; üres adatbázisra a seed betölti.
+- [x] Az eredményoldalról a futás visszajátszható.
+- [x] Az adatkezelési és a módszertani oldal a spec szerinti tartalommal él.
+- [x] A landing oldal szövege az új folyamatot írja le; nincs rajta olyan állítás, ami a darabra nem igaz.
+
+A nyitott kritériumból mi hiányzik (részletek a `TRACKING.md`-ben): a levél tényleges megérkezése nincs ellenőrizve, mert helyben nincs Resend-beállítás (a 14 napos törlés igazolva van). A `/minta` kritériuma teljesül, de a mintában nincs szintézis (a rögzítésekor még élt a szintézis hibája).
 
 **C terv: Kiadás** (7–8. lépés)
 

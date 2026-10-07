@@ -93,7 +93,7 @@ Amit a spec nem mond ki, de egy felhasználó belefut. Mindegyikhez teszt tartoz
 - Tokenek: `personas_generated`, `persona_completed`, `persona_failed` (lehet 0), `synthesis_completed`. Az eseményekben szereplő tokenek összege egyenlő a `runs.input_tokens` és `runs.output_tokens` értékével.
 - `error_code` a personánál: a `LLMProviderError.error_code`, sémahibánál `MALFORMED_PROVIDER_OUTPUT`, egyébként `UNEXPECTED_ENGINE_ERROR`.
 
-- [ ] **Step 1: Írd meg a bukó `db` teszteket** (`tests/test_db.py`)
+- [x] **Step 1: Írd meg a bukó `db` teszteket** (`tests/test_db.py`)
 
 ```python
 def test_insert_and_list_events_in_order(clean_db):
@@ -119,14 +119,14 @@ def test_list_events_invalid_run_id_is_empty(clean_db):
 
 Ugyanitt: a `test_update_run_rejects_invalid_status` `pytest.raises(Exception)`-je szűküljön `psycopg.errors.CheckViolation`-re.
 
-- [ ] **Step 2: Írd meg a bukó `llm_client` teszteket**
+- [x] **Step 2: Írd meg a bukó `llm_client` teszteket**
 
 - `test_on_retry_called_with_next_attempt_and_code`: a hamis transport kétszer 429-et dob, harmadszorra válaszol; az `on_retry` hívásai pontosan `[(2, "RATE_LIMITED"), (3, "RATE_LIMITED")]`.
 - `test_on_retry_not_called_on_terminal_error`: 400 után nincs hívás.
 - `test_url_error_body_has_no_reason_text`: a `urlopen` `URLError("titkos-gepnev.belso")`-t dob; a `TransportError.body` nem tartalmazza a `titkos-gepnev` szöveget, a `status_code` `None`.
 - A meglévő `test_real_transport_maps_low_level_failures_to_network_error` paraméterlistája bővül: `UnicodeDecodeError` (nem UTF-8 törzs 200-as válaszban), és az az eset, amikor a `HTTPError.read()` `TimeoutError`-t dob.
 
-- [ ] **Step 3: Írd meg a bukó engine-teszteket** (`test_persona_engine.py`)
+- [x] **Step 3: Írd meg a bukó engine-teszteket** (`test_persona_engine.py`)
 
 A hamis kliens a `generate_json`-t valósítja meg, és elfogadja az `on_retry`-t. Egy `events: list[tuple[str, dict]]` listába gyűjtő sinkkel:
 
@@ -142,7 +142,7 @@ A blueprint-generátorhoz (ugyanebben a fájlban vagy `test_blueprint_generator.
 - `test_too_few_blueprints_raise`: 17 persona → `BlueprintGenerationError`.
 - `test_provider_error_is_wrapped_with_usage`: `LLMProviderError(usage=TokenUsage(7, 3))` → `BlueprintGenerationError`, `usage == TokenUsage(7, 3)`, `__cause__ is None`.
 
-- [ ] **Step 4: Írd meg a bukó futásfeldolgozó-teszteket** (`test_run_processor.py`, a meglévő `make_fake_llm`-mel)
+- [x] **Step 4: Írd meg a bukó futásfeldolgozó-teszteket** (`test_run_processor.py`, a meglévő `make_fake_llm`-mel)
 
 - `test_event_sequence_of_completed_run`: az eseménytípusok listája `run_started`, `personas_generated`, majd 18 `persona_started` és 18 `persona_completed` (tetszőleges összefésülésben), `synthesis_started`, `synthesis_completed`, `run_completed`. Az események tokenösszege egyenlő a `runs` sor `input_tokens`, `output_tokens` értékével (200 és 100).
 - `test_synthesis_failure_emits_synthesis_failed`: `synthesis_fails=True` → van `synthesis_failed` `error_code`-dal, a futás `partial`, az utolsó esemény `run_completed`.
@@ -152,25 +152,25 @@ A blueprint-generátorhoz (ugyanebben a fájlban vagy `test_blueprint_generator.
 - A meglévő tesztek igazítása: az `on_persona_completed` és a `PersonaFailure.error_message` minden használata kikerül; a `test_failed_when_persona_generation_fails` az új viselkedést várja. A `test_unexpected_failure_logs_summary_and_provider_usage` kapja meg az állítást, amit a neve ígér (a `runs` sor tokenjei egyenlők a kivétel `usage`-ával).
 - Pótlandó állítások (az A terv naplójából): `completed_at` ki van töltve `partial` futásnál; a `failed` futás tokenjei megmaradnak.
 
-- [ ] **Step 5: Futtasd, hogy elbukjon**
+- [x] **Step 5: Futtasd, hogy elbukjon**
 
 Run: `pytest tests -q`
 Expected: FAIL (`AttributeError: module 'app.db' has no attribute 'insert_event'`, `TypeError ... on_event`)
 
-- [ ] **Step 6: Valósítsd meg a `db.py` két függvényét és az `events.py`-t** az Interfaces szerint. Az `insert_event` az oszlopneveket `psycopg.sql.Identifier`-rel illeszti be, ahogy az `update_run`.
+- [x] **Step 6: Valósítsd meg a `db.py` két függvényét és az `events.py`-t** az Interfaces szerint. Az `insert_event` az oszlopneveket `psycopg.sql.Identifier`-rel illeszti be, ahogy az `update_run`.
 
-- [ ] **Step 7: `llm_client.py`**
+- [x] **Step 7: `llm_client.py`**
 
 - `on_retry` a `generate_json`-ból a `_request_with_retry`-ba megy tovább.
 - `_post_json_sync`: az `URLError` ág `body={"detail": type(exc.reason).__name__}`-t ad; a `HTTPError` ágban az `exc.read()` saját `try`-ban van, hibánál a törzs `None`; az általános ág kivétellistája `UnicodeDecodeError`-ral bővül (a `ValueError` alosztálya, a `json.JSONDecodeError` mellé).
 
-- [ ] **Step 8: `blueprint_generator.py` és `persona_engine.py`**
+- [x] **Step 8: `blueprint_generator.py` és `persona_engine.py`**
 
 - A generátor a listát `count` elemre vágja; ha `count`-nál kevesebb, hibát dob. Minden hibaág `BlueprintGenerationError`.
 - Az engine a `safe_emit`-tel ír. A `persona_started` a szemafor megszerzése után megy ki. A kísérletszámot egy helyi változó követi, amelyet az `on_retry`-nak átadott aszinkron lezárás állít (és ugyanez küldi a `persona_retry`-t). A `PersonaFailure` építésénél nincs `str(exc)`.
 - A haladás `runs.persona_count`-ba írása megszűnik (az eseményekből látszik); a végső érték a futás lezárásakor íródik, ahogy eddig.
 
-- [ ] **Step 9: `run_processor.py`**
+- [x] **Step 9: `run_processor.py`**
 
 - A sink: `lambda type, **f: db.insert_event(run_id, type, **f)`; a saját eseményeit is `safe_emit`-tel írja.
 - Közös lezáró a három bukási úthoz: `_fail_run(*, run_id, error_code, usage, started, dropped)` → `status="failed"`, `completed_at`, tokenek, `run_failed` esemény az `error_code`-dal, összefoglaló naplósor.
@@ -178,14 +178,14 @@ Expected: FAIL (`AttributeError: module 'app.db' has no attribute 'insert_event'
 - A szintézis köré `synthesis_started`, utána `synthesis_completed` (idő, tokenek) vagy `synthesis_failed` (`error_code`: a `LLMProviderError.error_code`, különben `MALFORMED_PROVIDER_OUTPUT`).
 - `_format_persona_count_header_display`: `"valaszolt"` → `"válaszolt"`.
 
-- [ ] **Step 10: Futtasd, hogy átmenjen**
+- [x] **Step 10: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q`
 Expected: PASS, 0 hiba.
 
-- [ ] **Step 11: Dokumentáld az eltéréseket.** A spec 5. szakaszának táblájába: `synthesis_failed` sor; a `run_failed` sorba `error_code`; egy mondat a 18-as darabszám szabályáról. `TRACKING.md`: három sor az „Eltérések” táblába.
+- [x] **Step 11: Dokumentáld az eltéréseket.** A spec 5. szakaszának táblájába: `synthesis_failed` sor; a `run_failed` sorba `error_code`; egy mondat a 18-as darabszám szabályáról. `TRACKING.md`: három sor az „Eltérések” táblába.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add backend docs/superpowers/specs TRACKING.md
@@ -212,7 +212,7 @@ git commit -m "feat(backend): write run events from the engine and run processor
   - `check_run_limits(ip_hash: str | None) -> ErrorCode | None` – sorrend: egyidejű → IP → napi. `ip_hash is None` esetén az IP-ellenőrzés kimarad.
 - A `POST /api/v1/runs` az `X-Client-IP` fejlécből számol hasht (üres vagy hiányzó fejléc → `None`). Betelt keret: `429`, törzs `{"detail": ..., "code": <kód>}`; sor nem jön létre, háttérfeladat nem indul.
 
-- [ ] **Step 1: Írd meg a bukó teszteket**
+- [x] **Step 1: Írd meg a bukó teszteket**
 
 `test_limits.py` (valódi Postgres, `clean_db`):
 
@@ -233,14 +233,14 @@ Esetek, egy-egy teszt: 2 `running` futás → `BUSY`; 2 `completed` → `None`; 
 
 `conftest.py`: a `settings_env` beállítja a `SWARMSENSE_IP_HASH_SECRET=test-ip-secret` változót.
 
-- [ ] **Step 2: Futtasd, hogy elbukjon**
+- [x] **Step 2: Futtasd, hogy elbukjon**
 
 Run: `pytest tests/services/test_limits.py tests/routers/test_runs.py -q`
 Expected: FAIL (`ModuleNotFoundError: app.services.limits`)
 
-- [ ] **Step 3: Valósítsd meg** a `config.py`, `errors.py`, `db.py`, `limits.py` és `routers/runs.py` változásait az Interfaces szerint. A router a keretet a `db.create_run` előtt ellenőrzi; ha az ellenőrzés adatbázishibára fut, a válasz a meglévő `500 RUN_START_FAILED`.
+- [x] **Step 3: Valósítsd meg** a `config.py`, `errors.py`, `db.py`, `limits.py` és `routers/runs.py` változásait az Interfaces szerint. A router a keretet a `db.create_run` előtt ellenőrzi; ha az ellenőrzés adatbázishibára fut, a válasz a meglévő `500 RUN_START_FAILED`.
 
-- [ ] **Step 4: A helyi `.env` bővítése** (érték kiírása nélkül) és az `.env.example` frissítése a négy új névvel:
+- [x] **Step 4: A helyi `.env` bővítése** (érték kiírása nélkül) és az `.env.example` frissítése a négy új névvel:
 
 ```bash
 printf 'SWARMSENSE_IP_HASH_SECRET=%s\n' "$(openssl rand -hex 32)" >> backend/.env
@@ -249,12 +249,12 @@ grep -c '^SWARMSENSE_IP_HASH_SECRET=' backend/.env
 
 Expected: `1`
 
-- [ ] **Step 5: Futtasd, hogy átmenjen**
+- [x] **Step 5: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend
@@ -292,9 +292,9 @@ git commit -m "feat(backend): enforce run limits and store hashed client ip"
 - Produces (`internal_auth.py`): `is_internal_endpoint(request)` igaz minden útvonalra, amely `/api/v1/runs` vagy azzal kezdődik (`/api/v1/runs/…`), metódustól függetlenül. A `/` és a `/api/v1/status` nyitva marad. Az `INTERNAL_ONLY_ENDPOINTS` halmaz megszűnik.
 - Megszűnik: `GET /api/v1/runs/{run_id}/status`, `RunStatusResponse`, a `CORSMiddleware`, a `frontend_origin` beállítás.
 
-- [ ] **Step 1: Állapítsd meg az árakat.** Nyisd meg a DeepSeek nyilvános árlistáját, és vedd ki a `deepseek-v4.1-flash` (vagy az ezzel azonos árazású flash modell) bemeneti (cache nélküli) és kimeneti listaárát USD / 1M token egységben. A két szám és a forrás (URL, a lekérdezés dátuma) a `pricing.py` konstansaiba és egy megjegyzésébe kerül. Ha az ár nem állapítható meg egyértelműen, állj meg `NEEDS_CONTEXT` státusszal; ne becsülj.
+- [x] **Step 1: Állapítsd meg az árakat.** Nyisd meg a DeepSeek nyilvános árlistáját, és vedd ki a `deepseek-v4.1-flash` (vagy az ezzel azonos árazású flash modell) bemeneti (cache nélküli) és kimeneti listaárát USD / 1M token egységben. A két szám és a forrás (URL, a lekérdezés dátuma) a `pricing.py` konstansaiba és egy megjegyzésébe kerül. Ha az ár nem állapítható meg egyértelműen, állj meg `NEEDS_CONTEXT` státusszal; ne becsülj.
 
-- [ ] **Step 2: Írd meg a bukó teszteket** (`test_runs.py`)
+- [x] **Step 2: Írd meg a bukó teszteket** (`test_runs.py`)
 
 - `test_events_returns_status_topic_price_and_events`: két beszúrt esemény; a válasz kulcsai pontosan a fenti hat; a `price` egyenlő a `pricing.price_payload()`-dal; az első eseményben nincs `persona_index` kulcs.
 - `test_events_after_cursor_returns_only_newer`.
@@ -306,21 +306,21 @@ git commit -m "feat(backend): enforce run limits and store hashed client ip"
 - `test_no_cors_headers`: `Origin: http://localhost:3000` fejléccel a válaszban nincs `access-control-allow-origin`.
 - Törlendő: a két CORS-teszt és a `test_get_status_*` tesztek. A `client` fixture alapból küldje a titkot.
 
-- [ ] **Step 3: Futtasd, hogy elbukjon**
+- [x] **Step 3: Futtasd, hogy elbukjon**
 
 Run: `pytest tests/routers/test_runs.py -q`
 Expected: FAIL (404 az `/events` útvonalra)
 
-- [ ] **Step 4: Valósítsd meg.** A válaszmodell `response_model_exclude_none=True`-val megy ki. A `main.py`-ból kikerül a CORS és az „átmeneti” megjegyzés; a `config.py`-ból és a `conftest.py`-ból a `frontend_origin`; az `.env.example`-ből és a helyi `.env`-ből a `SWARMSENSE_FRONTEND_ORIGIN` sor (`sed -i '/^SWARMSENSE_FRONTEND_ORIGIN=/d' backend/.env`).
+- [x] **Step 4: Valósítsd meg.** A válaszmodell `response_model_exclude_none=True`-val megy ki. A `main.py`-ból kikerül a CORS és az „átmeneti” megjegyzés; a `config.py`-ból és a `conftest.py`-ból a `frontend_origin`; az `.env.example`-ből és a helyi `.env`-ből a `SWARMSENSE_FRONTEND_ORIGIN` sor (`sed -i '/^SWARMSENSE_FRONTEND_ORIGIN=/d' backend/.env`).
 
-- [ ] **Step 5: Futtasd, hogy átmenjen**
+- [x] **Step 5: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q && grep -rn "CORS\|frontend_origin" backend/app`
 Expected: PASS, a `grep` nem talál semmit.
 
-- [ ] **Step 6: Dokumentáld az eltéréseket** (spec 3. szakasz: minden `/api/v1/runs…` végpont titkot kér; 5. szakasz: a polling válasz új mezői; `TRACKING.md` két sor).
+- [x] **Step 6: Dokumentáld az eltéréseket** (spec 3. szakasz: minden `/api/v1/runs…` végpont titkot kér; 5. szakasz: a polling válasz új mezői; `TRACKING.md` két sor).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend docs/superpowers/specs TRACKING.md
@@ -406,7 +406,7 @@ export function countByStatus(state: TraceState): { queued: number; running: num
 
 **Elrendezés (spec 8. szakasz):** fejléc a kérdéssel, a futó órával és a négy fázissal (personák generálása → 18 persona → szintézis → PDF; az aktuális kiemelve, a kész pipálva); összesítő sor (sorban áll / fut / kész / kiesett darabszám, bemeneti és kimeneti token, becsült költség „becslés” jelöléssel); alatta 18 sor (név, állapot, eltelt idő, kísérlet `n/3`, hibánál a hibakód). A még el nem indult personák sora név nélkül, „sorban áll” felirattal jelenik meg. Mobilon egy oszlop. A színek a `lib/tokens.ts`-ből jönnek.
 
-- [ ] **Step 1: Írd meg a bukó `trace` és `cost` teszteket**
+- [x] **Step 1: Írd meg a bukó `trace` és `cost` teszteket**
 
 `trace.test.ts`, egy `ev(id, type, extra?)` segéddel:
 
@@ -419,7 +419,7 @@ export function countByStatus(state: TraceState): { queued: number; running: num
 
 `cost.test.ts`: `estimateCostUsd(1_000_000, 2_000_000, {input_per_million_usd: 0.5, output_per_million_usd: 1.5}) === 3.5`; 0 tokenre 0; `formatCostUsd(0.0123) === "~$0.012"`.
 
-- [ ] **Step 2: Írd meg a bukó route handler és `start-run` teszteket**
+- [x] **Step 2: Írd meg a bukó route handler és `start-run` teszteket**
 
 `route.test.ts` (a `fetch` mockolva, `API_URL` és `INTERNAL_SECRET` beállítva):
 
@@ -431,7 +431,7 @@ export function countByStatus(state: TraceState): { queued: number; running: num
 
 `start-run.test.ts` új esetei: az action a kérés `x-forwarded-for: 203.0.113.7, 10.0.0.1` fejlécéből `X-Client-IP: 203.0.113.7`-et küld (a `next/headers` mockolva); fejléc nélkül nincs `X-Client-IP`; a backend `429 {code: "DAILY_LIMIT_REACHED"}` válaszára `{ok: false, code: "DAILY_LIMIT_REACHED"}`; `500`-as, nem JSON törzsű válaszra `RUN_START_FAILED`; időtúllépésre (`AbortError`) `RUN_START_FAILED`.
 
-- [ ] **Step 3: Írd meg a bukó komponensteszteket**
+- [x] **Step 3: Írd meg a bukó komponensteszteket**
 
 `trace-view.test.tsx`: a fenti teljes sor állapotával a 18 sorból 17 „kész”, 1 „kiesett” a hibakódjával; a retry-os sor `2/3`-at mutat; az összesítőben megjelenik a `formatCostUsd` értéke és a „becslés” szó; `personas` fázisban 13 „sorban áll” sor van; `jest-axe` nem talál kritikus hibát.
 
@@ -446,18 +446,18 @@ export function countByStatus(state: TraceState): { queued: number; running: num
 
 `research/page.test.tsx` új esetei: `IP_LIMIT_REACHED` és `DAILY_LIMIT_REACHED` kódnál a hibaüzenet mellett link jelenik meg a `/minta` oldalra, `BUSY`-nál nem; sikeres indítás után a gomb letiltva marad, és egy második beküldés nem hívja újra az actiont.
 
-- [ ] **Step 4: Futtasd, hogy elbukjon**
+- [x] **Step 4: Futtasd, hogy elbukjon**
 
 Run: `pnpm test`
 Expected: FAIL (a `lib/trace` modul nem található)
 
-- [ ] **Step 5: Valósítsd meg a `lib` modulokat és a route handlert.** A route handler fájlban `export const dynamic = "force-dynamic"`.
+- [x] **Step 5: Valósítsd meg a `lib` modulokat és a route handlert.** A route handler fájlban `export const dynamic = "force-dynamic"`.
 
-- [ ] **Step 6: Valósítsd meg a `TraceView`-t és a `LiveTrace`-t**, majd a `waiting/[run_id]/page.tsx`-et: nem UUID azonosítóra `notFound()`, különben `<LiveTrace runId={run_id} />`. Töröld a `waiting-screen` két fájlját és a `@tanstack/react-query` függőséget (`pnpm remove @tanstack/react-query`).
+- [x] **Step 6: Valósítsd meg a `TraceView`-t és a `LiveTrace`-t**, majd a `waiting/[run_id]/page.tsx`-et: nem UUID azonosítóra `notFound()`, különben `<LiveTrace runId={run_id} />`. Töröld a `waiting-screen` két fájlját és a `@tanstack/react-query` függőséget (`pnpm remove @tanstack/react-query`).
 
-- [ ] **Step 7: Igazítsd az indítást.** A `start-run.ts` a `backendFetch`-et és a `clientIp`-t használja. A `research/page.tsx` egy `submitted` állapottal tartja letiltva a gombot a sikeres indítás után, és a két keretkódnál linket mutat a mintára.
+- [x] **Step 7: Igazítsd az indítást.** A `start-run.ts` a `backendFetch`-et és a `clientIp`-t használja. A `research/page.tsx` egy `submitted` állapottal tartja letiltva a gombot a sikeres indítás után, és a két keretkódnál linket mutat a mintára.
 
-- [ ] **Step 8: Szövegek.** `lib/errors.ts` új kódjai:
+- [x] **Step 8: Szövegek.** `lib/errors.ts` új kódjai:
 
 | Kód | Szöveg |
 |---|---|
@@ -472,14 +472,14 @@ Expected: FAIL (a `lib/trace` modul nem található)
 
 A `messages.waiting` blokk helyére `messages.trace` kerül (fázisnevek, állapotnevek, összesítő címkék, a „kapcsolat megszakadt” üzenet, linkszövegek). A régi `waiting` kulcsok törlődnek.
 
-- [ ] **Step 9: Környezet.** A `frontend/.env.example`-ből és a helyi `.env.local`-ból kikerül a `NEXT_PUBLIC_API_URL` (`sed -i '/^NEXT_PUBLIC_API_URL=/d' frontend/.env.local`).
+- [x] **Step 9: Környezet.** A `frontend/.env.example`-ből és a helyi `.env.local`-ból kikerül a `NEXT_PUBLIC_API_URL` (`sed -i '/^NEXT_PUBLIC_API_URL=/d' frontend/.env.local`).
 
-- [ ] **Step 10: Futtasd, hogy átmenjen**
+- [x] **Step 10: Futtasd, hogy átmenjen**
 
 Run: `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build && grep -rn "NEXT_PUBLIC_API_URL\|react-query" app components lib`
 Expected: mind zöld, a `grep` nem talál semmit.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add frontend
@@ -521,7 +521,7 @@ git commit -m "feat(frontend): live trace over a next route handler"
 
 **Állapotok:** nincs ilyen futás → `notFound()`; `queued`, `running`, `composing` → `redirect("/waiting/<id>")`; `failed` → hibapanel, link a `/minta` oldalra és az űrlapra, PDF-link nélkül; `partial` szintézis nélkül (`result.synthesis === null`) → az összefoglaló helyén „A szintézis nem készült el; a personák válaszai a PDF-ben vannak.”; ha `result.failed_personas` nem üres → „16/18 persona válaszolt” alakú sor.
 
-- [ ] **Step 1: Írd meg a bukó backend teszteket**
+- [x] **Step 1: Írd meg a bukó backend teszteket**
 
 `test_run_processor.py`:
 
@@ -538,19 +538,19 @@ git commit -m "feat(frontend): live trace over a next route handler"
 - `test_get_run_running_has_null_result_and_duration`.
 - `test_get_run_unknown_is_404`, `test_get_run_requires_secret`.
 
-- [ ] **Step 2: Futtasd, hogy elbukjon**
+- [x] **Step 2: Futtasd, hogy elbukjon**
 
 Run: `pytest tests -q`
 Expected: FAIL
 
-- [ ] **Step 3: Valósítsd meg a backend részt.** A futás lezárása két lépés lesz: (1) `update_run` az eredménnyel, a számlálókkal, a szintézis-oszlopokkal és a tokenekkel, a státusz közben `composing` marad; (2) a végső státusz és a `completed_at`, majd a `run_completed` esemény. A két lépés közé a 6. feladat teszi a PDF-et.
+- [x] **Step 3: Valósítsd meg a backend részt.** A futás lezárása két lépés lesz: (1) `update_run` az eredménnyel, a számlálókkal, a szintézis-oszlopokkal és a tokenekkel, a státusz közben `composing` marad; (2) a végső státusz és a `completed_at`, majd a `run_completed` esemény. A két lépés közé a 6. feladat teszi a PDF-et.
 
-- [ ] **Step 4: Futtasd, hogy átmenjen**
+- [x] **Step 4: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q`
 Expected: PASS
 
-- [ ] **Step 5: Írd meg a bukó frontend teszteket**
+- [x] **Step 5: Írd meg a bukó frontend teszteket**
 
 `run.test.ts`: nem UUID → `null`, `fetch` nélkül; 404 → `null`; 503 → dob; 200 → a törzs.
 
@@ -562,14 +562,14 @@ Expected: PASS
 - a personák érvei (`primary_argument`) nem jelennek meg az oldalon;
 - `jest-axe` nem talál kritikus hibát.
 
-- [ ] **Step 6: Valósítsd meg a frontend részt** a fenti szerkezet és állapotok szerint. A szövegek a `messages.result` blokkba kerülnek. A „Mire nem jó” bekezdés állítása: az eredmény szintetikus personák válasza, nem valódi megkérdezés; hipotézisek gyors előszűrésére való, döntést megalapozó piackutatást nem vált ki.
+- [x] **Step 6: Valósítsd meg a frontend részt** a fenti szerkezet és állapotok szerint. A szövegek a `messages.result` blokkba kerülnek. A „Mire nem jó” bekezdés állítása: az eredmény szintetikus personák válasza, nem valódi megkérdezés; hipotézisek gyors előszűrésére való, döntést megalapozó piackutatást nem vált ki.
 
-- [ ] **Step 7: Futtasd, hogy átmenjen**
+- [x] **Step 7: Futtasd, hogy átmenjen**
 
 Run: `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build`
 Expected: mind zöld.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend frontend
@@ -598,9 +598,9 @@ git commit -m "feat: store run result and add the result page"
 
 **A futásban:** az eredmény mentése és a végső státusz közé kerül. A PDF hibája nem buktatja a futást: a kivétel típusa a naplóba megy, a futás `completed` vagy `partial` lesz PDF nélkül.
 
-- [ ] **Step 1: Rögzítsd a verziókat.** A `requirements.txt`-be `jinja2==3.1.*` és a `playwright` PyPI-n elérhető legfrissebb kiadása pontos verzióval. A `Dockerfile` alapképe `mcr.microsoft.com/playwright/python:v<ugyanez a verzió>-noble`; a meglévő rendszerfelhasználó-létrehozás helyett az image `pwuser` felhasználója fut; a `COPY` sorok kiegészülnek az `app/templates`, `app/assets` mappákkal (az `app` másolása már viszi őket) és a `seed` mappával (`COPY --chown=pwuser:pwuser seed ./seed`; a mappát a 10. feladat tölti meg, itt egy `.gitkeep` kerül bele). Helyben: `pip install -r requirements.txt && python -m playwright install chromium`.
+- [x] **Step 1: Rögzítsd a verziókat.** A `requirements.txt`-be `jinja2==3.1.*` és a `playwright` PyPI-n elérhető legfrissebb kiadása pontos verzióval. A `Dockerfile` alapképe `mcr.microsoft.com/playwright/python:v<ugyanez a verzió>-noble`; a meglévő rendszerfelhasználó-létrehozás helyett az image `pwuser` felhasználója fut; a `COPY` sorok kiegészülnek az `app/templates`, `app/assets` mappákkal (az `app` másolása már viszi őket) és a `seed` mappával (`COPY --chown=pwuser:pwuser seed ./seed`; a mappát a 10. feladat tölti meg, itt egy `.gitkeep` kerül bele). Helyben: `pip install -r requirements.txt && python -m playwright install chromium`.
 
-- [ ] **Step 2: Írd meg a bukó teszteket**
+- [x] **Step 2: Írd meg a bukó teszteket**
 
 `test_pdf_service.py`, egy `make_run(**overrides)` segéddel, amely a `_build_result_payload` alakját követi:
 
@@ -633,25 +633,25 @@ def test_generate_pdf_smoke():              # valódi Chromium
 
 `route.test.ts` (frontend): a bináris törzs és a két fejléc változatlanul megy tovább; nem UUID → `404` `fetch` nélkül; a backend `503`-a kóddal együtt megy tovább; a `fetch` dob → `502 BACKEND_UNAVAILABLE`.
 
-- [ ] **Step 3: Futtasd, hogy elbukjon**
+- [x] **Step 3: Futtasd, hogy elbukjon**
 
 Run: `pytest tests/services/test_pdf_service.py -q`
 Expected: FAIL (`ModuleNotFoundError: app.services.pdf_service`)
 
-- [ ] **Step 4: Valósítsd meg a sablont és a `pdf_service.py`-t.** A sablon önálló HTML: beágyazott CSS, a font `@font-face` szabálya `file://` útvonallal a csomagolt TTF-re mutat (az útvonalat a `render_report_html` adja át), külső hálózati hivatkozás nincs benne. A PDF-végpont `async def`, és közvetlenül `await`-eli a `generate_pdf`-et.
+- [x] **Step 4: Valósítsd meg a sablont és a `pdf_service.py`-t.** A sablon önálló HTML: beágyazott CSS, a font `@font-face` szabálya `file://` útvonallal a csomagolt TTF-re mutat (az útvonalat a `render_report_html` adja át), külső hálózati hivatkozás nincs benne. A PDF-végpont `async def`, és közvetlenül `await`-eli a `generate_pdf`-et.
 
-- [ ] **Step 5: Kösd be a futásba és a végpontba**, majd írd meg a Next route handlert.
+- [x] **Step 5: Kösd be a futásba és a végpontba**, majd írd meg a Next route handlert.
 
-- [ ] **Step 6: CI.** A `ci.yml` backend feladatába a függőségek telepítése után: `python -m playwright install --with-deps chromium`. A `CLAUDE.md` „Parancsok” blokkjába a `pip install` sor után: `python -m playwright install chromium`.
+- [x] **Step 6: CI.** A `ci.yml` backend feladatába a függőségek telepítése után: `python -m playwright install --with-deps chromium`. A `CLAUDE.md` „Parancsok” blokkjába a `pip install` sor után: `python -m playwright install chromium`.
 
-- [ ] **Step 7: Futtasd, hogy átmenjen**
+- [x] **Step 7: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q` (backend), `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build` (frontend), `docker build -t swarmsense-backend-test backend`
 Expected: mind zöld; az image felépül.
 
-- [ ] **Step 8: Nézd meg a PDF-et.** Generálj egyet a teszt `make_run` adatával egy fájlba a scratchpad mappába, és nyisd meg: az ő és az ű helyesen jelenik meg, a szakaszok nem törnek ketté értelmetlenül. A jelentésbe írd le, mit láttál, és a fájl méretét (a spec 16. szakasza szerint a PDF mérete eddig ismeretlen; az érték a `TRACKING.md` „Megfigyelések” részébe kerül).
+- [x] **Step 8: Nézd meg a PDF-et.** Generálj egyet a teszt `make_run` adatával egy fájlba a scratchpad mappába, és nyisd meg: az ő és az ű helyesen jelenik meg, a szakaszok nem törnek ketté értelmetlenül. A jelentésbe írd le, mit láttál, és a fájl méretét (a spec 16. szakasza szerint a PDF mérete eddig ismeretlen; az érték a `TRACKING.md` „Megfigyelések” részébe kerül).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add backend frontend .github CLAUDE.md TRACKING.md
@@ -684,9 +684,9 @@ git commit -m "feat: generate the report pdf and serve it through next"
 
 **Cím érvényessége:** a `pydantic` `EmailStr` típusa, legfeljebb 254 karakter. A FastAPI alapértelmezett 422-es válasza helyett a végpont `INVALID_EMAIL` kódot ad (a kérésmodell validálása a végponton belül történik, vagy a modell saját kivételkezelőt kap; az e-mail-cím a hibaválaszban és a naplóban nem jelenik meg).
 
-- [ ] **Step 1: Nézd meg a Resend küldő API aktuális dokumentációját** (Context7), és vesd össze a fenti kérésalakkal. Eltérésnél a dokumentáció az irányadó; az eltérést írd a jelentésbe.
+- [x] **Step 1: Nézd meg a Resend küldő API aktuális dokumentációját** (Context7), és vesd össze a fenti kérésalakkal. Eltérésnél a dokumentáció az irányadó; az eltérést írd a jelentésbe.
 
-- [ ] **Step 2: Írd meg a bukó backend teszteket**
+- [x] **Step 2: Írd meg a bukó backend teszteket**
 
 `conftest.py`: új autouse fixture `no_real_email`, amely az `app.services.email_service._post_resend`-et `AssertionError`-t dobó függvényre cseréli; a `settings_env` beállítja a `SWARMSENSE_RESEND_API_KEY=test-resend-key` és a `SWARMSENSE_EMAIL_FROM=demo@example.test` változót.
 
@@ -707,25 +707,25 @@ git commit -m "feat: generate the report pdf and serve it through next"
 - a naplóban (`caplog`) egyik esetben sem szerepel az e-mail-cím;
 - a `GET /api/v1/runs/<id>` `emails_remaining` értéke két kérés után `1`.
 
-- [ ] **Step 3: Futtasd, hogy elbukjon**
+- [x] **Step 3: Futtasd, hogy elbukjon**
 
 Run: `pytest tests -q`
 Expected: FAIL
 
-- [ ] **Step 4: Valósítsd meg a backend részt.** A `_post_resend` `urllib`-bel küld, ahogy az `llm_client._post_json_sync`; a hibaágai csak státuszkódot és típusnevet visznek tovább. Az `.env.example` öt új nevet kap; a `SWARMSENSE_EMAIL_FROM` értéke ott `swarmsense@example.com`.
+- [x] **Step 4: Valósítsd meg a backend részt.** A `_post_resend` `urllib`-bel küld, ahogy az `llm_client._post_json_sync`; a hibaágai csak státuszkódot és típusnevet visznek tovább. Az `.env.example` öt új nevet kap; a `SWARMSENSE_EMAIL_FROM` értéke ott `swarmsense@example.com`.
 
-- [ ] **Step 5: Futtasd, hogy átmenjen**
+- [x] **Step 5: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q`
 Expected: PASS
 
-- [ ] **Step 6: Írd meg a bukó frontend teszteket**
+- [x] **Step 6: Írd meg a bukó frontend teszteket**
 
 `request-email.test.ts`: a hívás `POST /api/v1/runs/<id>/email` a titokkal; siker → `{ok: true, emailsRemaining: 2}`; a backend kódja változatlanul jön vissza (`EMAIL_RUN_LIMIT_REACHED`); nem UUID vagy üres cím → `INVALID_EMAIL`, `fetch` nélkül; a `fetch` dob → `EMAIL_SEND_FAILED`.
 
 `email-request-form.test.tsx`: `emailsRemaining === 0` → a gomb letiltva, mellette a „Erre a futásra már nem kérhető több levél.” szöveg; siker után megerősítő üzenet és a mező kiürül; hibakódnál a `lib/errors.ts` szövege `role="alert"`-tel; küldés közben a gomb letiltva; az űrlap alatt látszik a megjegyzés a 14 napos törlésről, linkkel az adatkezelési oldalra.
 
-- [ ] **Step 7: Valósítsd meg a frontend részt**, és tedd az űrlapot az eredményoldalra a `ResultView` `children`-jeként. Új szövegek a `lib/errors.ts`-ben:
+- [x] **Step 7: Valósítsd meg a frontend részt**, és tedd az űrlapot az eredményoldalra a `ResultView` `children`-jeként. Új szövegek a `lib/errors.ts`-ben:
 
 | Kód | Szöveg |
 |---|---|
@@ -737,12 +737,12 @@ Expected: PASS
 | `PDF_UNAVAILABLE` | „A PDF most nem készíthető el. Próbáld újra egy perc múlva.” |
 | `RUN_NOT_FINISHED` | „Ez a futás még nem készült el.” |
 
-- [ ] **Step 8: Futtasd, hogy átmenjen**
+- [x] **Step 8: Futtasd, hogy átmenjen**
 
 Run: `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build`
 Expected: mind zöld.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add backend frontend
@@ -774,7 +774,7 @@ git commit -m "feat: send the report pdf by email on request"
 
 **Hol megy értesítés:** a `_fail_run`-ban (minden bukási úton); a takarítóban megszakított futásonként; a futás létrehozása után, ha az elmúlt 24 óra futásszáma éppen elérte a `runs_per_day` értéket (így a keret betelése egyszer jelez, nem minden elutasított kérésnél).
 
-- [ ] **Step 1: Írd meg a bukó teszteket**
+- [x] **Step 1: Írd meg a bukó teszteket**
 
 `conftest.py`: autouse `no_real_discord`, amely az `app.services.notifier._post_discord`-ot `AssertionError`-t dobóra cseréli.
 
@@ -799,21 +799,21 @@ git commit -m "feat: send the report pdf by email on request"
 
 `tests/test_main.py` (új) vagy a meglévő indulási teszt mellé: az alkalmazás indulásakor a takarító egyszer lefut (a `run_cleanup_once` rögzítő hamisítványra cserélve), leálláskor a feladat megszakad.
 
-- [ ] **Step 2: Futtasd, hogy elbukjon**
+- [x] **Step 2: Futtasd, hogy elbukjon**
 
 Run: `pytest tests -q`
 Expected: FAIL
 
-- [ ] **Step 3: Valósítsd meg** az Interfaces szerint. A futásfeldolgozó végső státuszírása `finalize_run`-ra vált; ha `False`-t ad, a `run_completed` esemény és a PDF-mentés kimarad, és a naplóba egy sor kerül a futásazonosítóval.
+- [x] **Step 3: Valósítsd meg** az Interfaces szerint. A futásfeldolgozó végső státuszírása `finalize_run`-ra vált; ha `False`-t ad, a `run_completed` esemény és a PDF-mentés kimarad, és a naplóba egy sor kerül a futásazonosítóval.
 
-- [ ] **Step 4: Írd meg a `docs/lekerdezesek.md`-t** három lekérdezéssel (spec 10. szakasz): mai futások státusz szerint; napi tokenösszeg az elmúlt 14 napra; a leggyakoribb hibakódok a `run_events`-ből az elmúlt 7 napra. Mindegyik fölé egy mondat arról, mire való, és a futtatás módja (`docker compose … exec postgres psql -U swarmsense`).
+- [x] **Step 4: Írd meg a `docs/lekerdezesek.md`-t** három lekérdezéssel (spec 10. szakasz): mai futások státusz szerint; napi tokenösszeg az elmúlt 14 napra; a leggyakoribb hibakódok a `run_events`-ből az elmúlt 7 napra. Mindegyik fölé egy mondat arról, mire való, és a futtatás módja (`docker compose … exec postgres psql -U swarmsense`).
 
-- [ ] **Step 5: Futtasd, hogy átmenjen**
+- [x] **Step 5: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend docs/lekerdezesek.md
@@ -867,28 +867,28 @@ Ebben a feladatban a pontos szöveget az implementáló írja; a terv azt rögz�
 - A `painBridge` blokk három sora helyére: mit csinál a darab (élő trace, 18 persona 5-ös párhuzamossággal, PDF). A lábléc új linkje: Módszertan.
 - A `layout.tsx` `metadata` szövegei ugyanezeket a szabályokat követik („percek alatt”, „várakozás nélkül” jellegű ígéret nélkül).
 
-- [ ] **Step 1: Írd meg a bukó teszteket**
+- [x] **Step 1: Írd meg a bukó teszteket**
 
 - `page.test.tsx` (landing): a nyolc tiltott kifejezés egyike sincs a renderelt szövegben; megvan a „18” és a „portfólió” szó; van link a `/minta`, a `/modszertan`, a `/privacy` és a `/terms` oldalra; az előnézet blokkban látszik az „Illusztráció” szó; a meglévő axe-teszt marad.
 - `privacy/page.test.tsx`: megvan a „14 nap”, a „DeepSeek”, a „Resend”, az „IP-cím” kifejezés; nincs benne „mágikus”, „várólista”, „leiratkoz”, „hozzájárulás”; `CONTACT_EMAIL=kapcsolat@example.test` mellett a cím megjelenik, nélküle a pótló mondat.
 - `modszertan/page.test.tsx`: megvan a „18”, a „20 hívás”, a „legfeljebb 5”, a „nem reprezentatív” kifejezés és a link a `/minta` oldalra; axe.
 - A feltételek oldalához egy teszt a `privacy` tesztfájl mellé: nincs benne „mágikus”, „előfizetés”, „e-mailben kézbesíti”.
 
-- [ ] **Step 2: Futtasd, hogy elbukjon**
+- [x] **Step 2: Futtasd, hogy elbukjon**
 
 Run: `pnpm test`
 Expected: FAIL
 
-- [ ] **Step 3: Írd át a szövegeket és az oldalakat** a fenti szabályok szerint. A `privacy/page.tsx` szerkezete a megmaradó kulcsokhoz igazodik; a nem használt `messages.legal` kulcsok törlődnek. A hatálybalépés dátuma a commit napja, a verzió 2.0.
+- [x] **Step 3: Írd át a szövegeket és az oldalakat** a fenti szabályok szerint. A `privacy/page.tsx` szerkezete a megmaradó kulcsokhoz igazodik; a nem használt `messages.legal` kulcsok törlődnek. A hatálybalépés dátuma a commit napja, a verzió 2.0.
 
-- [ ] **Step 4: Takarítás.** `grep -rn "components/ui/button\|file.svg\|globe.svg\|next.svg\|vercel.svg\|window.svg\|emailCanvas\|emailSurface\|emailBorder\|emailText" frontend --include=*.ts --include=*.tsx --include=*.css` – ha nincs találat, a felsorolt fájlok és konstansok törlődnek; ha van, a találatot írd a jelentésbe, és az a fájl marad.
+- [x] **Step 4: Takarítás.** `grep -rn "components/ui/button\|file.svg\|globe.svg\|next.svg\|vercel.svg\|window.svg\|emailCanvas\|emailSurface\|emailBorder\|emailText" frontend --include=*.ts --include=*.tsx --include=*.css` – ha nincs találat, a felsorolt fájlok és konstansok törlődnek; ha van, a találatot írd a jelentésbe, és az a fájl marad.
 
-- [ ] **Step 5: Futtasd, hogy átmenjen**
+- [x] **Step 5: Futtasd, hogy átmenjen**
 
 Run: `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build`
 Expected: mind zöld.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend
@@ -925,7 +925,7 @@ git commit -m "feat(frontend): rewrite legal, methodology and landing copy"
 - `/minta`: szerveroldali komponens; `fetchSampleRunId()` → van: `<ReplayTrace runId=… />`; nincs: „A mintafutás most nem érhető el.” és link az űrlapra.
 - `/eredmeny/[id]/visszajatszas`: nem UUID → `notFound()`; különben `<ReplayTrace runId=… />`.
 
-- [ ] **Step 1: Írd meg a bukó backend teszteket**
+- [x] **Step 1: Írd meg a bukó backend teszteket**
 
 `test_seed.py`:
 
@@ -950,29 +950,29 @@ def test_export_text_with_quotes_and_accents_roundtrips(clean_db): ...  # topic:
 
 A szkripthez: a retry vagy kieső nélküli futásra nem nulla kilépési kód, és nem jön létre fájl (a `SEED_PATH` a `tmp_path`-ra állítva).
 
-- [ ] **Step 2: Írd meg a bukó frontend teszteket**
+- [x] **Step 2: Írd meg a bukó frontend teszteket**
 
 `replay.test.ts`: három esemény `12:00:00.000`, `12:00:01.500`, `12:00:01.500` időbélyeggel → `delayMs` `[0, 1500, 1500]`, a sorrend az `id` szerinti; üres bemenetre üres kimenet; az időben visszafelé lépő esemény `delayMs`-e nem kisebb az előzőénél.
 
 `replay-trace.test.tsx` (hamis időzítőkkel): pontosan egy `fetch` történik; 1499 ms-nál a második esemény még nincs feldolgozva, 1500 ms-nál igen; a címke a futás dátumát mutatja; az „Ugrás az eredményre” link `href`-je `/eredmeny/<id>` a lejátszás közben is; a végén megjelenik az „Újra” gomb, és megnyomása után az állapot a kezdeti; hibás lekérésnél a hibaüzenet látszik.
 
-- [ ] **Step 3: Futtasd, hogy elbukjon**
+- [x] **Step 3: Futtasd, hogy elbukjon**
 
 Run: `pytest tests -q` és `pnpm test`
 Expected: FAIL mindkettő
 
-- [ ] **Step 4: Valósítsd meg a backend részt.** A `lifespan` sorrendje: `apply_schema()` → `seed_sample_if_missing()` → a takarító indítása. A seed hibája (pl. sérült fájl) nem állítja meg az indulást: a kivétel típusa a naplóba megy.
+- [x] **Step 4: Valósítsd meg a backend részt.** A `lifespan` sorrendje: `apply_schema()` → `seed_sample_if_missing()` → a takarító indítása. A seed hibája (pl. sérült fájl) nem állítja meg az indulást: a kivétel típusa a naplóba megy.
 
-- [ ] **Step 5: Valósítsd meg a frontend részt.**
+- [x] **Step 5: Valósítsd meg a frontend részt.**
 
-- [ ] **Step 6: Futtasd, hogy átmenjen**
+- [x] **Step 6: Futtasd, hogy átmenjen**
 
 Run: `pytest tests -q`; `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build`
 Expected: mind zöld.
 
-- [ ] **Step 7: Dokumentáld az eltérést** (a seed nem tartalmaz PDF-et): spec 8. szakasz egy mondat, `TRACKING.md` egy sor.
+- [x] **Step 7: Dokumentáld az eltérést** (a seed nem tartalmaz PDF-et): spec 8. szakasz egy mondat, `TRACKING.md` egy sor.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend frontend docs/superpowers/specs TRACKING.md
@@ -992,9 +992,9 @@ Ez a feladat valódi LLM-hívásokat indít Balázs opencode Go keretéből. **L
 **Interfaces:**
 - Consumes: minden korábbi feladat.
 
-- [ ] **Step 1: Indítsd el helyben a teljes rendszert.** Postgres a `docker-compose.dev.yml`-ből; a backend `python -m uvicorn app.main:app --port 8000`; a frontend `pnpm build && pnpm start` (éles build, nem `dev`). Ha a 3000-es port foglalt, a frontend a 3001-esen megy, és a backend folyamata `SWARMSENSE_PUBLIC_BASE_URL=http://localhost:3001`-et kap. A mintagyűjtés idejére a backend folyamata `SWARMSENSE_RUNS_PER_IP_PER_DAY=20`-at kap, hogy a keret ne állítsa meg.
+- [x] **Step 1: Indítsd el helyben a teljes rendszert.** Postgres a `docker-compose.dev.yml`-ből; a backend `python -m uvicorn app.main:app --port 8000`; a frontend `pnpm build && pnpm start` (éles build, nem `dev`). Ha a 3000-es port foglalt, a frontend a 3001-esen megy, és a backend folyamata `SWARMSENSE_PUBLIC_BASE_URL=http://localhost:3001`-et kap. A mintagyűjtés idejére a backend folyamata `SWARMSENSE_RUNS_PER_IP_PER_DAY=20`-at kap, hogy a keret ne állítsa meg.
 
-- [ ] **Step 2: Végigvitel a böngészőben** (Chrome, nyitott hálózati panellel). Űrlap → trace → eredmény → PDF letöltése → visszajátszás. Ellenőrizd és írd a jelentésbe:
+- [x] **Step 2: Végigvitel a böngészőben** (Chrome, nyitott hálózati panellel). Űrlap → trace → eredmény → PDF letöltése → visszajátszás. Ellenőrizd és írd a jelentésbe:
 
 - a hálózati forgalomban csak a Next címe szerepel (nincs kérés a 8000-es portra);
 - a trace personánként mutat állapotot, kísérletszámot, időt; az összesítőben egyszerre legfeljebb 5 „fut”;
@@ -1002,25 +1002,25 @@ Ez a feladat valódi LLM-hívásokat indít Balázs opencode Go keretéből. **L
 - a Next naplójában szerepel-e a kérdés szövege éles buildnél (az A tervben fejlesztői módban szerepelt; az eredmény a `TRACKING.md` „Megfigyelések” részébe kerül, a teendő a C tervé);
 - a letöltött PDF megnyílik, az ékezetek helyesek.
 
-- [ ] **Step 3: Keretek kézi ellenőrzése.** A backendet újraindítva `SWARMSENSE_RUNS_PER_IP_PER_DAY=1`, majd `SWARMSENSE_RUNS_PER_DAY=1`, majd `SWARMSENSE_MAX_CONCURRENT_RUNS=0` értékkel: az űrlap mindháromnál a megfelelő üzenetet adja, az első kettőnél linkkel a mintára. LLM-hívás ezekhez nem kell (a már meglévő futások betöltik a keretet).
+- [x] **Step 3: Keretek kézi ellenőrzése.** A backendet újraindítva `SWARMSENSE_RUNS_PER_IP_PER_DAY=1`, majd `SWARMSENSE_RUNS_PER_DAY=1`, majd `SWARMSENSE_MAX_CONCURRENT_RUNS=0` értékkel: az űrlap mindháromnál a megfelelő üzenetet adja, az első kettőnél linkkel a mintára. LLM-hívás ezekhez nem kell (a már meglévő futások betöltik a keretet).
 
-- [ ] **Step 4: Beragadt futás.** Indíts egy futást, és a persona-fázisban állítsd le a backendet. Írd át SQL-lel a futás `created_at`-ját 11 perccel korábbra (így nem kell 10 percet várni), indítsd újra a backendet, és nézd meg, hogy a nyitva hagyott trace oldal hibapanelre vált a `RUN_TIMED_OUT` szövegével.
+- [x] **Step 4: Beragadt futás.** Indíts egy futást, és a persona-fázisban állítsd le a backendet. Írd át SQL-lel a futás `created_at`-ját 11 perccel korábbra (így nem kell 10 percet várni), indítsd újra a backendet, és nézd meg, hogy a nyitva hagyott trace oldal hibapanelre vált a `RUN_TIMED_OUT` szövegével.
 
-- [ ] **Step 5: E-mail.** Ha a helyi `.env`-ben van `SWARMSENSE_RESEND_API_KEY` és `SWARMSENSE_EMAIL_FROM`: kérj egy levelet Balázs által megadott címre, és erősítsd meg vele, hogy megérkezett a PDF-fel. Ha nincs beállítva: az űrlap az `EMAIL_NOT_CONFIGURED` szöveget adja; a levél tényleges megérkezése nyitott pontként a `TRACKING.md`-be kerül, és a CLAUDE.md megfelelő kritériuma nem pipálható ki.
+- [x] **Step 5: E-mail.** Ha a helyi `.env`-ben van `SWARMSENSE_RESEND_API_KEY` és `SWARMSENSE_EMAIL_FROM`: kérj egy levelet Balázs által megadott címre, és erősítsd meg vele, hogy megérkezett a PDF-fel. Ha nincs beállítva: az űrlap az `EMAIL_NOT_CONFIGURED` szöveget adja; a levél tényleges megérkezése nyitott pontként a `TRACKING.md`-be kerül, és a CLAUDE.md megfelelő kritériuma nem pipálható ki.
 
-- [ ] **Step 6: A takarítás ellenőrzése adaton.** Szúrj be SQL-lel egy 15 napos `email_requests` sort, indítsd újra a backendet, és ellenőrizd, hogy a sor eltűnt.
+- [x] **Step 6: A takarítás ellenőrzése adaton.** Szúrj be SQL-lel egy 15 napos `email_requests` sort, indítsd újra a backendet, és ellenőrizd, hogy a sor eltűnt.
 
-- [ ] **Step 7: A minta kiválasztása.** A 2–4. lépés futásai közül az, amelyikre a `python -m scripts.export_sample <run_id>` sikerrel lefut (van benne retry és kiesett persona). Ha egyik sem ilyen, indíts további futásokat különböző kérdésekkel a 8-as felső határig. A kiválasztott futás kérdése és célközönsége nem tartalmazhat személyes adatot vagy valódi cégnevet; ha tartalmaz, az nem lehet minta.
+- [x] **Step 7: A minta kiválasztása.** A 2–4. lépés futásai közül az, amelyikre a `python -m scripts.export_sample <run_id>` sikerrel lefut (van benne retry és kiesett persona). Ha egyik sem ilyen, indíts további futásokat különböző kérdésekkel a 8-as felső határig. A kiválasztott futás kérdése és célközönsége nem tartalmazhat személyes adatot vagy valódi cégnevet; ha tartalmaz, az nem lehet minta.
 
-- [ ] **Step 8: A seed ellenőrzése üres adatbázison.** Állítsd le a rendszert, töröld a dev adatbázis kötetét (`docker compose -f docker-compose.dev.yml down -v && … up -d`), indítsd el a backendet, és nyisd meg a `/minta` oldalt: a visszajátszás lefut, van benne retry és kiesett persona, az „Ugrás az eredményre” az eredményoldalra visz, és onnan a PDF letölthető (első kérésre generálódik).
+- [x] **Step 8: A seed ellenőrzése üres adatbázison.** Állítsd le a rendszert, töröld a dev adatbázis kötetét (`docker compose -f docker-compose.dev.yml down -v && … up -d`), indítsd el a backendet, és nyisd meg a `/minta` oldalt: a visszajátszás lefut, van benne retry és kiesett persona, az „Ugrás az eredményre” az eredményoldalra visz, és onnan a PDF letölthető (első kérésre generálódik).
 
-- [ ] **Step 9: Zárás a dokumentumokban.**
+- [x] **Step 9: Zárás a dokumentumokban.**
 
 - `CLAUDE.md`: a B terv kritériumai közül azok pipálódnak ki, amelyekre a jelentésben van bizonyíték; a „Hol tart a projekt” bekezdés frissül.
 - `TRACKING.md`: a 3–6. lépés és a B terv állapota; a „Most” sor; a megfigyelések (PDF mérete, a futások ideje és tokenszáma, hányadik futás adta a mintát, a Next napló kérdése); a nyitott pontok.
 - A terv fájljában a checkboxok.
 
-- [ ] **Step 10: Teljes ellenőrzés és commit**
+- [x] **Step 10: Teljes ellenőrzés és commit**
 
 Run: `pytest tests -q` (backend); `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build` (frontend); `grep -rn "localhost:8000\|NEXT_PUBLIC_API_URL" frontend/app frontend/components frontend/lib`
 Expected: mind zöld; a `grep` legfeljebb szerveroldali fájlban vagy tesztben talál.

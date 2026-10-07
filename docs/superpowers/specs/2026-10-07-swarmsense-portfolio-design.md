@@ -148,7 +148,7 @@ Futás indítása előtt, ebben a sorrendben. Az értékek környezeti változó
 
 ## 8. Trace képernyő és visszajátszás
 
-**Elrendezés:** fejléc (kérdés, futó óra, négy fázis: personák generálása → 18 persona → szintézis → PDF), összesítő sor (állapotonkénti darabszám, tokenek, becsült költség), alatta 18 sor (név, állapot, eltelt idő, kísérlet `n/3`, hibánál a hibakód). Mobilon egy oszlop.
+**Elrendezés:** fejléc (kérdés, futó óra, négy fázis: personák generálása → 18 persona → szintézis → PDF), összesítő sor (állapotonkénti darabszám, tokenek, becsült költség), alatta 18 sor (név, állapot, eltelt idő, kísérlet `n/3`, a persona hívásának bemeneti és kimeneti tokenjei, hibánál a hibakód). Mobilon egy oszlop.
 
 **Állapotkezelés**
 

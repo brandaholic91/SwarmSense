@@ -14,6 +14,34 @@ def test_create_run_inserts_queued_row(clean_db):
     assert row["created_at"].tzinfo is not None
 
 
+def test_create_run_stores_ip_hash(clean_db):
+    row = db.create_run(topic="a", audience="b", ip_hash="abc")
+    assert db.get_run(row["id"])["ip_hash"] == "abc"
+
+
+def test_count_active_runs_counts_only_unfinished_non_sample(clean_db):
+    queued = db.create_run(topic="a", audience="b")
+    running = db.create_run(topic="a", audience="b")
+    done = db.create_run(topic="a", audience="b")
+    db.update_run(running["id"], status="running")
+    db.update_run(done["id"], status="completed")
+    assert queued and db.count_active_runs() == 2
+
+
+def test_count_runs_since_filters_by_hash_and_window(clean_db):
+    db.create_run(topic="a", audience="b", ip_hash="x")
+    old = db.create_run(topic="a", audience="b", ip_hash="x")
+    db.create_run(topic="a", audience="b", ip_hash="y")
+    with db.connect() as conn:
+        conn.execute(
+            "update runs set created_at = now() - interval '25 hours' where id = %s",
+            (old["id"],),
+        )
+    assert db.count_runs_since() == 2
+    assert db.count_runs_since(ip_hash="x") == 1
+    assert db.count_runs_since(hours=48, ip_hash="x") == 2
+
+
 def test_get_run_returns_row_without_pdf(clean_db):
     created = db.create_run(topic="Árazás", audience="KKV vezetők")
     row = db.get_run(created["id"])

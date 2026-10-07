@@ -64,15 +64,38 @@ def apply_schema() -> None:
         conn.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
-def create_run(*, topic: str, audience: str) -> dict[str, Any]:
+def create_run(
+    *, topic: str, audience: str, ip_hash: str | None = None
+) -> dict[str, Any]:
     with connect() as conn:
         row = conn.execute(
-            "insert into runs (topic, audience) values (%s, %s) "
+            "insert into runs (topic, audience, ip_hash) values (%s, %s, %s) "
             "returning id, status, created_at",
-            (topic, audience),
+            (topic, audience, ip_hash),
         ).fetchone()
     row["id"] = str(row["id"])
     return row
+
+
+def count_active_runs() -> int:
+    with connect() as conn:
+        return conn.execute(
+            "select count(*) as n from runs "
+            "where status in ('queued', 'running', 'composing') and not is_sample"
+        ).fetchone()["n"]
+
+
+def count_runs_since(*, hours: int = 24, ip_hash: str | None = None) -> int:
+    query = (
+        "select count(*) as n from runs "
+        "where created_at > now() - make_interval(hours => %s) and not is_sample"
+    )
+    params: list[Any] = [hours]
+    if ip_hash is not None:
+        query += " and ip_hash = %s"
+        params.append(ip_hash)
+    with connect() as conn:
+        return conn.execute(query, params).fetchone()["n"]
 
 
 def get_run(run_id: str) -> dict[str, Any] | None:

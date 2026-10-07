@@ -7,7 +7,9 @@ from fastapi.testclient import TestClient
 
 from app import db
 from app.core.config import get_settings
+from app.core.errors import ErrorCode
 from app.routers import runs as runs_router
+from app.services import limits
 
 HEADERS = {"X-Internal-Secret": "test-internal-secret"}
 
@@ -47,6 +49,39 @@ def test_create_run_inserts_row_and_dispatches(client, dispatched):
     assert dispatched == [
         {"run_id": body["run_id"], "topic": "Árazás", "audience": "KKV vezetők"}
     ]
+
+
+def test_create_run_stores_hashed_client_ip(client):
+    r = client.post(
+        "/api/v1/runs",
+        json={"topic": "a", "audience": "b"},
+        headers={**HEADERS, "X-Client-IP": "203.0.113.7"},
+    )
+    assert r.status_code == 200
+    with db.connect() as conn:
+        row = conn.execute("select * from runs").fetchone()
+    assert row["ip_hash"] == limits.hash_ip("203.0.113.7")
+    assert all("203.0.113.7" not in str(value) for value in row.values())
+
+
+def test_create_run_without_client_ip_header_has_no_hash(client):
+    client.post("/api/v1/runs", json={"topic": "a", "audience": "b"}, headers=HEADERS)
+    with db.connect() as conn:
+        assert conn.execute("select ip_hash from runs").fetchone()["ip_hash"] is None
+
+
+@pytest.mark.parametrize(
+    "code", [ErrorCode.BUSY, ErrorCode.IP_LIMIT_REACHED, ErrorCode.DAILY_LIMIT_REACHED]
+)
+def test_create_run_full_limit_is_429(client, dispatched, monkeypatch, code):
+    monkeypatch.setattr(limits, "check_run_limits", lambda ip_hash: code)
+    r = client.post(
+        "/api/v1/runs", json={"topic": "a", "audience": "b"}, headers=HEADERS
+    )
+    assert r.status_code == 429
+    assert r.json()["code"] == code.value
+    assert _run_count() == 0
+    assert dispatched == []
 
 
 @pytest.mark.parametrize(
@@ -119,6 +154,19 @@ def test_create_run_db_failure_returns_code_and_does_not_dispatch(
     assert "run creation failed: RuntimeError" in caplog.text
     assert "titok" not in caplog.text
     assert "Traceback" not in caplog.text
+
+
+def test_create_run_limit_check_db_failure_is_500(client, dispatched, monkeypatch):
+    def boom(_):
+        raise RuntimeError("connection refused")
+
+    monkeypatch.setattr(limits, "check_run_limits", boom)
+    r = client.post(
+        "/api/v1/runs", json={"topic": "a", "audience": "b"}, headers=HEADERS
+    )
+    assert r.status_code == 500
+    assert r.json()["code"] == "RUN_START_FAILED"
+    assert dispatched == []
 
 
 def test_get_status_returns_progress(client):

@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     internal_secret: str = Field(...)
     frontend_origin: AnyHttpUrl = Field(...)
     environment: str = Field(default="development")
+    ip_hash_secret: str = Field(...)
+    max_concurrent_runs: int = Field(default=2)
+    runs_per_ip_per_day: int = Field(default=3)
+    runs_per_day: int = Field(default=20)
 
     @property
     def is_production(self) -> bool:

@@ -9,6 +9,9 @@ class ErrorCode(str, Enum):
     UNAUTHORIZED = "UNAUTHORIZED"
     RUN_NOT_FOUND = "RUN_NOT_FOUND"
     RUN_START_FAILED = "RUN_START_FAILED"
+    BUSY = "BUSY"
+    IP_LIMIT_REACHED = "IP_LIMIT_REACHED"
+    DAILY_LIMIT_REACHED = "DAILY_LIMIT_REACHED"
 
 
 def error_response(status_code: int, detail: str, code: ErrorCode) -> JSONResponse:

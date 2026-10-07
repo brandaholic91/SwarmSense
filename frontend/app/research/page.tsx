@@ -16,7 +16,6 @@ import {
   onPrimary,
   onSurface,
   outlineVariant,
-  surfaceContainer,
   surfaceContainerLow,
   textSecondary,
 } from "@/lib/tokens";
@@ -102,19 +101,7 @@ export default function ResearchPage() {
   };
 
   return (
-    <div className="relative min-h-dvh" style={{ color: onSurface }}>
-      <header
-        className="sticky top-0 z-40 flex h-20 items-center justify-center border-b"
-        style={{ backgroundColor: surfaceContainer, borderColor: outlineVariant }}
-      >
-        <span
-          className="text-lg font-semibold tracking-tight"
-          style={{ ...headlineFont, color: onSurface }}
-        >
-          Swarm<span style={{ color: accent }}>Sense</span>
-        </span>
-      </header>
-
+    <div className="relative" style={{ color: onSurface }}>
       <main className="flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-24">
         <div className="w-full max-w-[600px] space-y-12">
           <section className="space-y-8">

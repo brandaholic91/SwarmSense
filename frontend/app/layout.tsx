@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { SiteHeader } from "@/components/site-header";
 
 const outfit = Outfit({
   variable: "--font-headline",
@@ -47,6 +48,7 @@ export default function RootLayout({
       className={`${outfit.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <SiteHeader />
         {children}
       </body>
     </html>
